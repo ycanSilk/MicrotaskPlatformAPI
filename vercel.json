@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "src/goflylivechat/main.go",
+      "use": "@vercel/go",
+      "config": {
+        "srcDir": "src/goflylivechat",
+        "installCommand": "cd src/goflylivechat && go mod download",
+        "buildCommand": "cd src/goflylivechat && go build -o goflylivechat"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/gochat/(.*)",
+      "dest": "src/goflylivechat/goflylivechat"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ],
+  "env": {
+    "GOFLY_PORT": "8081",
+    "GOFLY_ENV": "production",
+    "VERCEL": "1"
+  },
+  "functions": {
+    "src/goflylivechat/goflylivechat": {
+      "memory": 512,
+      "maxDuration": 120
+    }
+  },
+  "regions": ["iad1", "sfo1", "lhr1", "fra1", "cdg1", "hnd1", "sin1"]
+}

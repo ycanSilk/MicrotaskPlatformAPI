@@ -1,0 +1,37 @@
+{
+  "baseUrl": "http://localhost:8083/api/sys",
+  "timeout": 10000,
+  "headers": {
+    "accept": "*/*",
+    "Content-Type": "application/json"
+  },
+  "endpoints": {
+    "auth": {
+      "register": "/user/register",
+      "login": "/user/login",
+      "logout": "/user/logout",
+      "resetpwd": "/user/reset-password",
+      "refreshToken": "/user/refresh",
+      "userlist": "/user/list",
+      "forgotpwd": "/user/forgot-password",
+      "changepwd": "/user/change-password",
+      "userprofile": "/user/profile",
+      "createuser": "/user"
+    },
+    "role": {
+      "rolelist": "/role/list",
+      "createrole": "/role",
+      "roleassignmenus": "/role/{roleId}/assign-menus",
+      "getrolemenus": "/role/{roleId}/menus",
+      "enablerole": "/role/{roleId}/enable",
+      "disablerole": "/role/{roleId}/disable",
+      "getroledetails": "/role/{roleId}",
+      "updaterole": "/role/{roleId}",
+      "deleterole": "/role/{roleId}",
+      "getallroles": "/role/all"
+    }
+  },
+  "mockMode": false,
+  "retryCount": 3,
+  "retryDelay": 1000
+}

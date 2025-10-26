@@ -1,0 +1,40 @@
+{
+  "users": [
+    {
+      "id": "com001",
+      "username": "commenter01",
+      "password": "com123456",
+      "role": "commenter",
+      "phone": "13800138001",
+      "createdAt": "2024-01-04T10:00:00Z",
+      "updatedAt": "2024-01-04T10:00:00Z"
+    },
+    {
+      "id": "com002",
+      "username": "commenter02",
+      "password": "com888888",
+      "role": "commenter",
+      "phone": "13800138002",
+      "createdAt": "2024-01-05T11:30:00Z",
+      "updatedAt": "2024-01-05T11:30:00Z"
+    },
+    {
+      "id": "com003",
+      "username": "commenter03",
+      "password": "com666666",
+      "role": "commenter",
+      "phone": "13800138003",
+      "createdAt": "2024-01-10T14:20:00Z",
+      "updatedAt": "2024-01-10T14:20:00Z"
+    },
+    {
+      "id": "com004",
+      "username": "test123",
+      "password": "123456",
+      "role": "commenter",
+      "phone": "",
+      "createdAt": "2025-09-16T14:18:58.742Z",
+      "updatedAt": "2025-09-16T14:18:58.742Z"
+    }
+  ]
+}

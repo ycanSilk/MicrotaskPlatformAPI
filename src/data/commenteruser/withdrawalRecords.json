@@ -1,0 +1,52 @@
+{
+  "withdrawals": [
+    {
+      "id": "wd001",
+      "userId": "com001",
+      "amount": 100.00,
+      "fee": 2.00,
+      "totalAmount": 102.00,
+      "method": "wechat",
+      "status": "completed",
+      "requestTime": "2024-01-18T09:00:00Z",
+      "completeTime": "2024-01-18T11:30:00Z",
+      "description": "微信提现"
+    },
+    {
+      "id": "wd002",
+      "userId": "com001",
+      "amount": 200.00,
+      "fee": 2.00,
+      "totalAmount": 202.00,
+      "method": "alipay",
+      "status": "completed",
+      "requestTime": "2024-01-11T15:30:00Z",
+      "completeTime": "2024-01-11T16:45:00Z",
+      "description": "支付宝提现"
+    },
+    {
+      "id": "wd003",
+      "userId": "com002",
+      "amount": 100.00,
+      "fee": 2.00,
+      "totalAmount": 102.00,
+      "method": "wechat",
+      "status": "completed",
+      "requestTime": "2024-01-18T10:15:00Z",
+      "completeTime": "2024-01-18T11:30:00Z",
+      "description": "微信提现"
+    },
+    {
+      "id": "wd004",
+      "userId": "com001",
+      "amount": 300.00,
+      "fee": 2.00,
+      "totalAmount": 302.00,
+      "method": "bank",
+      "status": "pending",
+      "requestTime": "2024-01-18T14:20:00Z",
+      "completeTime": null,
+      "description": "银行卡提现"
+    }
+  ]
+}

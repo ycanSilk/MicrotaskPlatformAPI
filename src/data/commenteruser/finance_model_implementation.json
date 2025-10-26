@@ -1,0 +1,623 @@
+{
+  "modelVersion": "2.0.0",
+  "description": "评论员收益系统完整数据模型实现",
+  "lastUpdated": "2024-09-16",
+  
+  "accounts": {
+    "com001": {
+      "userId": "com001",
+      "availableBalance": 456.80,
+      "frozenBalance": 0,
+      "totalEarnings": 2847.60,
+      "withdrawnAmount": 2390.80,
+      "completedTasks": 156,
+      "withdrawalCount": 24,
+      "inviteCode": "CM001",
+      "totalInvited": 5,
+      "referrerId": null,
+      "lastUpdated": "2024-01-15T14:30:00Z",
+      "todayEarnings": 28.50,
+      "yesterdayEarnings": 32.20,
+      "weeklyEarnings": 186.40,
+      "monthlyEarnings": 743.60,
+      "dailyEarnings": [
+        { "date": "2024-01-15", "amount": 28.50 },
+        { "date": "2024-01-14", "amount": 32.20 },
+        { "date": "2024-01-13", "amount": 25.70 },
+        { "date": "2024-01-12", "amount": 30.90 },
+        { "date": "2024-01-11", "amount": 26.40 },
+        { "date": "2024-01-10", "amount": 18.70 },
+        { "date": "2024-01-09", "amount": 24.00 }
+      ],
+      "paymentMethods": {
+        "wechat": {
+          "accountName": "张三",
+          "accountNumber": "wxid_123456789",
+          "verified": true
+        },
+        "alipay": {
+          "accountName": "张三",
+          "accountNumber": "13800138001",
+          "verified": true
+        },
+        "bank": {
+          "accountName": "张三",
+          "accountNumber": "6228480001234567890",
+          "bankName": "工商银行",
+          "branchName": "北京朝阳支行",
+          "verified": false
+        }
+      }
+    },
+    "com002": {
+      "userId": "com002",
+      "availableBalance": 128.30,
+      "frozenBalance": 0,
+      "totalEarnings": 952.70,
+      "withdrawnAmount": 824.40,
+      "completedTasks": 67,
+      "withdrawalCount": 8,
+      "inviteCode": "CM002",
+      "totalInvited": 2,
+      "referrerId": "com001",
+      "lastUpdated": "2024-01-15T10:20:00Z",
+      "todayEarnings": 15.30,
+      "yesterdayEarnings": 18.70,
+      "weeklyEarnings": 96.20,
+      "monthlyEarnings": 385.40,
+      "dailyEarnings": [
+        { "date": "2024-01-15", "amount": 15.30 },
+        { "date": "2024-01-14", "amount": 18.70 },
+        { "date": "2024-01-13", "amount": 12.50 },
+        { "date": "2024-01-12", "amount": 16.80 },
+        { "date": "2024-01-11", "amount": 14.20 },
+        { "date": "2024-01-10", "amount": 9.70 },
+        { "date": "2024-01-09", "amount": 9.00 }
+      ],
+      "paymentMethods": {
+        "wechat": {
+          "accountName": "李四",
+          "accountNumber": "wxid_987654321",
+          "verified": true
+        },
+        "alipay": {
+          "accountName": "李四",
+          "accountNumber": "13800138002",
+          "verified": true
+        }
+      }
+    },
+    "com003": {
+      "userId": "com003",
+      "availableBalance": 320.50,
+      "frozenBalance": 0,
+      "totalEarnings": 1568.90,
+      "withdrawnAmount": 1248.40,
+      "completedTasks": 98,
+      "withdrawalCount": 12,
+      "inviteCode": "CM003",
+      "totalInvited": 1,
+      "referrerId": "com001",
+      "lastUpdated": "2024-01-14T16:45:00Z",
+      "paymentMethods": {
+        "alipay": {
+          "accountName": "王五",
+          "accountNumber": "13800138003",
+          "verified": true
+        },
+        "bank": {
+          "accountName": "王五",
+          "accountNumber": "6228480001987654321",
+          "bankName": "建设银行",
+          "branchName": "上海浦东支行",
+          "verified": true
+        }
+      }
+    },
+    "com004": {
+      "userId": "com004",
+      "availableBalance": 35.50,
+      "frozenBalance": 0,
+      "totalEarnings": 50.20,
+      "withdrawnAmount": 0,
+      "completedTasks": 3,
+      "withdrawalCount": 0,
+      "inviteCode": "CM004",
+      "totalInvited": 0,
+      "referrerId": "com001",
+      "lastUpdated": "2025-09-16T14:18:58.742Z",
+      "paymentMethods": {
+        "wechat": {
+          "accountName": "赵六",
+          "accountNumber": "wxid_123789456",
+          "verified": true
+        }
+      }
+    }
+  },
+  
+  "earnings": [
+    {
+      "id": "earn001",
+      "userId": "com001",
+      "taskId": "task001",
+      "taskName": "美食探店推广",
+      "amount": 3.50,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-15T14:30:00Z",
+      "settleTime": "2024-01-15T14:35:00Z",
+      "description": "完成美食探店评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.35,
+        "commissionRecipient": "com000"
+      }
+    },
+    {
+      "id": "earn002",
+      "userId": "com001",
+      "taskId": "task002",
+      "taskName": "护肤产品体验",
+      "amount": 5.20,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-15T10:20:00Z",
+      "settleTime": "2024-01-15T10:25:00Z",
+      "description": "完成护肤产品体验评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.52,
+        "commissionRecipient": "com000"
+      }
+    },
+    {
+      "id": "earn003",
+      "userId": "com001",
+      "taskId": "task003",
+      "taskName": "科技产品评测",
+      "amount": 4.80,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-14T16:45:00Z",
+      "settleTime": "2024-01-14T16:50:00Z",
+      "description": "完成科技产品评测评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.48,
+        "commissionRecipient": "com000"
+      }
+    },
+    {
+      "id": "earn004",
+      "userId": "com002",
+      "taskId": "task004",
+      "taskName": "服装穿搭分享",
+      "amount": 6.00,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-15T09:10:00Z",
+      "settleTime": "2024-01-15T09:15:00Z",
+      "description": "完成服装穿搭分享评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.60,
+        "commissionRecipient": "com001"
+      }
+    },
+    {
+      "id": "earn005",
+      "userId": "com003",
+      "taskId": "task005",
+      "taskName": "电子产品使用体验",
+      "amount": 7.50,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-14T14:20:00Z",
+      "settleTime": "2024-01-14T14:25:00Z",
+      "description": "完成电子产品使用体验评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.75,
+        "commissionRecipient": "com001"
+      }
+    },
+    {
+      "id": "earn006",
+      "userId": "com004",
+      "taskId": "task006",
+      "taskName": "科技类真人账号出租",
+      "amount": 20.00,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2025-09-18T09:30:00Z",
+      "settleTime": "2025-09-18T09:35:00Z",
+      "description": "完成账号出租任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 2.00,
+        "commissionRecipient": "com001"
+      }
+    },
+    {
+      "id": "earn007",
+      "userId": "com004",
+      "taskId": "task007",
+      "taskName": "短视频互动评论",
+      "amount": 5.50,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2025-09-17T14:45:00Z",
+      "settleTime": "2025-09-17T14:50:00Z",
+      "description": "完成短视频评论任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 0.55,
+        "commissionRecipient": "com001"
+      }
+    },
+    {
+      "id": "earn008",
+      "userId": "com004",
+      "taskId": "task008",
+      "taskName": "产品试用体验",
+      "amount": 15.00,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2025-09-16T11:20:00Z",
+      "settleTime": "2025-09-16T11:25:00Z",
+      "description": "完成产品试用任务",
+      "commissionInfo": {
+        "hasCommission": true,
+        "commissionRate": 0.1,
+        "commissionAmount": 1.50,
+        "commissionRecipient": "com001"
+      }
+    },
+    {
+      "id": "earn009",
+      "userId": "com001",
+      "taskId": "invite_bonus",
+      "taskName": "邀请好友奖励",
+      "amount": 5.00,
+      "type": "bonus",
+      "status": "completed",
+      "earnedTime": "2025-09-16T14:18:58.742Z",
+      "settleTime": "2025-09-16T14:18:58.742Z",
+      "description": "邀请用户com004注册并完成首单任务",
+      "relatedUserId": "com004",
+      "commissionInfo": {
+        "hasCommission": false
+      }
+    }
+  ],
+  
+  "withdrawals": [
+    {
+      "id": "wd001",
+      "userId": "com001",
+      "amount": 100.00,
+      "fee": 2.00,
+      "totalAmount": 102.00,
+      "method": "wechat",
+      "status": "completed",
+      "requestTime": "2024-01-18T09:00:00Z",
+      "reviewTime": "2024-01-18T10:15:00Z",
+      "completeTime": "2024-01-18T11:30:00Z",
+      "description": "微信提现",
+      "reviewerId": "admin001",
+      "paymentInfo": {
+        "transactionId": "wx202401181130123456789",
+        "paidTo": "wxid_123456789"
+      }
+    },
+    {
+      "id": "wd002",
+      "userId": "com001",
+      "amount": 200.00,
+      "fee": 2.00,
+      "totalAmount": 202.00,
+      "method": "alipay",
+      "status": "completed",
+      "requestTime": "2024-01-11T15:30:00Z",
+      "reviewTime": "2024-01-11T16:00:00Z",
+      "completeTime": "2024-01-11T16:45:00Z",
+      "description": "支付宝提现",
+      "reviewerId": "admin001",
+      "paymentInfo": {
+        "transactionId": "ali202401111645987654321",
+        "paidTo": "13800138001"
+      }
+    },
+    {
+      "id": "wd003",
+      "userId": "com002",
+      "amount": 100.00,
+      "fee": 2.00,
+      "totalAmount": 102.00,
+      "method": "wechat",
+      "status": "completed",
+      "requestTime": "2024-01-18T10:15:00Z",
+      "reviewTime": "2024-01-18T11:00:00Z",
+      "completeTime": "2024-01-18T11:30:00Z",
+      "description": "微信提现",
+      "reviewerId": "admin001",
+      "paymentInfo": {
+        "transactionId": "wx202401181130987654321",
+        "paidTo": "wxid_987654321"
+      }
+    },
+    {
+      "id": "wd004",
+      "userId": "com001",
+      "amount": 300.00,
+      "fee": 2.00,
+      "totalAmount": 302.00,
+      "method": "bank",
+      "status": "pending",
+      "requestTime": "2024-01-18T14:20:00Z",
+      "reviewTime": null,
+      "completeTime": null,
+      "description": "银行卡提现",
+      "reviewerId": null,
+      "paymentInfo": null
+    }
+  ],
+  
+  "commissions": [
+    {
+      "id": "comm001",
+      "recipientId": "com000",
+      "sourceUserId": "com001",
+      "sourceEarningId": "earn001",
+      "amount": 0.35,
+      "rate": 0.1,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-15T14:35:00Z",
+      "description": "用户com001完成美食探店推广任务的佣金"
+    },
+    {
+      "id": "comm002",
+      "recipientId": "com000",
+      "sourceUserId": "com001",
+      "sourceEarningId": "earn002",
+      "amount": 0.52,
+      "rate": 0.1,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-15T10:25:00Z",
+      "description": "用户com001完成护肤产品体验任务的佣金"
+    },
+    {
+      "id": "comm003",
+      "recipientId": "com000",
+      "sourceUserId": "com001",
+      "sourceEarningId": "earn003",
+      "amount": 0.48,
+      "rate": 0.1,
+      "type": "task",
+      "status": "completed",
+      "earnedTime": "2024-01-14T16:50:00Z",
+      "description": "用户com001完成科技产品评测任务的佣金"
+    },
+    {
+      "id": "comm004",
+      "recipientId": "com001",
+      "sourceUserId": "com002",
+      "sourceEarningId": "earn004",
+      "amount": 0.60,
+      "rate": 0.1,
+      "type": "team",
+      "status": "completed",
+      "earnedTime": "2024-01-15T09:15:00Z",
+      "description": "团队成员com002完成服装穿搭分享任务的佣金"
+    },
+    {
+      "id": "comm005",
+      "recipientId": "com001",
+      "sourceUserId": "com003",
+      "sourceEarningId": "earn005",
+      "amount": 0.75,
+      "rate": 0.1,
+      "type": "team",
+      "status": "completed",
+      "earnedTime": "2024-01-14T14:25:00Z",
+      "description": "团队成员com003完成电子产品使用体验任务的佣金"
+    },
+    {
+      "id": "comm006",
+      "recipientId": "com001",
+      "sourceUserId": "com004",
+      "sourceEarningId": "earn006",
+      "amount": 2.00,
+      "rate": 0.1,
+      "type": "team",
+      "status": "completed",
+      "earnedTime": "2025-09-18T09:35:00Z",
+      "description": "团队成员com004完成科技类真人账号出租任务的佣金"
+    },
+    {
+      "id": "comm007",
+      "recipientId": "com001",
+      "sourceUserId": "com004",
+      "sourceEarningId": "earn007",
+      "amount": 0.55,
+      "rate": 0.1,
+      "type": "team",
+      "status": "completed",
+      "earnedTime": "2025-09-17T14:50:00Z",
+      "description": "团队成员com004完成短视频互动评论任务的佣金"
+    },
+    {
+      "id": "comm008",
+      "recipientId": "com001",
+      "sourceUserId": "com004",
+      "sourceEarningId": "earn008",
+      "amount": 1.50,
+      "rate": 0.1,
+      "type": "team",
+      "status": "completed",
+      "earnedTime": "2025-09-16T11:25:00Z",
+      "description": "团队成员com004完成产品试用体验任务的佣金"
+    }
+  ],
+  
+  "teamMembers": [
+    {
+      "id": "tm001",
+      "inviterId": "com001",
+      "memberId": "com002",
+      "joinDate": "2024-01-10T09:00:00Z",
+      "level": 1,
+      "status": "active",
+      "memberInfo": {
+        "nickname": "李四",
+        "avatar": "👨",
+        "completedTasks": 67,
+        "totalEarnings": 952.70
+      },
+      "commissionStats": {
+        "totalCommission": 47.64,
+        "commissionRate": 0.1,
+        "commissionThisWeek": 5.20,
+        "commissionThisMonth": 18.75
+      }
+    },
+    {
+      "id": "tm002",
+      "inviterId": "com001",
+      "memberId": "com003",
+      "joinDate": "2024-01-12T14:20:00Z",
+      "level": 1,
+      "status": "active",
+      "memberInfo": {
+        "nickname": "王五",
+        "avatar": "👩",
+        "completedTasks": 98,
+        "totalEarnings": 1568.90
+      },
+      "commissionStats": {
+        "totalCommission": 78.45,
+        "commissionRate": 0.1,
+        "commissionThisWeek": 8.30,
+        "commissionThisMonth": 25.42
+      }
+    },
+    {
+      "id": "tm003",
+      "inviterId": "com001",
+      "memberId": "com004",
+      "joinDate": "2025-09-16T14:18:58.742Z",
+      "level": 1,
+      "status": "active",
+      "memberInfo": {
+        "nickname": "赵六",
+        "avatar": "🧑",
+        "completedTasks": 3,
+        "totalEarnings": 50.20
+      },
+      "commissionStats": {
+        "totalCommission": 4.05,
+        "commissionRate": 0.1,
+        "commissionThisWeek": 4.05,
+        "commissionThisMonth": 4.05
+      }
+    }
+  ],
+  
+  "config": {
+    "withdrawal": {
+      "minAmount": 100.00,
+      "maxAmount": 5000.00,
+      "fee": 2.00,
+      "dailyLimit": 3,
+      "allowedDays": [4],
+      "amountUnit": 100.00,
+      "processingTime": "24小时内",
+      "autoReviewAmount": 500.00
+    },
+    "commission": {
+      "defaultRate": 0.1,
+      "teamRates": [
+        {"level": 1, "rate": 0.1},
+        {"level": 2, "rate": 0.05},
+        {"level": 3, "rate": 0.03}
+      ],
+      "inviteBonus": 5.00,
+      "settlementCycle": "daily"
+    },
+    "earnings": {
+      "settlementDelay": 0,
+      "minTaskReward": 1.00,
+      "maxTaskReward": 100.00
+    },
+    "security": {
+      "maxFailedAttempts": 3,
+      "lockoutDuration": 3600,
+      "withdrawalVerification": true
+    }
+  },
+  
+  "schema": {
+    "entities": {
+      "accounts": {
+        "description": "评论员账户信息",
+        "primaryKey": "userId",
+        "indexes": ["userId", "inviteCode", "referrerId"],
+        "relationships": {
+          "referrerId": {"entity": "accounts", "field": "userId"}
+        }
+      },
+      "earnings": {
+        "description": "评论员收益记录",
+        "primaryKey": "id",
+        "indexes": ["userId", "taskId", "earnedTime", "type"],
+        "relationships": {
+          "userId": {"entity": "accounts", "field": "userId"}
+        }
+      },
+      "withdrawals": {
+        "description": "评论员提现记录",
+        "primaryKey": "id",
+        "indexes": ["userId", "status", "requestTime", "method"],
+        "relationships": {
+          "userId": {"entity": "accounts", "field": "userId"}
+        }
+      },
+      "commissions": {
+        "description": "佣金记录",
+        "primaryKey": "id",
+        "indexes": ["recipientId", "sourceUserId", "earnedTime", "type"],
+        "relationships": {
+          "recipientId": {"entity": "accounts", "field": "userId"},
+          "sourceUserId": {"entity": "accounts", "field": "userId"}
+        }
+      },
+      "teamMembers": {
+        "description": "团队成员关系",
+        "primaryKey": "id",
+        "indexes": ["inviterId", "memberId", "status"],
+        "relationships": {
+          "inviterId": {"entity": "accounts", "field": "userId"},
+          "memberId": {"entity": "accounts", "field": "userId"}
+        }
+      }
+    },
+    
+    "queryTemplates": {
+      "getUserFinancialSummary": "SELECT * FROM accounts WHERE userId = ?",
+      "getUserEarningsByDateRange": "SELECT * FROM earnings WHERE userId = ? AND earnedTime BETWEEN ? AND ?",
+      "getUserWithdrawalHistory": "SELECT * FROM withdrawals WHERE userId = ?",
+      "getUserTeamMembers": "SELECT * FROM teamMembers WHERE inviterId = ?",
+      "getUserCommissionHistory": "SELECT * FROM commissions WHERE recipientId = ?"
+    }
+  }
+}

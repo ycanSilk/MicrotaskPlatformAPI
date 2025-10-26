@@ -1,0 +1,342 @@
+{
+  "earnings": [
+    {
+      "id": "earn001",
+      "userId": "com001",
+      "taskId": "task001",
+      "taskName": "美食探店推广",
+      "amount": 3.50,
+      "status": "completed",
+      "earnedTime": "2024-01-15T14:30:00Z",
+      "description": "完成美食探店评论任务"
+    },
+    {
+      "id": "earn002",
+      "userId": "com001",
+      "taskId": "task002",
+      "taskName": "护肤产品体验",
+      "amount": 5.20,
+      "status": "completed",
+      "earnedTime": "2024-01-15T10:20:00Z",
+      "description": "完成护肤产品体验评论任务"
+    },
+    {
+      "id": "earn003",
+      "userId": "com001",
+      "taskId": "task003",
+      "taskName": "科技产品评测",
+      "amount": 4.80,
+      "status": "completed",
+      "earnedTime": "2024-01-14T16:45:00Z",
+      "description": "完成科技产品评测评论任务"
+    },
+    {
+      "id": "earn004",
+      "userId": "com002",
+      "taskId": "task004",
+      "taskName": "服装穿搭分享",
+      "amount": 6.00,
+      "status": "completed",
+      "earnedTime": "2024-01-15T09:10:00Z",
+      "description": "完成服装穿搭分享评论任务"
+    },
+    {
+      "id": "earn005",
+      "userId": "com003",
+      "taskId": "task005",
+      "taskName": "电子产品使用体验",
+      "amount": 7.50,
+      "status": "completed",
+      "earnedTime": "2024-01-14T14:20:00Z",
+      "description": "完成电子产品使用体验评论任务"
+    },
+    {
+      "id": "earn006",
+      "userId": "com004",
+      "taskId": "task006",
+      "taskName": "科技类真人账号出租",
+      "amount": 20.00,
+      "status": "completed",
+      "earnedTime": "2025-09-18T09:30:00Z",
+      "description": "完成账号出租任务"
+    },
+    {
+      "id": "earn007",
+      "userId": "com004",
+      "taskId": "task007",
+      "taskName": "短视频互动评论",
+      "amount": 5.50,
+      "status": "completed",
+      "earnedTime": "2025-09-17T14:45:00Z",
+      "description": "完成短视频评论任务"
+    },
+    {
+      "id": "earn008",
+      "userId": "com004",
+      "taskId": "task008",
+      "taskName": "产品试用体验",
+      "amount": 15.00,
+      "status": "completed",
+      "earnedTime": "2025-09-16T11:20:00Z",
+      "description": "完成产品试用任务"
+    },
+    {
+      "id": "earn009",
+      "userId": "com004",
+      "taskId": "task009",
+      "taskName": "电商产品评论",
+      "amount": 12.80,
+      "status": "completed",
+      "earnedTime": "2025-09-19T10:30:00Z",
+      "description": "完成电商产品评价任务",
+      "taskEarning": 12.80,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn010",
+      "userId": "com004",
+      "taskId": "task010",
+      "taskName": "游戏体验分享",
+      "amount": 18.50,
+      "status": "completed",
+      "earnedTime": "2025-09-19T15:45:00Z",
+      "description": "完成游戏体验评论任务",
+      "taskEarning": 18.50,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn011",
+      "userId": "com004",
+      "taskId": "task011",
+      "taskName": "餐饮点评",
+      "amount": 15.20,
+      "status": "completed",
+      "earnedTime": "2025-09-20T09:20:00Z",
+      "description": "完成餐饮体验评论任务",
+      "taskEarning": 15.20,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn012",
+      "userId": "com004",
+      "taskId": "task012",
+      "taskName": "旅游景点评价",
+      "amount": 20.00,
+      "status": "completed",
+      "earnedTime": "2025-09-20T14:10:00Z",
+      "description": "完成旅游景点评论任务",
+      "taskEarning": 20.00,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn013",
+      "userId": "com004",
+      "taskId": "task013",
+      "taskName": "数码产品体验",
+      "amount": 16.80,
+      "status": "completed",
+      "earnedTime": "2025-09-21T11:30:00Z",
+      "description": "完成数码产品评论任务",
+      "taskEarning": 16.80,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn014",
+      "userId": "com004",
+      "taskId": "task014",
+      "taskName": "美妆产品测评",
+      "amount": 14.50,
+      "status": "completed",
+      "earnedTime": "2025-09-21T16:45:00Z",
+      "description": "完成美妆产品评论任务",
+      "taskEarning": 14.50,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn015",
+      "userId": "com004",
+      "taskId": "task015",
+      "taskName": "家居用品评价",
+      "amount": 13.20,
+      "status": "completed",
+      "earnedTime": "2025-09-22T10:15:00Z",
+      "description": "完成家居用品评论任务",
+      "taskEarning": 13.20,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn016",
+      "userId": "com004",
+      "taskId": "task016",
+      "taskName": "图书阅读分享",
+      "amount": 17.80,
+      "status": "completed",
+      "earnedTime": "2025-09-22T15:30:00Z",
+      "description": "完成图书阅读评论任务",
+      "taskEarning": 17.80,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn017",
+      "userId": "com004",
+      "taskId": "task017",
+      "taskName": "健身器材体验",
+      "amount": 19.60,
+      "status": "completed",
+      "earnedTime": "2025-09-23T09:45:00Z",
+      "description": "完成健身器材评论任务",
+      "taskEarning": 19.60,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn018",
+      "userId": "com004",
+      "taskId": "task018",
+      "taskName": "汽车用品评价",
+      "amount": 22.50,
+      "status": "completed",
+      "earnedTime": "2025-09-23T14:20:00Z",
+      "description": "完成汽车用品评论任务",
+      "taskEarning": 22.50,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn019",
+      "userId": "com004",
+      "taskId": "task019",
+      "taskName": "母婴产品测评",
+      "amount": 16.30,
+      "status": "completed",
+      "earnedTime": "2025-09-24T10:30:00Z",
+      "description": "完成母婴产品评论任务",
+      "taskEarning": 16.30,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn020",
+      "userId": "com004",
+      "taskId": "task020",
+      "taskName": "宠物用品评价",
+      "amount": 14.70,
+      "status": "completed",
+      "earnedTime": "2025-09-24T15:45:00Z",
+      "description": "完成宠物用品评论任务",
+      "taskEarning": 14.70,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn021",
+      "userId": "com004",
+      "taskId": "task021",
+      "taskName": "服装鞋帽体验",
+      "amount": 18.90,
+      "status": "completed",
+      "earnedTime": "2025-09-25T09:15:00Z",
+      "description": "完成服装鞋帽评论任务",
+      "taskEarning": 18.90,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn022",
+      "userId": "com004",
+      "taskId": "task022",
+      "taskName": "音乐应用评价",
+      "amount": 15.50,
+      "status": "completed",
+      "earnedTime": "2025-09-25T14:30:00Z",
+      "description": "完成音乐应用评论任务",
+      "taskEarning": 15.50,
+      "commissionEarning": 0.00
+    },
+    {
+      "id": "earn023",
+      "userId": "com001",
+      "taskId": "task023",
+      "taskName": "生活服务评价",
+      "amount": 12.50,
+      "status": "completed",
+      "earnedTime": "2025-09-19T11:00:00Z",
+      "description": "完成生活服务评论任务"
+    },
+    {
+      "id": "earn024",
+      "userId": "com001",
+      "taskId": "task024",
+      "taskName": "运动品牌测评",
+      "amount": 16.80,
+      "status": "completed",
+      "earnedTime": "2025-09-20T16:30:00Z",
+      "description": "完成运动品牌评论任务"
+    },
+    {
+      "id": "earn025",
+      "userId": "com001",
+      "taskId": "task025",
+      "taskName": "厨房电器体验",
+      "amount": 19.20,
+      "status": "completed",
+      "earnedTime": "2025-09-21T13:15:00Z",
+      "description": "完成厨房电器评论任务"
+    },
+    {
+      "id": "earn026",
+      "userId": "com002",
+      "taskId": "task026",
+      "taskName": "手机应用评价",
+      "amount": 10.50,
+      "status": "completed",
+      "earnedTime": "2025-09-19T14:20:00Z",
+      "description": "完成手机应用评论任务"
+    },
+    {
+      "id": "earn027",
+      "userId": "com002",
+      "taskId": "task027",
+      "taskName": "家具产品测评",
+      "amount": 14.80,
+      "status": "completed",
+      "earnedTime": "2025-09-20T11:45:00Z",
+      "description": "完成家具产品评论任务"
+    },
+    {
+      "id": "earn028",
+      "userId": "com002",
+      "taskId": "task028",
+      "taskName": "办公用品体验",
+      "amount": 13.20,
+      "status": "completed",
+      "earnedTime": "2025-09-22T10:30:00Z",
+      "description": "完成办公用品评论任务"
+    },
+    {
+      "id": "earn029",
+      "userId": "com003",
+      "taskId": "task029",
+      "taskName": "学习工具评价",
+      "amount": 11.80,
+      "status": "completed",
+      "earnedTime": "2025-09-19T16:45:00Z",
+      "description": "完成学习工具评论任务"
+    },
+    {
+      "id": "earn030",
+      "userId": "com003",
+      "taskId": "task030",
+      "taskName": "户外装备测评",
+      "amount": 17.50,
+      "status": "completed",
+      "earnedTime": "2025-09-21T09:30:00Z",
+      "description": "完成户外装备评论任务"
+    },
+    {
+      "id": "earn031",
+      "userId": "com003",
+      "taskId": "task031",
+      "taskName": "办公软件体验",
+      "amount": 15.60,
+      "status": "completed",
+      "earnedTime": "2025-09-23T15:10:00Z",
+      "description": "完成办公软件评论任务"
+    }
+  ]
+}

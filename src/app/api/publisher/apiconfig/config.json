@@ -1,0 +1,24 @@
+{
+  "baseUrl": "http://localhost:8083/api/biz",
+  "timeout": 10000,
+  "headers": {
+    "accept": "*/*",
+    "Content-Type": "application/json"
+  },
+  "endpoints": {
+    "auth": {
+      "register": "/user/register",
+      "login": "/user/login",
+      "logout": "/user/logout",
+      "resetpwd": "/user/reset-password",
+      "refreshToken": "/user/refresh",
+      "userlist": "/user/list",
+      "forgotpwd": "/user/forgot-password",
+      "changepwd": "/user/change-password",
+      "userprofile": "/user/profile"
+    }
+  },
+  "mockMode": false,
+  "retryCount": 3,
+  "retryDelay": 1000
+}

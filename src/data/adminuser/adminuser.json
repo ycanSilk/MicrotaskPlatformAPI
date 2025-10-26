@@ -1,0 +1,13 @@
+{
+  "users": [
+    {
+      "id": "admin001",
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "phone": "13800138000",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "modelVersion": "1.0.0",
+  "description": "Bound user invitations relational data",
+  "lastUpdated": "2024-01-16T00:00:00Z",
+  "invitations": [
+    {"id": "inv_001","inviterId": "user1","inviteeId": "user2","inviteCode": "CM001","status": "bound","createdAt": "2024-01-10T14:30:00Z","boundAt": "2024-01-10T14:45:00Z","inviterName": "评论用户1","inviteeName": "小王","inviteLink": "http://localhost:3000/register?inviteCode=CM001"},
+    {"id": "inv_002","inviterId": "user1","inviteeId": "user3","inviteCode": "CM001","status": "bound","createdAt": "2024-01-12T09:15:00Z","boundAt": "2024-01-12T09:30:00Z","inviterName": "评论用户1","inviteeName": "小李","inviteLink": "http://localhost:3000/register?inviteCode=CM001"},
+    {"id": "inv_003","inviterId": "user1","inviteeId": "user5","inviteCode": "CM001","status": "bound","createdAt": "2024-01-14T11:20:00Z","boundAt": "2024-01-14T11:35:00Z","inviterName": "评论用户1","inviteeName": "小张","inviteLink": "http://localhost:3000/register?inviteCode=CM001"},
+    {"id": "inv_004","inviterId": "user1","inviteeId": "user7","inviteCode": "CM001","status": "bound","createdAt": "2024-01-15T10:30:00Z","boundAt": "2024-01-15T10:40:00Z","inviterName": "评论用户1","inviteeName": "小陈","inviteLink": "http://localhost:3000/register?inviteCode=CM001"},
+    {"id": "inv_005","inviterId": "user4","inviteeId": "user6","inviteCode": "CM004","status": "bound","createdAt": "2024-01-08T13:50:00Z","boundAt": "2024-01-08T14:05:00Z","inviterName": "评论用户4","inviteeName": "小刘","inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_008","inviterId": "user4","inviteeId": "user8","inviteCode": "CM004","status": "bound","createdAt": "2024-01-09T10:20:00Z","boundAt": "2024-01-09T10:35:00Z","inviterName": "评论用户4","inviteeName": "小赵","inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_009","inviterId": "user4","inviteeId": "user9","inviteCode": "CM004","status": "bound","createdAt": "2024-01-11T15:40:00Z","boundAt": "2024-01-11T15:55:00Z","inviterName": "评论用户4","inviteeName": "小周","inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_010","inviterId": "user4","inviteeId": "user10","inviteCode": "CM004","status": "bound","createdAt": "2024-01-13T08:50:00Z","boundAt": "2024-01-13T09:05:00Z","inviterName": "评论用户4","inviteeName": "小钱","inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_011","inviterId": "user4","inviteeId": "user11","inviteCode": "CM004","status": "bound","createdAt": "2024-01-14T14:15:00Z","boundAt": "2024-01-14T14:30:00Z","inviterName": "评论用户4","inviteeName": "小孙","inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_012","inviterId": "user4","inviteeId": null,"inviteCode": "CM004","status": "pending","createdAt": "2024-01-15T16:30:00Z","boundAt": null,"inviterName": "评论用户4","inviteeName": null,"inviteLink": "http://localhost:3000/register?inviteCode=CM004"},
+    {"id": "inv_006","inviterId": "user2","inviteeId": null,"inviteCode": "CM002","status": "pending","createdAt": "2024-01-14T16:00:00Z","boundAt": null,"inviterName": "小王","inviteeName": null,"inviteLink": "http://localhost:3000/register?inviteCode=CM002"},
+    {"id": "inv_007","inviterId": "user3","inviteeId": null,"inviteCode": "CM003","status": "pending","createdAt": "2024-01-15T08:30:00Z","boundAt": null,"inviterName": "小李","inviteeName": null,"inviteLink": "http://localhost:3000/register?inviteCode=CM003"}
+  ],
+  "invitationStats": {
+    "totalInvitations": 12,
+    "boundInvitations": 9,
+    "pendingInvitations": 3,
+    "conversionRate": 0.75
+  },
+  
+  "indexes": {
+    "invitations": [
+      { "field": "id", "unique": true },
+      { "field": "inviterId" },
+      { "field": "inviteeId", "unique": true },
+      { "field": "inviteCode" },
+      { "field": "status" }
+    ]
+  },
+  
+  "relationships": {
+    "invitations": {
+      "inviter": { "model": "commenterAccount", "field": "userId", "targetField": "inviterId" },
+      "invitee": { "model": "commenterAccount", "field": "userId", "targetField": "inviteeId" }
+    }
+  },
+  
+  "inviteRewards": [
+    {"id": "reward_001","invitationId": "inv_001","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-10T14:45:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_002","invitationId": "inv_002","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-12T09:30:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_003","invitationId": "inv_003","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-14T11:35:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_004","invitationId": "inv_004","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-15T10:40:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_005","invitationId": "inv_005","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-08T14:05:00Z","description": "好友注册成功奖励"},
+
+    {"id": "reward_006","invitationId": "inv_008","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-09T10:35:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_007","invitationId": "inv_009","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-11T15:55:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_008","invitationId": "inv_010","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-13T09:05:00Z","description": "好友注册成功奖励"},
+    {"id": "reward_009","invitationId": "inv_011","rewardType": "register","amount": 5.00,"status": "completed","issuedAt": "2024-01-14T14:30:00Z","description": "好友注册成功奖励"},
+
+    {"id": "reward_010","invitationId": "inv_005","rewardType": "commission","amount": 12.50,"status": "completed","issuedAt": "2024-01-15T20:00:00Z","description": "好友完成任务佣金奖励"},
+    {"id": "reward_011","invitationId": "inv_008","rewardType": "commission","amount": 8.75,"status": "completed","issuedAt": "2024-01-15T20:00:00Z","description": "好友完成任务佣金奖励"},
+    {"id": "reward_012","invitationId": "inv_009","rewardType": "commission","amount": 15.20,"status": "completed","issuedAt": "2024-01-15T20:00:00Z","description": "好友完成任务佣金奖励"}
+  ],
+  
+  "activityLogs": [
+    {"id": "log_001","invitationId": "inv_001","action": "invite_sent","timestamp": "2024-01-10T14:30:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_002","invitationId": "inv_001","action": "invite_accepted","timestamp": "2024-01-10T14:45:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_003","invitationId": "inv_001","action": "reward_issued","timestamp": "2024-01-10T14:45:00Z","details": "发放注册奖励5.00元"},
+    {"id": "log_004","invitationId": "inv_002","action": "invite_sent","timestamp": "2024-01-12T09:15:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_005","invitationId": "inv_002","action": "invite_accepted","timestamp": "2024-01-12T09:30:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_006","invitationId": "inv_002","action": "reward_issued","timestamp": "2024-01-12T09:30:00Z","details": "发放注册奖励5.00元"},
+  
+    {"id": "log_007","invitationId": "inv_008","action": "invite_sent","timestamp": "2024-01-09T10:20:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_008","invitationId": "inv_008","action": "invite_accepted","timestamp": "2024-01-09T10:35:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_009","invitationId": "inv_008","action": "reward_issued","timestamp": "2024-01-09T10:35:00Z","details": "发放注册奖励5.00元"},
+    {"id": "log_010","invitationId": "inv_009","action": "invite_sent","timestamp": "2024-01-11T15:40:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_011","invitationId": "inv_009","action": "invite_accepted","timestamp": "2024-01-11T15:55:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_012","invitationId": "inv_009","action": "reward_issued","timestamp": "2024-01-11T15:55:00Z","details": "发放注册奖励5.00元"},
+    {"id": "log_013","invitationId": "inv_010","action": "invite_sent","timestamp": "2024-01-13T08:50:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_014","invitationId": "inv_010","action": "invite_accepted","timestamp": "2024-01-13T09:05:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_015","invitationId": "inv_010","action": "reward_issued","timestamp": "2024-01-13T09:05:00Z","details": "发放注册奖励5.00元"},
+    {"id": "log_016","invitationId": "inv_011","action": "invite_sent","timestamp": "2024-01-14T14:15:00Z","details": "邀请链接生成并发送"},
+    {"id": "log_017","invitationId": "inv_011","action": "invite_accepted","timestamp": "2024-01-14T14:30:00Z","details": "被邀请用户完成注册"},
+    {"id": "log_018","invitationId": "inv_011","action": "reward_issued","timestamp": "2024-01-14T14:30:00Z","details": "发放注册奖励5.00元"},
+    {"id": "log_019","invitationId": "inv_010","action": "commission_earned","timestamp": "2024-01-15T20:00:00Z","details": "获得佣金奖励15.20元"},
+    {"id": "log_020","invitationId": "inv_008","action": "commission_earned","timestamp": "2024-01-15T20:00:00Z","details": "获得佣金奖励8.75元"},
+    {"id": "log_021","invitationId": "inv_009","action": "commission_earned","timestamp": "2024-01-15T20:00:00Z","details": "获得佣金奖励12.50元"}
+  ]
+}
