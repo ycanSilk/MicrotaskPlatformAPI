@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 // 导入API配置
 import config from '../../apiconfig/config.json';
 
@@ -22,10 +23,8 @@ function validateLoginData(data: LoginRequest): { isValid: boolean; error?: stri
     return { isValid: false, error: '用户名和密码为必填项' };
   }
 
-  // 验证用户名格式（3-10位字母数字下划线组合）
-  const usernameRegex = /^[a-zA-Z0-9_]{3,10}$/;
-  if (!usernameRegex.test(data.username)) {
-    return { isValid: false, error: '用户名必须包含3-10个字符，且只能包含字母、数字和下划线' };
+  if (data.username.length < 4 || data.username.length > 16) {
+    return { isValid: false, error: '用户名必须包含4-16个字符，且只能包含字母、数字和下划线' };
   }
 
   // 验证密码长度
@@ -34,6 +33,29 @@ function validateLoginData(data: LoginRequest): { isValid: boolean; error?: stri
   }
 
   return { isValid: true };
+}
+
+/**
+ * 配置并设置安全的HttpOnly Cookie
+ */
+function setSecureHttpOnlyCookie(
+  response: NextResponse,
+  name: string,
+  value: string,
+  maxAge: number
+): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const expiryDate = new Date(Date.now() + maxAge * 1000);
+  
+  // 设置安全Cookie
+  response.cookies.set(name, value, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+    path: '/',
+    expires: expiryDate,
+    maxAge: maxAge
+  });
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -56,63 +78,83 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       password: requestData.password
     };
 
-    // 构建完整的API URL
-    const apiUrl = `${config.baseUrl}${config.endpoints.auth.login}`;
-    console.log('登录API请求URL:', apiUrl);
-    console.log('登录API请求数据:', backendRequestData);
-
     // 调用实际的后端API
+    const apiUrl = `${config.baseUrl}${config.endpoints.auth.login}`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: config.headers,
       body: JSON.stringify(backendRequestData),
-      // 设置请求超时
       signal: AbortSignal.timeout(config.timeout || 5000)
     });
 
     // 检查响应状态
     if (!response.ok) {
-      console.error(`登录API返回错误状态码: ${response.status}`);
+      console.error(`登录API错误: ${response.status}`);
       try {
         const errorData = await response.json();
         return NextResponse.json<ApiResponse>({
           success: false,
-          message: errorData.message || `登录失败，状态码: ${response.status}`
+          message: errorData.message || `登录失败`
         }, { status: response.status });
-      } catch (jsonError) {
+      } catch {
         return NextResponse.json<ApiResponse>({
           success: false,
-          message: `登录失败，状态码: ${response.status}`
+          message: '登录失败'
         }, { status: response.status });
       }
     }
 
     // 解析后端响应
     const result = await response.json();
-    console.log('登录API响应结果:', result);
-
+    
     // 验证返回的数据结构
     if (!result || !result.data) {
+      console.error('登录响应数据无效');
       return NextResponse.json<ApiResponse>({
         success: false,
         message: '登录失败，无效的响应数据'
       }, { status: 500 });
     }
 
-    // 构建返回给前端的响应数据
+    // 获取token和过期时间
+    const token = result.data.token || '';
+    if (!token) {
+      console.error('登录未返回有效token');
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        message: '登录成功但未返回有效token'
+      }, { status: 500 });
+    }
+    
+    const userId = result.data.userId || '';
+    const userInfo = result.data.userInfo || {};
+    const expiresIn = result.data.expiresIn || 86400; // 默认24小时
+    const expiryDate = new Date(Date.now() + expiresIn * 1000);
+    
+    // 构建返回给前端的响应数据 - 不包含role字段
     const responseData: ApiResponse = {
       success: true,
       message: result.message || '登录成功！',
       data: {
-        token: result.data.token || '',
-        userId: result.data.userId || '',
+        userId,
         username: requestData.username,
-        userInfo: result.data.userInfo || {},
-        expiresIn: result.data.expiresIn || 86400 // 默认24小时
+        userInfo: { ...userInfo }, // 直接使用用户信息，不添加role字段
+        expiresIn,
+        expiresAt: expiryDate.toISOString()
       }
     };
-
-    return NextResponse.json(responseData, { status: 200 });
+    
+    // 创建响应对象
+    const successResponse = NextResponse.json(responseData, { status: 200 });
+    
+    // 设置安全的HttpOnly Cookie保存token
+    setSecureHttpOnlyCookie(successResponse, 'commenter_token', token, expiresIn);
+    
+    // 关键日志
+    console.log(`用户 ${requestData.username} 登录成功`);
+    console.log(result);
+    
+    return successResponse;
   } catch (error) {
     console.error('登录过程中发生错误:', error);
     
@@ -122,11 +164,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        errorMessage = '请求超时，请检查网络连接后重试';
-        statusCode = 408; // Request Timeout
+        errorMessage = '请求超时，请检查网络连接';
+        statusCode = 408;
       } else if (error.message.includes('Failed to fetch')) {
-        errorMessage = '无法连接到登录服务器，请稍后重试';
-        statusCode = 503; // Service Unavailable
+        errorMessage = '无法连接到服务器';
+        statusCode = 503;
       }
     }
 
@@ -137,7 +179,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 }
 
-// 处理GET请求（如果需要）
+// 处理GET请求
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json<ApiResponse>({
     success: false,

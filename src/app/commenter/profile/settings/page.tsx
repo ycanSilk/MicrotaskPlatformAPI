@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+
 interface UserProfile {
+  id: string;
   avatar: string;
   name: string;
   phone: string;
-  email: string;
-
+  email: string | null;
+  invitationCode: string;
+  createdAt: string;
 }
 
 export default function PersonalInfoPage() {
@@ -16,28 +19,93 @@ export default function PersonalInfoPage() {
   
   // 用户个人信息状态
   const [userProfile, setUserProfile] = useState<UserProfile>({
+    id: '',
     avatar: '/images/0e92a4599d02a7.jpg',
-    name: 'A', 
-    phone: '137****8808',
-    email: '123456@qq.com'
+    name: '',
+    phone: '',
+    email: null,
+    invitationCode: '',
+    createdAt: ''
   });
-
-  // 编辑状态
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [tempValue, setTempValue] = useState('');
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [currentField, setCurrentField] = useState<{
-    key: keyof UserProfile;
-    label: string;
-    placeholder?: string;
-  } | null>(null);
+  
+  // 加载状态
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 获取用户信息函数
+  const fetchUserInfo = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // 执行API请求，使用credentials: 'include'自动携带HttpOnly Cookie
+      const apiUrl = '/api/commenter/user/getloginuserinfo';
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': '*/*'
+        },
+        signal: AbortSignal.timeout(10000),
+        credentials: 'include' // 确保跨域请求时携带凭证（Cookie）
+      });
+      
+      // 处理API响应
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          const errorMsg = errorData.message || `请求失败：${response.status}`;
+          throw new Error(errorMsg);
+        } catch (jsonError) {
+          throw new Error(`请求失败：${response.status}`);
+        }
+      }
+      
+      // 解析成功响应
+      const data = await response.json();
+      
+      // 验证数据结构
+      if (data.success && data.data && data.data.userInfo) {
+        const userInfo = data.data.userInfo;
+        
+        // 更新用户信息状态
+        setUserProfile({
+          id: userInfo.id || '',
+          name: userInfo.username || '',
+          phone: userInfo.phone || '',
+          email: userInfo.email,
+          invitationCode: userInfo.invitationCode || '',
+          createdAt: userInfo.createTime ? new Date(userInfo.createTime).toLocaleDateString() : '',
+          avatar: userInfo.avatar || '/images/0e92a4599d02a7.jpg'
+        });
+      } else {
+        throw new Error(data.message || '获取用户信息失败');
+      }
+    } catch (err) {
+      // 错误处理
+      const errorMessage = err instanceof Error ? err.message : '获取用户信息失败';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // 组件加载时执行
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+  
+  // 手机号脱敏处理
+  const maskPhone = (phone: string): string => {
+    if (!phone || phone.length !== 11) return phone;
+    return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+  };
 
   // 处理头像上传
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 在实际应用中，这里应该上传文件到服务器
-      // 这里仅做本地预览
+      // 本地预览
       const reader = new FileReader();
       reader.onload = (event) => {
         setUserProfile(prev => ({
@@ -46,26 +114,6 @@ export default function PersonalInfoPage() {
         }));
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  // 打开编辑模态框
-  const openEditModal = (field: keyof UserProfile, label: string, placeholder?: string) => {
-    setCurrentField({ key: field, label, placeholder });
-    setTempValue(userProfile[field]);
-    setShowEditModal(true);
-  };
-
-  // 保存编辑
-  const saveEdit = () => {
-    if (currentField) {
-      setUserProfile(prev => ({
-        ...prev,
-        [currentField.key]: tempValue
-      }));
-      setShowEditModal(false);
-      setCurrentField(null);
-      setTempValue('');
     }
   };
 
@@ -78,45 +126,71 @@ export default function PersonalInfoPage() {
   const InfoItem = ({ 
     label, 
     value, 
-    field,
-    placeholder 
+    editable = true 
   }: { 
     label: string; 
     value: string; 
-    field: keyof UserProfile;
-    placeholder?: string;
+    editable?: boolean;
   }) => (
-    <div 
-      className="p-4 border-b border-gray-100 flex justify-between items-center"
-      onClick={() => openEditModal(field, label, placeholder)}
-    >
+    <div className="p-4 border-b border-gray-100 flex justify-between items-center">
       <span className="text-gray-800">{label}</span>
       <div className="flex items-center text-gray-500">
-        <span className="mr-2 whitespace-nowrap">{value}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+        <span className="whitespace-nowrap">{value}</span>
       </div>
     </div>
   );
 
+  // 处理加载状态
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">加载中...</div>
+      </div>
+    );
+  }
+  
+  // 处理错误状态
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button 
+          onClick={() => router.push('/commenter/auth/login')}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          前往登录
+        </button>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 顶部导航栏 */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <button 
+              onClick={handleBack}
+              className="p-2 rounded-md hover:bg-gray-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-lg font-medium text-gray-900">个人信息</h1>
+            <div className="w-8"></div> {/* 占位，保持标题居中 */}
+          </div>
+        </div>
+      </div>
+      
       {/* 个人信息表单 */}
-      <div className="mt-4 bg-white shadow-sm">
-        {/* 头像 - 整行可点击 */}
-        <div 
-          className="p-4 border-b border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={(e) => {
-            const fileInput = e.currentTarget.querySelector('input[type="file"]') as HTMLInputElement;
-            if (fileInput) {
-              fileInput.click();
-            }
-          }}
-        >
-          <span className="text-gray-800">头像</span>
-          <div className="flex items-center">
-            <div className="relative mr-2">
+      {userProfile.id && (
+        <div className="mt-4 bg-white shadow-sm">
+          {/* 头像 */}
+          <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+            <span className="text-gray-800">头像</span>
+            <div className="relative">
               <img 
                 src={userProfile.avatar} 
                 alt="头像" 
@@ -128,60 +202,32 @@ export default function PersonalInfoPage() {
                 onChange={handleAvatarUpload}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <div className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm">更换</span>
-              </div>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-
-        {/* 名字 */}
-        <InfoItem label="名字" value={userProfile.name} field="name" placeholder="请输入名字" />
-
-        {/* 手机号 */}
-        <InfoItem label="手机号" value={userProfile.phone} field="phone" placeholder="请输入手机号" />
-
-        {/* 邮箱 */}
-        <InfoItem label="邮箱" value={userProfile.email || '未填写'} field="email" placeholder="请输入邮箱" />
-
-      </div>
-
-      {/* 编辑模态框 */}
-      {showEditModal && currentField && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md mx-4">
-            <div className="p-5 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">编辑{currentField.label}</h3>
-            </div>
-            <div className="p-5">
-              <input
-                type="text"
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                placeholder={currentField.placeholder || `请输入${currentField.label}`}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
-              />
-            </div>
-            <div className="flex border-t border-gray-200">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 py-3 text-gray-600 font-medium hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={saveEdit}
-                className="flex-1 py-3 text-blue-600 font-medium hover:bg-gray-50 border-l border-gray-200"
-              >
-                确定
-              </button>
             </div>
           </div>
+
+          {/* 接单账号ID */}
+          <InfoItem label="接单账号ID" value={userProfile.id} editable={false} />
+          
+          {/* 邀请码 */}
+          <InfoItem label="邀请码" value={userProfile.invitationCode || '未设置'} editable={false} />
+
+          {/* 名字 */}
+          <InfoItem label="用户名" value={userProfile.name || '未设置'} editable={false} />
+
+          {/* 手机号 */}
+          <InfoItem label="手机号" value={maskPhone(userProfile.phone) || '未绑定'} editable={false} />
+
+          {/* 邮箱 */}
+          <InfoItem label="邮箱" value={userProfile.email || '未填写'} editable={false} />
+          
+          {/* 注册时间 */}
+          <InfoItem label="注册时间" value={userProfile.createdAt || '未获取'} editable={false} />
+
+          <div onClick={() => router.push('/commenter/profile/changepwd')} className="p-4 border-b border-gray-100  justify-between text-center items-center cursor-pointer hover:bg-blue-200">
+            修改密码
+          </div>
         </div>
+        
       )}
     </div>
   );

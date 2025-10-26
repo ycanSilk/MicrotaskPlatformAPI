@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://localhost:8083/api/biz",
+  "baseUrl": "http://localhost:8083/api",
   "timeout": 10000,
   "headers": {
     "accept": "*/*",
@@ -7,15 +7,18 @@
   },
   "endpoints": {
     "auth": {
-      "register": "/user/register",
-      "login": "/user/login",
-      "logout": "/user/logout",
-      "resetpwd": "/user/reset-password",
-      "refreshToken": "/user/refresh",
-      "userlist": "/user/list",
-      "forgotpwd": "/user/forgot-password",
-      "changepwd": "/user/change-password",
-      "userprofile": "/user/profile"
+      "register": "/biz/user/register",
+      "login": "/biz/user/login",
+      "logout": "/biz/user/logout",
+      "resetpwd": "/biz/user/reset-password",
+      "refreshToken": "/biz/user/refresh",
+      "userlist": "/biz/user/list",
+      "forgotpwd": "/biz/user/forgot-password",
+      "changepwd": "/biz/user/change-password",
+      "userprofile": "/biz/user/profile"
+    },
+    "user": {
+      "getuserinfo": "/biz/user/profile"
     }
   },
   "mockMode": false,

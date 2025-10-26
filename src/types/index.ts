@@ -25,6 +25,7 @@ export interface User {
   createdAt: string;
   updatedAt?: string;
   lastLoginAt?: string;
+  invitationCode?: string; // 邀请码
   permissions?: string[];  // 管理员权限
   stats?: {  // 统计数据
     totalTasks?: number;

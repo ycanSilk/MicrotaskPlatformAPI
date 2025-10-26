@@ -197,7 +197,25 @@ export default function BindBankCardPage() {
     
     try {
       // 获取当前登录用户信息
-      const currentUser = CommenterAuthStorage.getCurrentUser();
+    const getCurrentUser = () => {
+      if (typeof localStorage === 'undefined') return null;
+      try {
+        const authDataStr = localStorage.getItem('commenter_auth_data');
+        if (authDataStr) {
+          const authData = JSON.parse(authDataStr);
+          return {
+            id: authData.userId || '',
+            username: authData.username || '',
+            ...(authData.userInfo || {})
+          };
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error);
+      }
+      return null;
+    };
+    
+    const currentUser = getCurrentUser();
       if (!currentUser) {
         setApiError('用户未登录，请重新登录');
         // 跳转到登录页

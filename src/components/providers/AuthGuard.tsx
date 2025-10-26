@@ -4,7 +4,21 @@ import { useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { Loading } from '@/components/ui';
-import { getRoleHomePath } from '@/auth/common';
+
+// 替代已删除的auth模块的内联实现
+const getRoleHomePath = (role: string) => {
+  // 根据角色返回对应的首页路径
+  switch (role) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'publisher':
+      return '/publisher/dashboard';
+    case 'commenter':
+      return '/commenter/hall';
+    default:
+      return '/publisher/dashboard'; // 默认返回派单员首页
+  }
+};
 
 interface AuthGuardProps {
   children: ReactNode;

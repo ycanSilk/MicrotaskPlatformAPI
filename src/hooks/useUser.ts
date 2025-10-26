@@ -2,7 +2,141 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
-import { getCurrentLoggedInUser, isAnyUserLoggedIn, commonLogin, commonLogout, getAuthStorageByRole } from '@/auth/common';
+
+// 从localStorage获取当前登录用户信息
+const getCurrentLoggedInUser = (): User | null => {
+  try {
+    if (typeof window === 'undefined') return null;
+    
+    // 检查commenter认证数据
+    const commenterAuthData = localStorage.getItem('commenter_auth_data');
+    if (commenterAuthData) {
+      const parsedData = JSON.parse(commenterAuthData);
+      if (parsedData.userInfo) {
+        return {
+          id: parsedData.userId || parsedData.userInfo.id,
+          username: parsedData.username || parsedData.userInfo.username,
+          role: 'commenter',
+          ...parsedData.userInfo,
+          // 确保必要的字段存在
+          balance: parsedData.userInfo.balance || 0,
+          status: parsedData.userInfo.status || 'active',
+          createdAt: parsedData.userInfo.createTime || parsedData.createdAt || new Date().toISOString()
+        };
+      }
+    }
+    
+    // 检查publisher认证数据
+    const publisherToken = localStorage.getItem('publisher_auth_token');
+    const publisherUser = localStorage.getItem('publisher_user_info');
+    if (publisherToken && publisherUser) {
+      const userInfo = JSON.parse(publisherUser);
+      return {
+        id: userInfo.id || '',
+        username: userInfo.username || '',
+        role: 'publisher',
+        ...userInfo,
+        balance: userInfo.balance || 0,
+        status: userInfo.status || 'active',
+        createdAt: userInfo.createTime || new Date().toISOString()
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('获取当前登录用户信息失败:', error);
+    return null;
+  }
+};
+
+// 检查是否有任何用户登录
+const isAnyUserLoggedIn = (): boolean => {
+  try {
+    if (typeof window === 'undefined') return false;
+    
+    // 检查commenter认证数据
+    const commenterAuthData = localStorage.getItem('commenter_auth_data');
+    if (commenterAuthData) return true;
+    
+    // 检查publisher认证数据
+    const publisherToken = localStorage.getItem('publisher_auth_token');
+    if (publisherToken) return true;
+    
+    // 检查会话标记
+    const activeSession = sessionStorage.getItem('commenter_active_session');
+    if (activeSession) return true;
+    
+    return false;
+  } catch (error) {
+    console.error('检查登录状态失败:', error);
+    return false;
+  }
+};
+
+// 通用登录函数
+const commonLogin = async (credentials: any) => {
+  try {
+    // 这是一个简化的登录实现，实际项目中应该调用后端API
+    const { username, password, role } = credentials;
+    
+    // 根据不同角色返回模拟数据
+    if (role === 'commenter') {
+      return {
+        success: true,
+        message: '登录成功',
+        user: {
+          id: `commenter-${Date.now()}`,
+          username,
+          role: 'commenter',
+          balance: 0,
+          status: 'active',
+          createdAt: new Date().toISOString()
+        }
+      };
+    } else if (role === 'publisher') {
+      return {
+        success: true,
+        message: '登录成功',
+        user: {
+          id: `publisher-${Date.now()}`,
+          username,
+          role: 'publisher',
+          balance: 1000,
+          status: 'active',
+          createdAt: new Date().toISOString()
+        }
+      };
+    } else {
+      return {
+        success: false,
+        message: '不支持的角色类型'
+      };
+    }
+  } catch (error) {
+    console.error('登录失败:', error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : '登录过程中发生错误'
+    };
+  }
+};
+
+// 通用登出函数
+const commonLogout = async () => {
+  try {
+    if (typeof window === 'undefined') return;
+    
+    // 清除所有认证相关数据
+    localStorage.removeItem('commenter_auth_data');
+    localStorage.removeItem('publisher_auth_token');
+    localStorage.removeItem('publisher_user_info');
+    sessionStorage.removeItem('commenter_active_session');
+    
+    console.log('已清除所有认证信息');
+  } catch (error) {
+    console.error('登出失败:', error);
+  }
+};
 
 interface UseUserReturn {
   user: User | null;
@@ -20,29 +154,17 @@ export function useUser(): UseUserReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // 初始化用户状态
+  // 初始化时检查用户登录状态
   useEffect(() => {
-    const initializeAuth = () => {
-      // 确保在客户端执行
-      if (typeof window === 'undefined') {
-        setIsLoading(false);
-        return;
-      }
+    setIsLoading(true);
 
-      try {
-        const currentUser = getCurrentLoggedInUser();
-        if (currentUser) {
-          setUser(currentUser.user);
-          setIsLoggedIn(true);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
+    // 获取当前登录用户
+    const currentUser = getCurrentLoggedInUser();
+    const loggedIn = isAnyUserLoggedIn();
+    
+    setUser(currentUser);
+    setIsLoggedIn(loggedIn);
+    setIsLoading(false);
   }, []);
 
   // 登录函数
@@ -78,10 +200,12 @@ export function useUser(): UseUserReturn {
   };
 
   // 登出函数
-  const handleLogout = () => {
-    commonLogout();
-    setUser(null);
+  const handleLogout = async () => {
+    setIsLoading(true);
     setIsLoggedIn(false);
+    setUser(null);
+    await commonLogout();
+    setIsLoading(false);
   };
 
   // 刷新用户信息

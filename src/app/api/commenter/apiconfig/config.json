@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://localhost:8080/api/ind",
+  "baseUrl": "http://localhost:8083/api",
   "timeout": 5000,
   "headers": {
     "accept": "*/*",
@@ -7,15 +7,17 @@
   },
   "endpoints": {
     "auth": {
-      "register": "/user/register",
-      "login": "/user/login",
-      "logout": "/user/logout",
-      "resetpwd": "/user/reset-password",
-      "refreshToken": "/user/refresh",
-      "userlist": "/user/list",
-      "forgotpwd": "/user/forgot-password",
-      "changepwd": "/user/change-password",
-      "userprofile": "/user/profile"
+      "register": "/ind/user/register",
+      "login": "/ind/user/login",
+      "logout": "/ind/user/logout"
+    },
+    "user": {
+      "refreshToken": "/ind/user/refresh",
+      "userlist": "/ind/user/list",
+      "resetpwd": "/ind/user/reset-password",
+      "forgotpwd": "/ind/user/forgot-password",
+      "changepwd": "/ind/user/change-password",
+      "userprofile": "/ind/user/profile"
     },
     "bankcards": {
       "banklist": "/bank/list",

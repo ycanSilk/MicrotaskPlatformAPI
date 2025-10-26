@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getCurrentLoggedInUser, commonLogout } from '@/auth/common';
+
 import Link from 'next/link';
 import { AdminBottomNavigation } from './components/AdminBottomNavigation';
 
@@ -25,19 +25,27 @@ export default function AdminLayout({
 
     const initializeAuth = async () => {
       try {
-        // 使用新认证系统获取当前登录用户
-        const currentUser = await getCurrentLoggedInUser();
-        
-        if (!currentUser || currentUser.role !== 'admin') {
-          router.push('/auth/login/adminlogin');
-          return;
+        // 注意：admin认证模块已被移除
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Development environment detected, using mock admin data');
+          // 开发环境使用模拟数据
+          const mockAdminUser = {
+            id: 'dev-admin-123',
+            username: '管理员账号',
+            role: 'admin',
+            status: 'active',
+            createdAt: new Date().toISOString()
+          };
+          setUser(mockAdminUser);
+          setIsLoading(false);
+        } else {
+          // 生产环境重定向到评论员登录
+          console.log('Admin module removed, redirecting to commenter login');
+          router.push('/auth/login/commenterlogin');
+          setIsLoading(false);
         }
-        
-        setUser(currentUser);
-        setIsLoading(false);
       } catch (error) {
-        console.error('认证初始化失败:', error);
-        router.push('/auth/login/adminlogin');
+        console.error('Admin Layout Error:', error);
         setIsLoading(false);
       }
     };
@@ -46,13 +54,9 @@ export default function AdminLayout({
   }, [router]);
 
   const handleLogout = async () => {
-    try {
-      await commonLogout();
-    } catch (error) {
-      console.error('登出失败:', error);
-    } finally {
-      router.push('/auth/login/adminlogin');
-    }
+   
+      router.push('/auth/login/commenterlogin');
+    
   };
 
   // 获取当前页面标题

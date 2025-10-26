@@ -3,7 +3,24 @@
 import { useState } from 'react';
 import { Card, Button } from '@/components/ui';
 import { useRouter } from 'next/navigation';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+// 直接从localStorage获取用户信息的辅助函数
+const getCurrentUser = () => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const authDataStr = localStorage.getItem('commenter_auth_data');
+    if (authDataStr) {
+      const authData = JSON.parse(authDataStr);
+      return {
+        id: authData.userId || '',
+        username: authData.username || '',
+        ...(authData.userInfo || {})
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+  return null;
+};
 import { VideoCameraOutlined, CoffeeOutlined, BarChartOutlined } from '@ant-design/icons';
 
 export default function AccountRentalPage() {

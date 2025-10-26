@@ -2,11 +2,60 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getCurrentLoggedInUser, commonLogout } from '@/auth/common';
 import Link from 'next/link';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
 import AlertModal from '../../components/ui/AlertModal';
-// 移除外部返回按钮导入，改为在页面内实现
+
+// 替代已删除的auth模块的内联实现
+const getCurrentLoggedInUser = () => {
+  try {
+    // 尝试从localStorage获取用户信息
+    const userJson = localStorage.getItem('commenter_user');
+    if (userJson) {
+      return JSON.parse(userJson);
+    }
+    return null;
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    return null;
+  }
+};
+
+const commonLogout = () => {
+  try {
+    // 清除localStorage中的认证信息
+    localStorage.removeItem('commenter_user');
+    localStorage.removeItem('commenter_token');
+    console.log('用户已登出');
+  } catch (error) {
+    console.error('登出失败:', error);
+  }
+};
+
+// 替代CommenterAuthStorage的完整实现
+const CommenterAuthStorage = {
+  getAuth: () => {
+    try {
+      // 首先尝试直接从localStorage获取认证信息
+      const authData = localStorage.getItem('commenter_auth');
+      if (authData) {
+        return JSON.parse(authData);
+      }
+      
+      // 兼容旧的存储方式
+      const userJson = localStorage.getItem('commenter_user');
+      const token = localStorage.getItem('commenter_token');
+      if (userJson && token) {
+        const user = JSON.parse(userJson);
+        return { user, token };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取认证信息失败:', error);
+      return null;
+    }
+  }
+};
 import { ReloadOutlined, UserOutlined, HomeOutlined, FileTextOutlined, DollarOutlined, PropertySafetyOutlined, UserAddOutlined, WarningOutlined } from '@ant-design/icons';
 import TopNavigationBar from './components/TopNavigationBar';
 import BottomNavigationBar from './components/BottomNavigationBar';
@@ -45,7 +94,7 @@ export default function CommenterLayout({
       }
 
       try {
-        console.log('初始化评论员界面');
+
         
         // 尝试获取用户信息，但不强制要求
         const auth = CommenterAuthStorage.getAuth();

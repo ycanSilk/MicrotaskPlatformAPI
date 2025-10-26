@@ -3,7 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCardOutlined } from '@ant-design/icons';
 import { SimpleToast } from '../../../components/ui/SimpleToast';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+// 直接从localStorage获取用户信息的辅助函数
+const getCurrentUser = () => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const authDataStr = localStorage.getItem('commenter_auth_data');
+    if (authDataStr) {
+      const authData = JSON.parse(authDataStr);
+      return {
+        id: authData.userId || '',
+        username: authData.username || '',
+        ...(authData.userInfo || {})
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+  return null;
+};
 // 定义银行卡数据接口
 interface BankCard {
   id: string;
@@ -46,7 +63,7 @@ export default function BankCardsPage() {
       setError(null);
       
       // 获取当前登录用户信息
-      const currentUser = CommenterAuthStorage.getCurrentUser();
+    const currentUser = getCurrentUser();
       if (!currentUser) {
         setError('用户未登录，请重新登录');
         setTimeout(() => {

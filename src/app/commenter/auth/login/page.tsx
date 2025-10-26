@@ -2,8 +2,69 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CommenterAuthStorage, getCommenterHomePath, clearAllAuth } from '@/auth';
-import SuccessModal  from '../../../../components/button/authButton/SuccessModal';
+import SuccessModal from '../../../../components/button/authButton/SuccessModal';
+
+// 获取认证用户信息
+const getAuthUserFromStorage = () => {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const userInfoStr = sessionStorage.getItem('commenter_user_info');
+    if (userInfoStr) {
+      return JSON.parse(userInfoStr) || null;
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+  return null;
+};
+
+// 清除认证信息
+const clearAllAuth = () => {
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      sessionStorage.removeItem('commenter_user_info');
+      sessionStorage.removeItem('commenter_active_session');
+      sessionStorage.removeItem('commenter_active_session_last_activity');
+    } catch (error) {
+      console.error('清除认证信息失败:', error);
+    }
+  }
+};
+
+// 处理登录响应
+export const handleLoginResponse = (data: any) => {
+  try {
+    if (typeof sessionStorage === 'undefined') {
+      console.error('sessionStorage不可用');
+      return false;
+    }
+    
+    if (!data || !data.success) {
+      console.error('无效的登录响应');
+      return false;
+    }
+    
+    // 只保存用户信息，token由浏览器通过HttpOnly Cookie管理
+    if (data.data?.userInfo) {
+      try {
+        sessionStorage.setItem('commenter_user_info', JSON.stringify(data.data.userInfo));
+        sessionStorage.setItem('commenter_active_session', 'true');
+        sessionStorage.setItem('commenter_active_session_last_activity', Date.now().toString());
+      } catch (error) {
+        console.warn('保存用户信息失败:', error);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('保存认证状态时发生错误:', error);
+    return false;
+  }
+};
+
+// 获取评论员首页路径
+const getCommenterHomePath = () => '/commenter/hall';
+
 
 // 定义登录表单数据类型
 interface LoginFormData {
@@ -25,12 +86,6 @@ const validationRules = {
     maxLength: 20,
     pattern: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{6,20}$/,
     message: '密码必须包含6-20个字符'
-  },
-  captcha: {
-    minLength: 4,
-    maxLength: 6,
-    pattern: /^[a-zA-Z0-9]{4,6}$/,
-    message: '验证码格式不正确'
   }
 };
 
@@ -43,7 +98,6 @@ export default function CommenterLoginPage() {
   const [captchaCode, setCaptchaCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [requestInfo, setRequestInfo] = useState<any | null>(null);
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -62,10 +116,19 @@ export default function CommenterLoginPage() {
 
   // 验证单个字段
   const validateField = (fieldName: keyof LoginFormData, value: string): string => {
+    // 对于验证码字段，暂时跳过验证
+    if (fieldName === 'captcha') {
+      return '';
+    }
+    
     const rules = validationRules[fieldName];
     
     if (!value.trim()) {
       return '此字段不能为空';
+    }
+    
+    if (!rules) {
+      return '无效的字段规则';
     }
     
     if (value.length < rules.minLength || value.length > rules.maxLength) {
@@ -84,21 +147,17 @@ export default function CommenterLoginPage() {
     const errors: Partial<Record<keyof LoginFormData, string>> = {};
     let isValid = true;
     
-    // 验证每个字段
+    // 验证用户名和密码（跳过验证码验证）
     Object.keys(formData).forEach(key => {
-      const fieldName = key as keyof LoginFormData;
-      const error = validateField(fieldName, formData[fieldName]);
-      if (error) {
-        errors[fieldName] = error;
-        isValid = false;
+      if (key !== 'captcha') { // 跳过验证码字段
+        const fieldName = key as keyof LoginFormData;
+        const error = validateField(fieldName, formData[fieldName]);
+        if (error) {
+          errors[fieldName] = error;
+          isValid = false;
+        }
       }
     });
-    
-    // 验证码特殊验证
-    if (formData.captcha && formData.captcha.toUpperCase() !== captchaCode.toUpperCase()) {
-      errors.captcha = '请输入正确的验证码';
-      isValid = false;
-    }
     
     setFieldErrors(errors);
     return isValid;
@@ -169,130 +228,63 @@ export default function CommenterLoginPage() {
     }
   };
 
-  // 重置表单
-  const handleReset = () => {
-    setFormData({
-      username: 'ceshiapi',
-      password: '123456',
-      captcha: '' // 不自动填充验证码
-    });
-    setErrorMessage('');
-    setResponseTime(null);
-    setRequestInfo(null);
-    setFieldErrors({}); // 清除所有字段错误提示
-    // 重置时也刷新验证码
-    refreshCaptcha();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 重置错误信息
     setErrorMessage('');
-    
-    // 执行表单验证
     if (!validateForm()) {
       return;
     }
-    
     setIsLoading(true);
     const startTime = Date.now();
-    
     try {
-      // 调用登录API
       const response = await fetch('/api/commenter/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           username: formData.username.trim(),
           password: formData.password
         }),
-        // 设置请求超时
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(10000),
+        credentials: 'include' // 关键设置，允许浏览器处理认证Cookie
       });
-      
       const responseTime = Date.now() - startTime;
       setResponseTime(responseTime);
-      
-      // 解析响应数据
       const data = await response.json();
-      
-      // 保存请求和响应信息用于调试
-      setRequestInfo({
-        request: { username: formData.username, password: '******' },
-        response: data,
-        status: response.status,
-        responseTime
-      });
-      
-      // 处理API响应
       if (!response.ok || !data.success) {
-        setErrorMessage(data.message || '登录失败，请检查用户名和密码');
-        return;
+        throw new Error(data.message || `登录失败，状态码: ${response.status}`);
       }
-      
-      // 先清除所有其他角色的认证信息
+      // 登录成功
       clearAllAuth();
       
-      // 验证返回的数据结构
-      if (!data.data || !data.data.token) {
-        throw new Error('无效的认证信息');
+      // 使用简化的tokenManager处理登录响应
+      // 注意：不再保存token，只保存用户信息和认证状态
+      const tokenResult = handleLoginResponse(data);
+      if (!tokenResult) {
+        throw new Error('处理登录响应失败');
       }
       
-      // 构建用户信息
-      const userInfo = {
-        username: formData.username,
-        id: data.data.userId || '',
-        role: 'commenter' as const,
-        balance: data.data.userInfo?.balance || 0,
-        status: data.data.userInfo?.status || 'active',
-        createdAt: data.data.userInfo?.createdAt || new Date().toISOString(),
-        ...data.data.userInfo
-      };
+      // token由浏览器通过HttpOnly Cookie自动管理
       
-      // 保存认证信息到本地存储
-      CommenterAuthStorage.saveAuth({
-        token: data.data.token,
-        user: userInfo,
-        expiresAt: Date.now() + (data.data.expiresIn || 86400) * 1000
-      });
-      
-      // 保存token到本地缓存
-      if (typeof window !== 'undefined') {
-        const tokenData = {
-          token: data.data.token,
-          tokenType: 'Bearer',
-          expiresIn: data.data.expiresIn || 86400,
-          timestamp: Date.now(),
-          expiresAt: Date.now() + (data.data.expiresIn || 86400) * 1000
-        };
-        localStorage.setItem('commenterAuthToken', JSON.stringify(tokenData));
-      }
-      
-      // 设置成功消息并显示模态框
-      setLoginSuccessMessage(`登录成功！欢迎 ${userInfo.username}`);
+      const savedUser = getAuthUserFromStorage();
+      setLoginSuccessMessage(`登录成功！欢迎 ${savedUser?.username || formData.username}`);
       setShowSuccessModal(true);
     } catch (error) {
-      // 处理不同类型的错误
       let errorMsg = '登录过程中出现错误，请稍后再试';
-      
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMsg = '请求超时，请检查网络连接';
-        } else if (error.message.includes('Failed to fetch')) {
-          errorMsg = '无法连接到服务器，请稍后再试';
-        } else {
-          errorMsg = error.message;
-        }
+      const typedError = error as Error;
+      if (typedError.name === 'AbortError') {
+        errorMsg = '请求超时，请检查网络连接';
+      } else if (typedError.message && typedError.message.includes('Failed to fetch')) {
+        errorMsg = '无法连接到服务器，请稍后再试';
+      } else if (typedError.message) {
+        errorMsg = typedError.message;
       }
-      
       setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -428,7 +420,7 @@ export default function CommenterLoginPage() {
           title="登录成功"
           message={loginSuccessMessage}
           buttonText="确认"
-          redirectUrl={getCommenterHomePath()}
+          redirectUrl="/commenter/hall"
         />
       </div>
     </div>

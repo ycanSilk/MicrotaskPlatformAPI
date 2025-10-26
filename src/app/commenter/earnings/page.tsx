@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import EarningsOverview from './components/EarningsOverview';
 import EarningsDetails from './components/EarningsDetails';
@@ -97,18 +96,17 @@ export default function CommenterEarningsPage() {
         setIsLoading(true);
         setError(null);
 
-        // 获取用户信息
-        const commenterUser = CommenterAuthStorage.getCurrentUser();
-        if (!commenterUser) {
+      
+        if (!hookUser) {
           setError('请先登录');
           setIsLoading(false);
           return;
         }
-        setUser(commenterUser);
+        setUser(hookUser);
         setIsLoggedIn(true);
         
         const financeAdapter = FinanceModelAdapter.getInstance();
-        const userId = commenterUser.id;
+        const userId = hookUser?.id || 'mock-user-id';
         
         // 获取用户账户信息
         const accountInfo = await financeAdapter.getUserAccount(userId);

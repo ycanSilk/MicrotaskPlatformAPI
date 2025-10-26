@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { UserOutlined } from '@ant-design/icons';
-import { commonLogout } from '@/auth/common';
 import { CustomerServiceButton } from '../../../components/button/CustomerServiceButton';
 import SearchBar from '../../../components/button/SearchBar';
 
@@ -150,9 +149,35 @@ export default function TopNavigationBar({ user }: TopNavigationBarProps) {
     return pathname !== '/commenter';
   };
 
-  const handleLogout = () => {
-    commonLogout();
-    router.push('/auth/login/commenterlogin');
+  const handleLogout = async () => {
+    try {
+      // 调用退出登录API
+      const response = await fetch('/api/commenter/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include' // 包含Cookie信息
+      });
+
+      // 解析响应数据
+      const data = await response.json();
+      
+      // 无论成功还是失败，都清除本地认证状态并跳转登录页
+      // 在实际应用中，可以根据响应状态提供不同的用户反馈
+      if (data.success) {
+        console.log('退出登录成功', data);
+      } else {
+        console.warn('退出登录时遇到问题', data);
+        // 即使API返回错误，也继续执行本地登出逻辑
+      }
+    } catch (error) {
+      console.error('退出登录请求失败', error);
+      // 即使请求失败，也执行本地登出逻辑
+    } finally {
+      // 清除本地状态并跳转到登录页面
+      router.push('/commenter/auth/login');
+    }
   };
 
   return (
@@ -200,12 +225,16 @@ export default function TopNavigationBar({ user }: TopNavigationBarProps) {
           {/* 下拉菜单 */}
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-10 transform transition-all duration-200 origin-top-right animate-fade-in-down">
-              {/* 用户名显示 */}
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-gray-800 font-medium text-sm">
-                  {user?.username || user?.nickname || '用户'}
-                </p>
-              </div>
+              {/* 个人中心按钮 */}
+              <button 
+                onClick={() => {
+                  router.push('/commenter/profile/settings');
+                  setShowDropdown(false);
+                }}
+                className="w-full text-left px-4 py-3 border-b border-gray-100 text-gray-800 font-medium text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
+              >
+                个人中心
+              </button>
               
               {/* 退出登录按钮 */}
               <button 

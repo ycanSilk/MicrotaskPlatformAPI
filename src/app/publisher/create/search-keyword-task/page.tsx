@@ -3,7 +3,6 @@
 import { Button, Input, AlertModal } from '@/components/ui';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PublisherAuthStorage } from '@/auth';
 
 export default function PublishSearchKeywordTaskPage() {
   const router = useRouter();

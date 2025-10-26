@@ -10,8 +10,10 @@ export default function PublisherRegisterPage() {
     password: '',
     confirmPassword: '',
     phone: '',
+    email: '',
+    companyName: '',
+    contactPerson: '',
     captcha: '',
-    inviteCode: '',
     agreeToTerms: false
   });
   const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
@@ -33,7 +35,7 @@ export default function PublisherRegisterPage() {
   // 刷新验证码
   const refreshCaptcha = () => {
     setCaptchaCode(generateCaptcha());
-    setFormData({ ...formData, captcha: '' });
+    setFormData(prev => ({ ...prev, captcha: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,13 +44,34 @@ export default function PublisherRegisterPage() {
     setSuccessMessage('');
     
     // 基础验证
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setErrorMessage('请输入用户名和密码');
+    // 用户名验证
+    if (!formData.username.trim()) {
+      setErrorMessage('用户名不能为空');
+      return;
+    }
+    
+    // 用户名长度验证（至少4个字符）
+    if (formData.username.trim().length < 4) {
+      setErrorMessage('用户名长度必须大于或等于4个字符');
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage('两次输入的密码不一致');
+    // 用户名长度验证（不超过16个字符）
+    if (formData.username.trim().length > 16) {
+      setErrorMessage('用户名长度不能超过16个字符');
+      return;
+    }
+    
+    // 用户名格式验证（字母数字组合）
+    const usernameRegex = /^[a-zA-Z0-9]{1,20}$/;
+    if (!usernameRegex.test(formData.username.trim())) {
+      setErrorMessage('用户名只能包含字母和数字');
+      return;
+    }
+
+    // 密码验证
+    if (!formData.password.trim()) {
+      setErrorMessage('密码不能为空');
       return;
     }
 
@@ -57,11 +80,60 @@ export default function PublisherRegisterPage() {
       return;
     }
 
+    // 确认密码验证
+    if (!formData.confirmPassword.trim()) {
+      setErrorMessage('请确认密码');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage('两次输入的密码不一致');
+      return;
+    }
+
+    // 企业名称验证（必填）
+    if (!formData.companyName.trim()) {
+      setErrorMessage('企业名称不能为空');
+      return;
+    }
+
+    if (formData.companyName.trim().length < 2 || formData.companyName.trim().length > 100) {
+      setErrorMessage('企业名称长度应在2-100个字符之间');
+      return;
+    }
+
+    // 企业负责人验证（必填）
+    if (!formData.contactPerson.trim()) {
+      setErrorMessage('企业负责人不能为空');
+      return;
+    }
+
+    if (formData.contactPerson.trim().length < 2 || formData.contactPerson.trim().length > 50) {
+      setErrorMessage('企业负责人姓名长度应在2-50个字符之间');
+      return;
+    }
+
+    // 企业负责人格式验证（中文、英文、空格）
+    const contactPersonRegex = /^[\u4e00-\u9fa5a-zA-Z\s]+$/;
+    if (!contactPersonRegex.test(formData.contactPerson.trim())) {
+      setErrorMessage('企业负责人姓名只能包含中文、英文和空格');
+      return;
+    }
+
     // 如果填写了手机号，则验证手机号格式
     if (formData.phone.trim()) {
       const phoneRegex = /^1[3-9]\d{9}$/;
       if (!phoneRegex.test(formData.phone)) {
         setErrorMessage('请输入正确的手机号码');
+        return;
+      }
+    }
+
+    // 如果填写了邮箱，则验证邮箱格式
+    if (formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        setErrorMessage('请输入正确的邮箱地址');
         return;
       }
     }
@@ -87,7 +159,7 @@ export default function PublisherRegisterPage() {
     
     try {
       // 调用发布者注册API
-      const response = await fetch('/api/register/publisher', {
+      const response = await fetch('/api/publisher/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +168,9 @@ export default function PublisherRegisterPage() {
           username: formData.username,
           password: formData.password,
           phone: formData.phone,
-          inviteCode: formData.inviteCode
+          email: formData.email,
+          companyName: formData.companyName,
+          contactPerson: formData.contactPerson
         }),
       });
 
@@ -104,11 +178,13 @@ export default function PublisherRegisterPage() {
       
       if (result.success) {
         // 注册成功
-        setSuccessMessage(result.message);
+        setSuccessMessage(result.message || '注册成功！您的账号已创建，现在可以登录了。');
         // 显示确认提示框
         setShowConfirmModal(true);
       } else {
-        setErrorMessage(result.message || '注册失败');
+        setErrorMessage(result.message || '注册失败，请稍后重试');
+        // 刷新验证码
+        refreshCaptcha();
       }
     } catch (error) {
       setErrorMessage('注册过程中发生错误，请重试');
@@ -146,7 +222,7 @@ export default function PublisherRegisterPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="6-20位字母数字组合"
+                    placeholder="4-16位字母数字组合"
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -181,20 +257,36 @@ export default function PublisherRegisterPage() {
                   />
                 </div>
 
-                {/* 手机号和验证码 */}
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs md:text-sm font-medium  mb-1">
-                      手机号
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="请输入11位手机号（选填）"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    />
-                  </div>
+                {/* 手机号 */}
+                <div className="mb-3">
+                  <label className="block text-xs md:text-sm font-medium  mb-1">
+                    手机号
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="请输入11位手机号（选填）"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                {/* 邮箱 */}
+                <div className="mb-3">
+                  <label className="block text-xs md:text-sm font-medium  mb-1">
+                    邮箱
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="请输入邮箱地址（选填）"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+
+                {/* 验证码 */}
+                <div>
 
                   {/* 验证码 */}
                   <div>
@@ -221,18 +313,36 @@ export default function PublisherRegisterPage() {
                 </div>
               </div>
 
-              {/* 邀请码 */}
+              {/* 企业信息 */}
               <div className="bg-blue-50 rounded-lg p-3 md:p-4">
-                <h3 className="text-sm font-bold text-blue-800 mb-3"> 邀请码（可选）</h3>
-                <div>
+                <h3 className="text-sm font-bold text-blue-800 mb-3">企业信息</h3>
+                
+                {/* 企业名称 */}
+                <div className="mb-3">
+                  <label className="block text-xs md:text-sm font-medium  mb-1">
+                    企业名称 <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="填写邀请码可获得新人奖励"
-                    value={formData.inviteCode}
-                    onChange={(e) => setFormData({...formData, inviteCode: e.target.value})}
+                    placeholder="请输入企业名称"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({...formData, companyName: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
-                  <p className="text-xs text-blue-600 mt-2">邀请新用户,指导新用户完成首个100元提现，可获得10元系统奖励</p>
+                </div>
+
+                {/* 企业负责人 */}
+                <div className="mb-3">
+                  <label className="block text-xs md:text-sm font-medium  mb-1">
+                    企业负责人 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="请输入企业负责人姓名"
+                    value={formData.contactPerson}
+                    onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
                 </div>
               </div>
 
@@ -285,7 +395,7 @@ export default function PublisherRegisterPage() {
               <p className="text-xs text-gray-600">
                 已有账号？{' '}
                 <button 
-                  onClick={() => router.push('/auth/login/publisherlogin')}
+                  onClick={() => router.push('/publisher/auth/login')}
                   className="text-blue-600 hover:text-blue-800 underline"
                 >
                   立即登录

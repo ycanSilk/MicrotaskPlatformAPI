@@ -30,14 +30,23 @@ interface ApiResponse {
 // 基础验证函数
 function validateRegisterData(data: RegisterRequest): { isValid: boolean; error?: string } {
   // 检查必填字段
-  if (!data.username || !data.password) {
-    return { isValid: false, error: '用户名和密码为必填项' };
+  if (!data.username || data.username.trim() === '') {
+    return { isValid: false, error: '用户名不能为空' };
   }
 
-  // 验证用户名格式（6-20位字母数字组合）
-  const usernameRegex = /^[a-zA-Z0-9]{6,20}$/;
-  if (!usernameRegex.test(data.username)) {
-    return { isValid: false, error: '用户名必须为6-20位字母数字组合' };
+  // 验证用户名长度（至少4位字符）
+  if (data.username.length < 4) {
+    return { isValid: false, error: '用户名长度必须大于或等于4个字符' };
+  }
+
+  // 验证用户名最大长度（不超过16位字符）
+  if (data.username.length > 16) {
+    return { isValid: false, error: '用户名长度不能超过16个字符' };
+  }
+
+  // 检查密码是否为空
+  if (!data.password || data.password.trim() === '') {
+    return { isValid: false, error: '密码不能为空' };
   }
 
   // 验证密码长度

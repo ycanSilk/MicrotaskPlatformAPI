@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
-import { AdminAuthStorage } from '@/auth/admin/auth';
+// Admin auth storage removed
 import { financeModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import { WithdrawalRecord } from '@/data/commenteruser/finance_model_adapter';
 

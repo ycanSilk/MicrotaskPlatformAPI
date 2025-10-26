@@ -3,7 +3,24 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CommenterAccount, DailyEarning } from '../page';
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+// 直接从localStorage获取用户信息的辅助函数
+const getCurrentUser = () => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const authDataStr = localStorage.getItem('commenter_auth_data');
+    if (authDataStr) {
+      const authData = JSON.parse(authDataStr);
+      return {
+        id: authData.userId || '',
+        username: authData.username || '',
+        ...(authData.userInfo || {})
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+  return null;
+};
 import type { User } from '@/types';
 
 interface EarningsOverviewProps {

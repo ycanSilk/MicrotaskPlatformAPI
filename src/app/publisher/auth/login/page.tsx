@@ -1,23 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authenticatePublisher, PublisherAuthStorage } from '@/auth';
-import SuccessModal  from '../../../../components/button/authButton/SuccessModal';
+import SuccessModal from '../../../../components/button/authButton/SuccessModal';
+import { saveAuthData } from '../../../api/publisher/auth/token/tokenManager';
 
 export default function PublisherLoginPage() {
   const [formData, setFormData] = useState({
-    username: 'test12',
-    password: '123456',
+    username: '',
+    password: '',
     captcha: ''
   });
-  const [captchaCode, setCaptchaCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [loginSuccessMessage, setLoginSuccessMessage] = useState('');
+  const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
   const router = useRouter();
-
+  
   // 生成随机验证码
   function generateCaptcha(length = 4) {
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -28,112 +28,59 @@ export default function PublisherLoginPage() {
     return result;
   }
 
-  // 初始化验证码
-  useEffect(() => {
-    console.log('Initializing captcha');
-    const initialCaptcha = generateCaptcha();
-    setCaptchaCode(initialCaptcha);
-    // 默认填充验证码
-    setFormData(prev => ({ ...prev, captcha: initialCaptcha }));
-  }, []);
-
-  // 自动填充测试账号
-  useEffect(() => {
-    // 设置默认测试账号
-    setFormData({
-      username: 'test12',
-      password: '123456',
-      captcha: captchaCode
-    });
-  }, [captchaCode]);
-
   // 刷新验证码
   const refreshCaptcha = () => {
-    console.log('Refreshing captcha');
-    const newCaptcha = generateCaptcha();
-    setCaptchaCode(newCaptcha);
-    // 刷新验证码时保持用户名和密码不变，只更新验证码
-    setFormData(prev => ({
-      ...prev,
-      captcha: newCaptcha
-    }));
+    setCaptchaCode(generateCaptcha());
+    setFormData(prev => ({ ...prev, captcha: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login form submitted with data:', formData);
     setErrorMessage('');
     
-    // 验证表单
-    if (!formData.username.trim()) {
-      console.log('Username is empty');
-      setErrorMessage('请输入用户名');
-      return;
-    }
-    
-    if (!formData.password.trim()) {
-      console.log('Password is empty');
-      setErrorMessage('请输入密码');
-      return;
-    }
-    
-    if (!formData.captcha.trim()) {
-      console.log('Captcha is empty');
+    // 前端验证码非空校验
+    if (!formData.captcha || formData.captcha.trim() === '') {
       setErrorMessage('请输入验证码');
       return;
     }
     
-    if (formData.captcha.toUpperCase() !== captchaCode.toUpperCase()) {
-      console.log('Captcha incorrect');
+    // 验证码校验（忽略大小写）
+    if (formData.captcha.toUpperCase() !== captchaCode) {
       setErrorMessage('验证码错误');
-      refreshCaptcha();
+      refreshCaptcha(); // 验证码错误时刷新
       return;
     }
-
+    
     setIsLoading(true);
     
     try {
-      console.log('Using new publisher authentication system');
-      // 使用新的认证系统
-      const result = await authenticatePublisher({
-        username: formData.username,
-        password: formData.password
+      // 调用后端登录接口
+      const response = await fetch('/api/publisher/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        }),
+        credentials: 'include' // 确保包含cookies
       });
 
-      // 处理认证结果
-      if (result.success && result.user && result.token) {
-        // 构造认证会话
-        const authSession = {
-          user: result.user,
-          token: result.token,
-          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24小时过期
-        };
-        
-        // 保存认证信息
-        PublisherAuthStorage.saveAuth(authSession);
-        
-        console.log('Auth info saved');
-        
-        // 在客户端验证信息是否正确保存
-        if (typeof window !== 'undefined') {
-          const savedToken = localStorage.getItem('publisher_auth_token');
-          const savedUser = localStorage.getItem('publisher_user_info');
-          console.log('Saved token:', savedToken);
-          console.log('Saved user:', savedUser);
-        }
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        // 保存认证数据（不包含token，只保存用户信息）
+        saveAuthData({ userInfo: data.data.userInfo });
         
         // 设置成功消息并显示模态框
-        setLoginSuccessMessage(`登录成功！欢迎 ${result.user.username}`);
+        setLoginSuccessMessage(`登录成功！欢迎 ${data.data.userInfo.username}`);
         setShowSuccessModal(true);
       } else {
-        console.log('Login failed with message:', result?.message);
-        setErrorMessage(result?.message || '登录失败');
-        refreshCaptcha();
+        setErrorMessage(data?.message || '登录失败，请检查用户名和密码');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setErrorMessage('登录过程中发生错误，请重试');
-      refreshCaptcha();
+      setErrorMessage('登录过程中发生错误，请稍后重试');
     } finally {
       setIsLoading(false);
     }
@@ -189,13 +136,13 @@ export default function PublisherLoginPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
-              {/* 验证码 */}
+              
+              {/* 验证码输入 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  验证码
+                  验证码 <span className="text-red-500">*</span>
                 </label>
-                <div className="flex space-x-2">
+                <div className="flex space-x-3">
                   <input
                     type="text"
                     placeholder="请输入验证码"
@@ -210,6 +157,7 @@ export default function PublisherLoginPage() {
                     {captchaCode}
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 mt-1">点击验证码可刷新</p>
               </div>
 
               {/* 错误信息 */}
@@ -254,7 +202,7 @@ export default function PublisherLoginPage() {
           </div>
 
           {/* 底部信息 */}
-          <div className="text-center  mb-8">
+          <div className="text-center mb-8">
             <p>©2025 微任务系统平台 V1.0</p>
           </div>
         </div>

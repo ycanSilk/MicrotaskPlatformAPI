@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PublisherAuthStorage } from '@/auth/publisher/auth';
+// Publisher auth storage removed
 import { EditOutlined, CopyOutlined, LinkOutlined } from '@ant-design/icons';
 import OrderHeaderTemplate from '../components/OrderHeaderTemplate';
 

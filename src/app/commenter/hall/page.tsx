@@ -2,11 +2,31 @@
 import React from 'react';
 import CommenterHallContentPage from '../hall-content/page';
 import TopNavigationBar from '../components/TopNavigationBar';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+
+// 直接从localStorage获取用户信息的辅助函数
+const getCurrentUser = () => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const authDataStr = localStorage.getItem('commenter_auth_data');
+    if (authDataStr) {
+      const authData = JSON.parse(authDataStr);
+      // 构建用户信息对象
+      return {
+        id: authData.userId || '',
+        username: authData.username || '',
+        role: 'commenter',
+        ...(authData.userInfo || {})
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+  }
+  return null;
+};
 
 export default function CommenterHallPage() {
   // 获取当前登录用户信息
-  const currentUser = CommenterAuthStorage.getCurrentUser();
+  const currentUser = getCurrentUser();
   
   return (
     <div className="bg-gray-50 min-h-screen">

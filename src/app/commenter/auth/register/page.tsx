@@ -44,14 +44,26 @@ export default function CommenterRegisterPage() {
     
     // 用户名验证
     if (!formData.username.trim()) {
-      setErrorMessage('请输入用户名');
+      setErrorMessage('用户名不能为空');
       return;
     }
     
-    // 用户名格式验证（6-20位字母数字组合）
-    const usernameRegex = /^[a-zA-Z0-9]{6,20}$/;
+    // 用户名长度验证（至少4个字符）
+    if (formData.username.trim().length < 4) {
+      setErrorMessage('用户名长度必须大于或等于4个字符');
+      return;
+    }
+
+    // 用户名长度验证（不超过16个字符）
+    if (formData.username.trim().length > 16) {
+      setErrorMessage('用户名长度不能超过16个字符');
+      return;
+    }
+    
+    // 用户名格式验证（字母数字组合）
+    const usernameRegex = /^[a-zA-Z0-9]{1,20}$/;
     if (!usernameRegex.test(formData.username.trim())) {
-      setErrorMessage('用户名必须为6-20位字母数字组合');
+      setErrorMessage('用户名只能包含字母和数字');
       return;
     }
 
@@ -167,7 +179,7 @@ export default function CommenterRegisterPage() {
       
       if (result.success) {
         // 注册成功
-        setSuccessMessage(result.message || '注册成功！');
+        setSuccessMessage(result.message || '注册成功！您的账号已创建，现在可以登录了。');
         // 显示确认提示框
         setShowConfirmModal(true);
       } else {
@@ -218,7 +230,7 @@ export default function CommenterRegisterPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="6-20位字母数字组合"
+                    placeholder="4-16位字母数字组合"
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"

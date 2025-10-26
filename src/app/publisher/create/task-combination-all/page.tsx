@@ -1,8 +1,8 @@
-"use client";
+'use client';
+
 import { Button, Input, AlertModal } from '@/components/ui';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PublisherAuthStorage } from '@/auth';
 
 // 全包任务详情页 - 参考publish/page.tsx实现
 // 包含上评、中评、下评的完整评论任务套餐

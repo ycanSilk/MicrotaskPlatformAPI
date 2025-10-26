@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// 定义用户信息接口
 interface UserProfile {
+  id?: string;
   avatar: string;
   name: string;
   phone: string;
   email: string;
-
+  companyName: string;
+  contactPerson: string;
+  accountType: string;
+  [key: string]: any;
 }
 
 export default function PersonalInfoPage() {
@@ -17,10 +22,75 @@ export default function PersonalInfoPage() {
   // 用户个人信息状态
   const [userProfile, setUserProfile] = useState<UserProfile>({
     avatar: '/images/0e92a4599d02a7.jpg',
-    name: 'A', 
-    phone: '137****8808',
-    email: '123456@qq.com'
+    name: '', 
+    phone: '',
+    email: '',
+    companyName: '',
+    contactPerson: '',
+    accountType: ''
   });
+  
+  // 加载状态
+  const [loading, setLoading] = useState(true);
+  
+  // 错误状态
+  const [error, setError] = useState<string | null>(null);
+  
+  // API响应接口
+  interface ApiResponse<T = any> {
+    code: number;
+    message: string;
+    data: T;
+  }
+  
+  // 获取用户信息
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/publisher/user/getuserinfo', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+            // Cookie中的token会自动传递
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json() as ApiResponse<UserProfile>;
+        
+        if (result.code === 200 && result.data) {
+          setUserProfile(result.data);
+        } else {
+          setError(result.message || '获取用户信息失败');
+          // 设置默认数据以便展示
+          setUserProfile(prev => ({
+            ...prev,
+            name: '用户',
+            accountType: '未设置'
+          }));
+        }
+      } catch (err) {
+        console.error('获取用户信息错误:', err);
+        setError('网络请求失败，请稍后重试');
+        // 设置默认数据以便展示
+        setUserProfile(prev => ({
+          ...prev,
+          name: '用户',
+          accountType: '未设置'
+        }));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserInfo();
+  }, []);
 
   // 编辑状态
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -102,7 +172,28 @@ export default function PersonalInfoPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 个人信息表单 */}
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mt-2 mx-4 rounded">
+          <div className="flex">
+            <div className="py-1">
+              <svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 加载状态 */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64 bg-white mt-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
       <div className="mt-4 bg-white shadow-sm">
         {/* 头像 - 整行可点击 */}
         <div 
@@ -147,42 +238,66 @@ export default function PersonalInfoPage() {
         {/* 邮箱 */}
         <InfoItem label="邮箱" value={userProfile.email || '未填写'} field="email" placeholder="请输入邮箱" />
 
-      </div>
+        {/* 企业名称 */}
+        <InfoItem label="企业名称" value={userProfile.companyName || '未填写'} field="companyName" placeholder="请输入企业名称" />
 
-      {/* 编辑模态框 */}
-      {showEditModal && currentField && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md mx-4">
-            <div className="p-5 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">编辑{currentField.label}</h3>
-            </div>
-            <div className="p-5">
-              <input
-                type="text"
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                placeholder={currentField.placeholder || `请输入${currentField.label}`}
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
-              />
-            </div>
-            <div className="flex border-t border-gray-200">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 py-3 text-gray-600 font-medium hover:bg-gray-50"
-              >
-                取消
-              </button>
-              <button
-                onClick={saveEdit}
-                className="flex-1 py-3 text-blue-600 font-medium hover:bg-gray-50 border-l border-gray-200"
-              >
-                确定
-              </button>
-            </div>
+        {/* 负责人 */}
+        <InfoItem label="负责人" value={userProfile.contactPerson || '未填写'} field="contactPerson" placeholder="请输入负责人姓名" />
+
+        {/* 账号类型 */}
+        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+          <span className="text-gray-800">账号类型</span>
+          <div className="text-gray-500">
+            {userProfile.accountType || '未设置'}
           </div>
         </div>
+        
+        {/* 用户ID */}
+        {userProfile.id && (
+          <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+            <span className="text-gray-800">用户ID</span>
+            <div className="text-gray-500">
+              {userProfile.id}
+            </div>
+          </div>
+        )}
+
+        {/* 编辑模态框 */}
+        {showEditModal && currentField && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-full max-w-md mx-4">
+              <div className="p-5 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">编辑{currentField.label}</h3>
+              </div>
+              <div className="p-5">
+                <input
+                  type="text"
+                  value={tempValue}
+                  onChange={(e) => setTempValue(e.target.value)}
+                  placeholder={currentField.placeholder || `请输入${currentField.label}`}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex border-t border-gray-200">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-3 text-gray-600 font-medium hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={saveEdit}
+                  className="flex-1 py-3 text-blue-600 font-medium hover:bg-gray-50 border-l border-gray-200"
+                >
+                  确定
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       )}
-    </div>
-  );
+   </div> 
+)
 }

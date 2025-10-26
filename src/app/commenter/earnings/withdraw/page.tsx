@@ -1,7 +1,6 @@
 'use client';
 import React, { useState } from 'react';
 import WithdrawalPage from '../components/WithdrawalPage';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
@@ -65,21 +64,16 @@ const WithdrawPage = () => {
         setIsLoading(true);
         setError(null);
 
-        // 获取当前用户
-        const commenterUser = CommenterAuthStorage.getCurrentUser();
-        if (!commenterUser) {
-          router.push('/auth/login/commenterlogin');
-          return;
-        }
+
 
         // 获取用户账户信息
-        const userAccount = await financeAdapter.getUserAccount(commenterUser.id);
+        const userAccount = await financeAdapter.getUserAccount(currentUserAccount?.userId || 'mock-user-id');
         if (userAccount) {
           setCurrentUserAccount(userAccount);
         } else {
           // 设置默认账户数据
           setCurrentUserAccount({
-            userId: commenterUser.id,
+            userId: currentUserAccount?.userId || 'mock-user-id',
             availableBalance: 150.5,
             frozenBalance: 50,
             totalEarnings: 200.5
@@ -87,7 +81,7 @@ const WithdrawPage = () => {
         }
 
         // 获取提现记录
-        const records = await financeAdapter.getUserWithdrawalRecords(commenterUser.id);
+        const records = await financeAdapter.getUserWithdrawalRecords(currentUserAccount?.userId || 'mock-user-id');
         if (records && records.length > 0) {
           setWithdrawalRecords(records);
         } else {
@@ -95,7 +89,7 @@ const WithdrawPage = () => {
           setWithdrawalRecords([
             {
               id: '1',
-              userId: commenterUser.id,
+              userId: currentUserAccount?.userId || 'mock-user-id',
               amount: 100.0,
               fee: 0.5,
               method: '微信',
@@ -138,12 +132,6 @@ const WithdrawPage = () => {
       setIsLoading(true);
       setError(null);
 
-      // 获取当前用户
-      const commenterUser = CommenterAuthStorage.getCurrentUser();
-      if (!commenterUser) {
-        router.push('/auth/login/commenterlogin');
-        return;
-      }
 
       // 这里应该从表单状态或组件状态中获取amount, method, accountInfo
       // 由于这是模拟环境，我使用一些默认值
@@ -153,7 +141,7 @@ const WithdrawPage = () => {
 
       // 创建提现请求
       const withdrawalRequest = {
-        userId: commenterUser.id,
+        userId: currentUserAccount?.userId || 'mock-user-id',
         amount,
         method,
         accountInfo,

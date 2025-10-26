@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { PublisherAuthStorage } from '@/auth/publisher/auth';
 import Link from 'next/link';
 import { PublisherBottomNavigation } from './components/PublisherBottomNavigation';
 import { PublisherHeader } from '@/app/publisher/components/PublisherHeader';
@@ -29,70 +28,33 @@ export default function PublisherLayout({
     const initializeAuth = async () => {
       if (!isMounted) return;
       
-      try {
-        console.log('Checking user authentication...');
-        // 直接使用派单员认证存储检查，而不是通用检查
-        let authSession = PublisherAuthStorage.getAuth();
-        
-        console.log('Auth session from storage:', authSession);
-        
+      try {    
         // 开发环境中提供模拟认证数据
-        // 注意：这仅用于开发预览，生产环境中请移除这段代码
-        if (process.env.NODE_ENV === 'development' && (!authSession || !authSession.user)) {
-          console.log('Development environment detected, using mock authentication data');
-          authSession = {
-            user: {
-              id: 'dev-publisher-123',
-              username: '开发者账号',
-              role: 'publisher',
-              balance: 1000.00,
-              status: 'active',
-              createdAt: new Date().toISOString()
-            },
-            token: 'dev-token',
-            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24小时后过期
+        // 注意：publisher认证模块已被移除
+        if (process.env.NODE_ENV === 'development') {
+          const mockUser = {
+            id: 'dev-publisher-123',
+            username: '开发者账号',
+            role: 'publisher',
+            balance: 1000.00,
+            status: 'active',
+            createdAt: new Date().toISOString()
           };
-        }
-        
-        if (!authSession || !authSession.user) {
-          console.log('Publisher Layout: No user found, redirecting to login');
+          
           if (isMounted) {
-            router.push('/auth/login/publisherlogin');
+            setUser(mockUser);
+            setIsLoading(false);
           }
-          return;
-        }
-        
-        console.log('User role:', authSession.user.role);
-        if (authSession.user.role !== 'publisher') {
-          console.log('Publisher Layout: Wrong role, redirecting to login. Role:', authSession.user.role);
+        } else {
+          // 生产环境重定向到评论员登录
           if (isMounted) {
-            router.push('/auth/login/publisherlogin');
+            router.push('/auth/login/commenterlogin');
           }
-          return;
-        }
-        
-        console.log('Publisher Layout: User authorized, setting user data');
-        if (isMounted) {
-          setUser(authSession.user);
-          setIsLoading(false);
         }
       } catch (error) {
-        console.error('Publisher Layout: Error checking user:', error);
+        console.error('Publisher Layout: Error:', error);
         if (isMounted) {
-          // 在开发环境中，即使有错误也尝试使用模拟数据继续
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Development environment: Using mock data despite error');
-            setUser({
-              id: 'dev-publisher-123',
-              name: '开发者账号',
-              role: 'publisher',
-              balance: 1000.00,
-            });
-            setIsLoading(false);
-          } else {
-            router.push('/auth/login/publisherlogin');
-            setIsLoading(false);
-          }
+          setIsLoading(false);
         }
       }
     };
@@ -106,13 +68,12 @@ export default function PublisherLayout({
   }, [router]); // 只依赖router，避免无限循环
 
   const handleLogout = async () => {
-    console.log('Logging out user');
     try {
-      PublisherAuthStorage.clearAuth();
+      // PublisherAuthStorage已被移除
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      router.push('/auth/login/publisherlogin');
+      router.push('/auth/login/commenterlogin');
     }
   };
 
@@ -132,7 +93,7 @@ export default function PublisherLayout({
   };
 
   if (isLoading) {
-    console.log('Layout is loading...');
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -148,7 +109,6 @@ export default function PublisherLayout({
 
   // 如果没有用户数据，显示请登录提示
   if (!user) {
-    console.log('No user data, showing login prompt');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -168,7 +128,7 @@ export default function PublisherLayout({
     );
   }
 
-  console.log('Rendering layout with user:', user);
+ 
 
   return (
     <div className="min-h-screen bg-gray-50">

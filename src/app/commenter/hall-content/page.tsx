@@ -139,7 +139,7 @@ export default function CommenterHallContentPage() {
   // 从API获取待领取订单 - 暂停登录验证，直接使用静态数据
   const fetchAvailableTasks = async () => {
     try {
-      console.log('使用静态数据展示任务列表');
+
       
       // 模拟网络延迟
       await new Promise(resolve => setTimeout(resolve, 300));
