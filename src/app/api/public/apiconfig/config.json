@@ -8,6 +8,8 @@
   "endpoints": {
     "wallet": {
       "walletinfo": "/wallet/info",
+      "bindAlipay": "/wallet/bind-alipay",
+      "setpaymentpwd": "/wallet/security-password",
       "topup": "/biz/wallet/topup",
       "withdraw": "/biz/wallet/withdraw"
     }

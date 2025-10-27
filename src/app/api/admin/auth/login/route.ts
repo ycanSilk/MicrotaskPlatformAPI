@@ -101,28 +101,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       body: JSON.stringify(backendRequestData),
       signal: AbortSignal.timeout(config.timeout || 5000)
     });
-    // 解析外部API响应
-    const data = await response.json();
-    console.log('外部API响应:', data);
+    // 解析外部API响应（只解析一次）
+    const result: ExternalApiResponse = await response.json();
+    console.log('外部API响应:', result);
     // 检查响应状态
     if (!response.ok) {
       console.error(`登录API错误: ${response.status}`);
-      try {
-        const errorData = await response.json();
-        return NextResponse.json<ApiResponse>({
-          success: false,
-          message: errorData.message || `登录失败`
-        }, { status: response.status });
-      } catch {
-        return NextResponse.json<ApiResponse>({
-          success: false,
-          message: '登录失败'
-        }, { status: response.status });
-      }
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        message: result.message || '登录失败'
+      }, { status: response.status });
     }
-
-    // 解析后端响应
-    const result: ExternalApiResponse = await response.json();
     
     // 验证返回的数据结构
     if (!result || typeof result.code !== 'number') {

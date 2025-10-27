@@ -7,10 +7,33 @@ import ArrowUpOutlined from '@ant-design/icons/ArrowUpOutlined';
 import ArrowDownOutlined from '@ant-design/icons/ArrowDownOutlined';
 import InfoCircleOutlined from '@ant-design/icons/InfoCircleOutlined';
 import UndoOutlined from '@ant-design/icons/UndoOutlined';
+import ReloadOutlined from '@ant-design/icons/ReloadOutlined';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Badge } from '@/components/ui/Badge';
+
+// 钱包信息类型定义
+interface WalletData {
+  userId: string;
+  totalBalance: number;
+  availableBalance: number;
+  frozenBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  status: string;
+  currency: string;
+  createTime: string;
+}
+
+// API响应类型定义 - 更灵活的接口定义以适应不同的响应格式
+interface ApiResponse {
+  code?: number;
+  message: string;
+  data?: WalletData;
+  success: boolean;
+  timestamp?: number;
+}
 
 // 交易记录类型定义
 interface Transaction {
@@ -47,141 +70,99 @@ interface WithdrawalRecord {
 
 const BalancePage = () => {
   const router = useRouter();
-  const [balance, setBalance] = useState(1298.00);
-  const [frozenBalance, setFrozenBalance] = useState(0.00);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [frozenBalance, setFrozenBalance] = useState<number | null>(null);
+  const [totalBalance, setTotalBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [rechargeRecords, setRechargeRecords] = useState<RechargeRecord[]>([]);
   const [withdrawalRecords, setWithdrawalRecords] = useState<WithdrawalRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [walletError, setWalletError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  // 模拟获取数据
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // 模拟网络请求延迟
-        await new Promise(resolve => setTimeout(resolve, 800));
+  // 获取钱包信息
+  const fetchWalletInfo = async () => {
+    try {
+      setLoading(true);
+      setWalletError(null);
+      console.log('开始获取钱包信息...');
+      
+      const response = await fetch('/api/public/walletmanagement/getwalletinfo', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include' // 包含cookies以支持HttpOnly Cookie认证
+      });
+      
+      // 无论状态码如何，都尝试解析响应数据
+      const data = await response.json();
+      
+      // 检查响应数据是否包含必要的信息
+      if (data && data.success && data.data) {
+        console.log('钱包信息获取成功:', data.data);
+        // 更新状态数据
+        setBalance(data.data.availableBalance);
+        setFrozenBalance(data.data.frozenBalance);
+        setTotalBalance(data.data.totalBalance);
         
-        // 模拟交易记录数据
-        const mockTransactions: Transaction[] = [
-          {
-            id: 'txn-001',
-            type: 'task_income',
-            amount: 580.00,
-            balanceAfter: 1298.00,
-            date: '2023-07-01',
-            time: '14:30',
-            description: '任务报酬结算',
-            orderId: 'TASK-20230701-001',
-            status: 'completed'
-          },
-          {
-            id: 'txn-002',
-            type: 'withdraw',
-            amount: -100.00,
-            balanceAfter: 718.00,
-            date: '2023-06-30',
-            time: '16:45',
-            description: '提现到银行卡',
-            status: 'completed'
-          },
-          {
-            id: 'txn-003',
-            type: 'task_income',
-            amount: 320.00,
-            balanceAfter: 818.00,
-            date: '2023-06-28',
-            time: '10:20',
-            description: '任务报酬结算',
-            orderId: 'TASK-20230628-002',
-            status: 'completed'
-          },
-          {
-            id: 'txn-004',
-            type: 'withdraw',
-            amount: -50.00,
-            balanceAfter: 498.00,
-            date: '2023-06-25',
-            time: '11:05',
-            description: '提现到银行卡',
-            status: 'completed'
-          },
-          {
-            id: 'txn-005',
-            type: 'task_income',
-            amount: 498.00,
-            balanceAfter: 548.00,
-            date: '2023-06-20',
-            time: '15:30',
-            description: '任务报酬结算',
-            orderId: 'TASK-20230620-001',
-            status: 'completed'
-          },
-          {
-            id: 'txn-006',
-            type: 'recharge',
-            amount: 1000.00,
-            balanceAfter: 50.00,
-            date: '2023-06-15',
-            time: '10:15',
-            description: '支付宝充值',
-            status: 'completed'
-          }
-        ];
-        
-        // 模拟充值记录
-        const mockRechargeRecords: RechargeRecord[] = [
-          {
-            id: 'recharge-001',
-            amount: 1000.00,
-            date: '2023-06-15 10:15',
-            paymentMethod: '支付宝',
-            status: 'completed',
-            orderId: 'RECH-20230615-001'
-          },
-          {
-            id: 'recharge-002',
-            amount: 500.00,
-            date: '2023-06-01 09:20',
-            paymentMethod: '微信支付',
-            status: 'completed',
-            orderId: 'RECH-20230601-001'
-          }
-        ];
-        
-        // 模拟提现记录
-        const mockWithdrawalRecords: WithdrawalRecord[] = [
-          {
-            id: 'withdraw-001',
-            amount: 100.00,
-            date: '2023-06-30 16:45',
-            bankAccount: '工商银行 **** 5678',
-            status: 'completed',
-            orderId: 'WITH-20230630-001'
-          },
-          {
-            id: 'withdraw-002',
-            amount: 50.00,
-            date: '2023-06-25 11:05',
-            bankAccount: '工商银行 **** 5678',
-            status: 'completed',
-            orderId: 'WITH-20230625-001'
-          }
-        ];
-        
-        setTransactions(mockTransactions);
-        setRechargeRecords(mockRechargeRecords);
-        setWithdrawalRecords(mockWithdrawalRecords);
-      } catch (error) {
-        console.error('获取余额和交易记录失败:', error);
-      } finally {
-        setLoading(false);
+        // 使用真实数据生成交易记录
+        fetchTransactionData();
+      } else {
+        // API返回失败时显示错误信息
+        console.warn('API返回格式异常:', data);
+        setWalletError('获取钱包信息失败，请稍后重试');
+        // 清空余额数据，不显示任何值
+        setBalance(null);
+        setFrozenBalance(null);
+        setTotalBalance(null);
+        setTransactions([]);
+        setRechargeRecords([]);
+        setWithdrawalRecords([]);
       }
-    };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.error('获取钱包信息过程中发生异常:', errorMessage);
+      
+      // 发生异常时显示错误信息
+      setWalletError('网络连接异常，请检查您的网络');
+      // 清空余额数据，不显示任何值
+      setBalance(null);
+      setFrozenBalance(null);
+      setTotalBalance(null);
+      setTransactions([]);
+      setRechargeRecords([]);
+      setWithdrawalRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
+  // 获取交易记录数据（仅使用真实数据）
+  const fetchTransactionData = async () => {
+    try {
+      // 这里应该调用真实的交易记录API
+      // 由于目前没有真实API，暂时返回空数组
+      setTransactions([]);
+      setRechargeRecords([]);
+      setWithdrawalRecords([]);
+    } catch (error) {
+      console.error('获取交易记录失败:', error);
+      setTransactions([]);
+      setRechargeRecords([]);
+      setWithdrawalRecords([]);
+    }
+  };
+
+  // 页面加载时获取钱包信息
+  useEffect(() => {
+    fetchWalletInfo();
   }, []);
+
+  // 刷新钱包信息
+  const handleRefreshWallet = () => {
+    fetchWalletInfo();
+  };
 
   // 格式化日期
   const formatDate = (dateString: string) => {
@@ -303,18 +284,25 @@ const BalancePage = () => {
           <div className="absolute right-0 top-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16" />
           <div className="absolute left-0 bottom-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12" />
           <div className="p-2 relative z-10 mt-5">
-            <div className="mb-10 grid grid-cols-2 gap-2">
+            <div className="mb-6 grid grid-cols-2 gap-2">
               <div className="text-center bg-green-500 rounded-lg p-2">
-                <div>可用余额:</div>
-                <div>{balance.toFixed(2)}</div>
+                <div className="text-sm opacity-90">可用余额</div>
+                <div className="text-xl font-bold">{balance !== null ? balance.toFixed(2) : '--'}</div>
               </div>
               <div className="text-center bg-green-500 rounded-lg p-2">
-                <div>冻结余额:</div>
-                <div>{frozenBalance.toFixed(2)}</div>
+                <div className="text-sm opacity-90">冻结余额</div>
+                <div className="text-xl font-bold">{frozenBalance !== null ? frozenBalance.toFixed(2) : '--'}</div>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
+            {totalBalance !== null && (
+              <div className="text-center mb-6">
+                <div className="text-sm opacity-90">总资产</div>
+                <div className="text-2xl font-bold">{totalBalance.toFixed(2)}</div>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-3 gap-2">
               <Button 
                 onClick={handleRecharge}
                 className="bg-blue-700 text-white hover:bg-blue-600 font-medium"
@@ -322,15 +310,32 @@ const BalancePage = () => {
                 充值
               </Button>
               <Button 
-              onClick={handleViewAllTransactions}
-              className="bg-blue-700 text-white hover:bg-blue-600 font-medium"
-            >
-              全部明细
-            </Button>
+                onClick={handleViewAllTransactions}
+                className="bg-blue-700 text-white hover:bg-blue-600 font-medium"
+              >
+                全部明细
+              </Button>
+              <Button 
+                onClick={handleRefreshWallet}
+                className="bg-blue-700 text-white hover:bg-blue-600 font-medium flex items-center justify-center"
+                disabled={loading}
+              >
+                <ReloadOutlined className="mr-1" /> 刷新
+              </Button>
             </div>
           </div>
         </Card>
       </div>
+
+      {/* 错误提示 */}
+      {walletError && (
+        <div className="mt-3 px-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm flex items-center">
+            <InfoCircleOutlined className="mr-2 h-4 w-4" />
+            <span>{walletError}</span>
+          </div>
+        </div>
+      )}
 
       {/* 交易记录 */}
       <div className="mt-3 bg-white">
@@ -450,7 +455,7 @@ const BalancePage = () => {
                             {record.date}
                           </div>
                           <div className="text-xs text-gray-500">
-                            余额: {balance.toFixed(2)}
+                            余额: {balance !== null ? balance.toFixed(2) : '--'}
                           </div>
                         </div>
                       </div>
@@ -483,7 +488,7 @@ const BalancePage = () => {
                             {record.date}
                           </div>
                           <div className="text-xs text-gray-500">
-                            余额: {balance.toFixed(2)}
+                            余额: {balance !== null ? balance.toFixed(2) : '--'}
                           </div>
                         </div>
                       </div>

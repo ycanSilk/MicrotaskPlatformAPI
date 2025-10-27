@@ -64,6 +64,13 @@ export default function PublisherProfilePage() {
       path: '/publisher/balance'
     },
     {
+      id: 'payment-method',
+      title: '支付设置',
+      icon: <CreditCardOutlined className="text-xl" />,
+      color: 'bg-purple-100',
+      path: '/publisher/profile/paymentsettings'
+    },
+    {
       id: 'order-management',
       title: '订单管理',
       icon: <OrderedListOutlined className="text-xl" />,
