@@ -12,13 +12,16 @@
       "logout": "/biz/user/logout",
       "resetpwd": "/biz/user/reset-password",
       "refreshToken": "/biz/user/refresh",
-      "userlist": "/biz/user/list",
-      "forgotpwd": "/biz/user/forgot-password",
-      "changepwd": "/biz/user/change-password",
-      "userprofile": "/biz/user/profile"
+      "userlist": "/biz/user/list"
     },
     "user": {
-      "getuserinfo": "/biz/user/profile"
+      "getuserinfo": "/biz/user/profile",
+      "changepwd": "/biz/user/change-password"
+    },
+    "wallet": {
+      "walletinfo": "/wallet/info",
+      "topup": "/biz/wallet/topup",
+      "withdraw": "/biz/wallet/withdraw"
     }
   },
   "mockMode": false,

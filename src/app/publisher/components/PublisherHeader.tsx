@@ -401,6 +401,43 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user }) => {
     setShowUserName(!showUserName);
   };
 
+  const handleProfileClick = () => {
+    setShowUserName(false); // 关闭下拉菜单
+    router.push('/publisher/profile/settings');
+  };
+
+  const handleLogoutClick = async () => {
+    setShowUserName(false); // 关闭下拉菜单
+    console.log('Logging out user');
+    try {
+      // 在实际应用中，这里会调用认证相关的方法来清除登录状态
+      // PublisherAuthStorage.clearAuth();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      router.push('/auth/login/publisherlogin');
+    }
+  };
+
+  // 点击页面其他区域关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // 检查点击是否发生在头像按钮或下拉菜单之外
+      if (showUserName && !target.closest('.user-avatar-container')) {
+        setShowUserName(false);
+      }
+    };
+
+    if (showUserName) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showUserName]);
+
   return (
     <div className="bg-blue-500 border-b border-[#9bcfffff] px-4 py-3 flex items-center justify-between h-[60px] box-border">
       <div className="flex items-center flex-1">
@@ -428,13 +465,9 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user }) => {
         )}
         
         {isClient && user && (user.username || user.name) && (
-            <div className="relative mr-2">
+            <div className="relative mr-2 user-avatar-container">
               <button
                 onClick={handleUserAvatarClick}
-                onMouseEnter={() => setShowUserName(true)}
-                onMouseLeave={() => {
-                  setTimeout(() => setShowUserName(false), 300);
-                }}
                 className="w-[20px] h-[20px] cursor-pointer flex items-center justify-center text-white transition-all duration-300 ease"
                 aria-label="用户信息"
               >
@@ -448,11 +481,22 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user }) => {
               </button>
               {showUserName && (
                 <div
-                  className="absolute top-[44px] right-0 bg-white border border-[#e8e8e8] rounded-md p-2 shadow-lg z-50 min-w-[120px] text-center"
+                  className="absolute top-[36px] right-0 bg-white border border-[#e8e8e8] rounded-md shadow-lg z-50 w-[150px] overflow-hidden"
                 >
-                  <span className="text-sm">
-                    {user.username || user.name}
-                  </span>
+                  {/* 个人中心按钮 */}
+                  <button
+                    onClick={handleProfileClick}
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b border-gray-100"
+                  >
+                    个人中心
+                  </button>
+                  {/* 退出登录按钮 */}
+                  <button
+                    onClick={handleLogoutClick}
+                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    退出登录
+                  </button>
                 </div>
               )}
             </div>

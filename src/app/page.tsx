@@ -191,7 +191,7 @@ export default function HomePage() {
                 <span className="mr-2">✓</span>主程配置管理
               </div>
             </div>
-            <a href="/auth/login/adminlogin" className="block w-full py-3 px-4 bg-red-500 text-white rounded-lg text-center text-sm font-medium hover:bg-red-600 transition-colors">
+            <a href="/admin/auth/login" className="block w-full py-3 px-4 bg-red-500 text-white rounded-lg text-center text-sm font-medium hover:bg-red-600 transition-colors">
               管理员登录 →
             </a>
           </div>

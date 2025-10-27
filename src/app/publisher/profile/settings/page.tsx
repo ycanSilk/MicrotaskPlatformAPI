@@ -12,7 +12,7 @@ interface UserProfile {
   email: string;
   companyName: string;
   contactPerson: string;
-  accountType: string;
+  userType: string;
   [key: string]: any;
 }
 
@@ -27,7 +27,7 @@ export default function PersonalInfoPage() {
     email: '',
     companyName: '',
     contactPerson: '',
-    accountType: ''
+    userType: ''
   });
   
   // 加载状态
@@ -62,12 +62,33 @@ export default function PersonalInfoPage() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const result = await response.json() as ApiResponse<UserProfile>;
+        const result = await response.json() as ApiResponse;
         
-        if (result.code === 200 && result.data) {
-          setUserProfile(result.data);
+        // 打印完整的响应数据，用于调试
+        console.log('完整的API响应数据:', result);
+        
+        // 处理后端返回的数据结构
+        if (result.code === 200 && result.data && result.data.userInfo) {
+          // 从userInfo对象中提取数据
+          const apiUserData = result.data.userInfo;
+          
+          // 映射数据到UserProfile格式
+          const mappedUserProfile: UserProfile = {
+            id: apiUserData.id,
+            avatar: apiUserData.avatar || '/images/0e92a4599d02a7.jpg',
+            name: apiUserData.username || '用户',
+            phone: apiUserData.phone || '',
+            email: apiUserData.email || '',
+            companyName: apiUserData.companyName || '',
+            contactPerson: apiUserData.contactPerson || '',
+            userType: apiUserData.userType || '未设置'
+          };
+          
+          setUserProfile(mappedUserProfile);
+          console.log('映射后的用户信息:', mappedUserProfile);
         } else {
           setError(result.message || '获取用户信息失败');
+          console.warn('API响应数据不符合预期:', result);
           // 设置默认数据以便展示
           setUserProfile(prev => ({
             ...prev,
@@ -248,7 +269,7 @@ export default function PersonalInfoPage() {
         <div className="p-4 border-b border-gray-100 flex justify-between items-center">
           <span className="text-gray-800">账号类型</span>
           <div className="text-gray-500">
-            {userProfile.accountType || '未设置'}
+            {userProfile.userType || '未设置'}
           </div>
         </div>
         
@@ -257,10 +278,14 @@ export default function PersonalInfoPage() {
           <div className="p-4 border-b border-gray-100 flex justify-between items-center">
             <span className="text-gray-800">用户ID</span>
             <div className="text-gray-500">
-              {userProfile.id}
+              {userProfile.id || 'NULL'}
             </div>
           </div>
         )}
+
+        <div onClick={() => router.push('/publisher/profile/changepwd')} className="p-4 border-b border-gray-100  justify-between text-center items-center cursor-pointer hover:bg-blue-200">
+            修改密码
+        </div>
 
         {/* 编辑模态框 */}
         {showEditModal && currentField && (

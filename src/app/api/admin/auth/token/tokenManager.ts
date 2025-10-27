@@ -2,10 +2,10 @@
 // 主要负责管理认证状态，基于HttpOnly Cookie的认证机制
 
 // 定义常量
-const SESSION_KEY = 'publisher_active_session';
+const SESSION_KEY = 'commenter_active_session';
 const SESSION_LAST_ACTIVITY = `${SESSION_KEY}_last_activity`;
-const USER_INFO_KEY = 'publisher_user_info';
-const COOKIE_NAME = 'publisher_token'; // 用于文档说明，实际不再通过JS操作
+const USER_INFO_KEY = 'commenter_user_info';
+const COOKIE_NAME = 'commenter_token'; // 用于文档说明，实际不再通过JS操作
 
 // 全局状态变量，不再直接存储token值，改为存储认证状态标志
 export let isAuthenticatedFlag: boolean = false;

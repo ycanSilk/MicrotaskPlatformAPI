@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import EarningsOverview from '../components/EarningsOverview';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import type { User } from '@/types';
 import { useRouter } from 'next/navigation';

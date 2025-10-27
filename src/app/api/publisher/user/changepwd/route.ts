@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 const getTokenFromCookie = (): string | null => {
   try {
     const cookieStore = cookies();
-    const token = cookieStore.get('commenter_token')?.value;
+    const token = cookieStore.get('publisher_token')?.value;
     return token || null;
   } catch (error) {
     console.error('无法从Cookie获取token:', error);

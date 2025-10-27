@@ -1,0 +1,18 @@
+{
+  "baseUrl": "http://localhost:8083/api",
+  "timeout": 10000,
+  "headers": {
+    "accept": "*/*",
+    "Content-Type": "application/json"
+  },
+  "endpoints": {
+    "wallet": {
+      "walletinfo": "/wallet/info",
+      "topup": "/biz/wallet/topup",
+      "withdraw": "/biz/wallet/withdraw"
+    }
+  },
+  "mockMode": false,
+  "retryCount": 3,
+  "retryDelay": 1000
+}
