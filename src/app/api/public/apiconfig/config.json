@@ -11,7 +11,9 @@
       "bindAlipay": "/wallet/bind-alipay",
       "setpaymentpwd": "/wallet/security-password",
       "topup": "/biz/wallet/topup",
-      "withdraw": "/biz/wallet/withdraw"
+      "withdraw": "/biz/wallet/withdraw",
+      "availablebalance": "/wallet/available-balance",
+      "validatepwd": "/wallet/validate-security-password?password="
     }
   },
   "mockMode": false,

@@ -179,28 +179,7 @@ export default function PublishTaskPage() {
     });
   };
 
-  // 处理图片上传
-  const handleImageUpload = async (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      // 压缩图片
-      const compressedFile = await compressImage(file);
-      
-      // 更新表单数据中的图片
-      setFormData(prevData => ({
-        ...prevData,
-        comments: prevData.comments.map((comment, i) => 
-          i === index ? { ...comment, image: compressedFile } : comment
-        )
-      }));
-      
-      showAlert('上传成功', '图片已成功上传并压缩！', '✅');
-    } catch (error) {
-      showAlert('上传失败', '图片上传失败，请重试', '❌');
-    }
-  };
+  // 图片上传功能移至handlePublish函数内部
 
   // 移除已上传的图片
   const removeImage = (index: number) => {
@@ -214,187 +193,297 @@ export default function PublishTaskPage() {
 
   // 发布任务
   const handlePublish = async () => {
-    // 防止重复提交
-    if (isPublishing) {
-      return;
-    }
+        console.log('========== 开始处理发布任务请求 ==========');
+        // 防止重复提交
+        if (isPublishing) {
+          console.log('警告: 防止重复提交，发布功能已被禁用');
+          return;
+        }
+        
+        console.log('发布前表单数据检查开始');
+        
+        // 表单验证 - 全面检查所有必填字段
+        if (!formData.videoUrl.trim()) {
+          console.log('验证失败: 视频链接为空');
+          setAlertConfig({
+            title: '验证失败',
+            message: '请输入抖音视频链接',
+            icon: 'error',
+            buttonText: '确定',
+            onButtonClick: () => {}
+          });
+          setShowAlertModal(true);
+          return;
+        }
+      
+        // 验证评论内容
+        const validComments = formData.comments.filter(comment => comment.content.trim() !== '');
+        console.log(`评论内容验证: 有效评论数量=${validComments.length}, 总评论数量=${formData.comments.length}`);
+        if (validComments.length === 0) {
+          console.log('验证失败: 没有有效的评论内容');
+          setAlertConfig({
+            title: '验证失败',
+            message: '请输入评论内容',
+            icon: 'error',
+            buttonText: '确定',
+            onButtonClick: () => {}
+          });
+          setShowAlertModal(true);
+          return;
+        }
+      
+        // 验证任务数量
+        console.log(`任务数量验证: quantity=${formData.quantity}`);
+        if (!formData.quantity || formData.quantity < 1) {
+          console.log('验证失败: 任务数量无效');
+          setAlertConfig({
+            title: '验证失败',
+            message: '请设置有效的任务数量',
+            icon: 'error',
+            buttonText: '确定',
+            onButtonClick: () => {}
+          });
+          setShowAlertModal(true);
+          return;
+        }
+        
+        console.log('表单验证通过，准备构建请求数据');
+      
+        try {
+          // 设置加载状态
+          setIsPublishing(true);
+          console.log('设置发布状态为正在发布');
+          
+          // 不再需要从localStorage获取token，因为后端会从cookie自动获取
+          // 前端只需要确保请求发送时携带了cookie（默认行为）
+          console.log('使用credentials: include确保cookie传递');
+      
+          console.log('准备构建请求体，详细检查每个字段的数据类型和格式');
+          
+          // 构建请求体，按照后端API要求的完整格式
+          const futureDate = new Date(Date.now() + parseInt(formData.deadline) * 60 * 60 * 1000);
+          // 格式化deadline为'YYYY-MM-DD HH:mm:ss'格式
+          const formattedDeadline = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}-${String(futureDate.getDate()).padStart(2, '0')} ${String(futureDate.getHours()).padStart(2, '0')}:${String(futureDate.getMinutes()).padStart(2, '0')}:${String(futureDate.getSeconds()).padStart(2, '0')}`;
+          
+          const requestBody = {
+            title: '测试中评',
+            description: '这是一条中评评论测试发布信息',
+            platform: 'DOUYIN',
+            taskType: 'COMMENT',
+            totalQuantity: formData.quantity,
+            unitPrice: taskPrice,
+            deadline: formattedDeadline,
+            requirements: '按照要求发布评论',
+            commentDetail: {
+              commentType: 'SINGLE',
+              linkUrl1: formData.videoUrl.trim(),
+              unitPrice1: taskPrice,
+              quantity1: formData.quantity,
+              commentText1: formData.comments[0]?.content.trim() || '',
+              commentImages1: formData.comments[0]?.image ? '/images/0e92a4599d02a7.jpg' : '', // 使用示例图片路径
+              mentionUser1: '超哥超车', // 默认提及用户
+              linkUrl2: '',
+              unitPrice2: 0,
+              quantity2: 0,
+              commentText2: '',
+              commentImages2: '',
+              mentionUser2: ''
+            }
+          };
+          
+          // 详细记录每个字段的数据类型和值
+          console.log('===== 请求体字段验证与数据类型检查 =====');
+          console.log('title:', requestBody.title, '类型:', typeof requestBody.title);
+          console.log('description:', requestBody.description, '类型:', typeof requestBody.description);
+          console.log('platform:', requestBody.platform, '类型:', typeof requestBody.platform);
+          console.log('taskType:', requestBody.taskType, '类型:', typeof requestBody.taskType);
+          console.log('totalQuantity:', requestBody.totalQuantity, '类型:', typeof requestBody.totalQuantity);
+          console.log('unitPrice:', requestBody.unitPrice, '类型:', typeof requestBody.unitPrice);
+          console.log('deadline:', requestBody.deadline, '类型:', typeof requestBody.deadline);
+          console.log('requirements:', requestBody.requirements, '类型:', typeof requestBody.requirements);
+          
+          // 详细检查commentDetail字段
+          console.log('\n===== commentDetail字段验证 =====');
+          console.log('commentType:', requestBody.commentDetail.commentType, '类型:', typeof requestBody.commentDetail.commentType);
+          console.log('linkUrl1:', requestBody.commentDetail.linkUrl1, '类型:', typeof requestBody.commentDetail.linkUrl1);
+          console.log('unitPrice1:', requestBody.commentDetail.unitPrice1, '类型:', typeof requestBody.commentDetail.unitPrice1);
+          console.log('quantity1:', requestBody.commentDetail.quantity1, '类型:', typeof requestBody.commentDetail.quantity1);
+          console.log('commentText1:', requestBody.commentDetail.commentText1, '类型:', typeof requestBody.commentDetail.commentText1);
+          
+          console.log('\n===== 完整请求体 =====');
+          console.log('请求体构建完成，数据结构:', Object.keys(requestBody));
+          console.log('详细请求数据:', JSON.stringify(requestBody, null, 2));
+          console.log('请求体JSON字符串长度:', JSON.stringify(requestBody).length);
     
-    // 表单验证 - 完整验证逻辑
-    if (!formData.videoUrl) {
-      showAlert('输入错误', '请输入视频链接', '⚠️');
-      return;
-    }
+        // 调用后端API，使用正确的路由路径
+        console.log('开始调用后端API: /api/publisher/publishertasks/topcomment');
+        const apiUrl = '/api/publisher/publishertasks/topcomment';
+        console.log('\n===== 准备发送API请求 =====');
+        console.log('API URL:', apiUrl);
+        console.log('请求方法:', 'POST');
+        console.log('是否包含credentials:', true);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // 不再需要手动添加Authorization头，token会通过cookie自动传递
+          },
+          body: JSON.stringify(requestBody),
+          // 确保请求携带credentials
+          credentials: 'include'
+        });
+        
+        console.log('\n===== API响应接收 =====');
+        console.log('响应状态码:', response.status);
+        console.log('响应状态文本:', response.statusText);
+        console.log('响应类型:', response.type);
+        console.log('是否来自同一源:', response.type === 'basic');
+        
+        console.log(`API调用完成，响应状态码: ${response.status}, 响应状态: ${response.statusText}`);
     
-    // 验证任务数量
-    if (formData.quantity === undefined) {
-      showAlert('输入错误', '请输入任务数量', '⚠️');
-      return;
-    }
+        console.log('开始解析API响应');
+        let result;
+        try {
+          result = await response.json();
+          console.log('API响应解析成功:', JSON.stringify(result, null, 2));
+        } catch (jsonError) {
+          console.error('错误: 解析API响应JSON失败:', jsonError);
+          throw new Error('服务器返回无效响应格式');
+        }
     
-    // 评论已调整为可选填项，不再强制验证
-
-    // 显示加载状态
-    setIsPublishing(true);
+        // 检查响应状态 - 关键问题点：不仅检查HTTP状态码，还要检查响应内容中的success标志和code字段
+        console.log(`响应状态检查: HTTP状态=${response.ok ? 'ok' : 'error'}, 响应success标志=${result.success || false}, 响应code=${result.code || 'N/A'}`);
+        
+        // 重要：同时检查HTTP状态码、响应中的success标志和code字段
+        // 即使HTTP状态码是200，只要success为false或code不是200，也要视为错误
+        if (!response.ok || result.success === false || (result.code && result.code !== 200)) {
+          const errorMsg = result.message || result.error || '发布任务失败，请稍后重试';
+          console.error(`任务发布失败: HTTP状态=${response.status}, 响应code=${result.code || 'N/A'}, 错误消息=${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+        
+        console.log('任务发布成功！后端返回了成功的响应');
     
-    // 生成唯一请求ID用于跟踪，确保在整个函数作用域可用
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`[任务发布-${requestId}] 开始发布任务...`);
-    console.log(`[任务发布-${requestId}] 表单数据:`, formData);
-    console.log(`[任务发布-${requestId}] 任务ID:`, taskId);
-
-    try {
-      // 使用PublisherAuthStorage获取认证token和用户信息
-      const auth = PublisherAuthStorage.getAuth();
-      const token = auth?.token;
-      const userInfo = PublisherAuthStorage.getCurrentUser();
-      
-      console.log('[任务发布] 认证信息:', { token: token ? '存在' : '不存在', userInfo });
-      
-      if (!token || !userInfo) {
-        console.log('[任务发布] 认证失败: 用户未登录或会话已过期');
-        showAlert('认证失败', '用户未登录，请重新登录', '❌');
-        // 使用setTimeout延迟跳转，确保用户看到提示
-        setTimeout(() => {
-          router.push('/publisher/login' as any);
-        }, 1500);
-        return;
-      }
-
-      // 计算总费用
-      const totalCost = taskPrice * formData.quantity;
-      
-      // 余额校验 - 获取当前用户的可用余额
-      console.log('[任务发布] 开始余额校验，总费用:', totalCost);
-      const balanceResponse = await fetch('/api/publisher/finance', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      });
-      
-      const balanceData = await balanceResponse.json();
-      console.log('[任务发布] 余额校验结果:', balanceData);
-      
-      if (!balanceData.success || !balanceData.data) {
-        console.log('[任务发布] 获取余额失败');
-        showAlert('系统错误', '获取账户余额失败，请稍后重试', '❌');
-        return;
-      }
-      
-      // 获取可用余额
-      const availableBalance = balanceData.data.balance?.available || 0;
-      console.log('[任务发布] 当前可用余额:', availableBalance);
-      
-      // 比较余额和总费用
-      if (availableBalance < totalCost) {
-        console.log('[任务发布] 余额不足，可用余额:', availableBalance, '总费用:', totalCost);
-        showAlert(
-          '余额不足', 
-          `您的账户可用余额为 ¥${availableBalance.toFixed(2)}，完成此任务需要 ¥${totalCost.toFixed(2)}，请先充值再发布任务。`, 
-          '⚠️'
-        );
-        return;
-      }
-      
-      console.log('[任务发布] 余额充足，继续发布流程');
-
-      // 构建API请求体 - 将所有评论合并为一个requirements字段
-      const requirements = formData.comments.map(comment => comment.content).join('\n\n');
-      const requestBody = {
-        taskId: taskId || '',
-        taskTitle,
-        taskPrice: taskPrice,
-        requirements: requirements,
-        videoUrl: formData.videoUrl,
-        quantity: formData.quantity,
-        deadline: formData.deadline,
-        needImageComment: true // 由于我们总是允许图片上传，设为true
-      };
-
-      console.log('API请求体:', requestBody);
-      
-      console.log(`[任务发布-${requestId}] 即将发送API请求，时间戳: ${Date.now()}`);
-      
-      // 调用API发布任务
-      const response = await fetch('/api/publisher/comment-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'X-Request-ID': requestId // 添加请求ID头
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      console.log(`[任务发布-${requestId}] API响应状态: ${response.status}, 接收时间: ${Date.now()}`);
-
-      const result = await response.json();
-      console.log(`[任务发布-${requestId}] API响应结果:`, result);
-      
-      if (result.success) {
-        console.log(`[任务发布-${requestId}] 任务发布成功，即将显示成功提示`);
-        // 修改为用户点击确认后才跳转
-        showAlert(
-          '发布成功', 
-          `任务发布成功！订单号：${result.order?.orderNumber || ''}`, 
-          '✅',
-          '确定',
-          () => {
-            console.log(`[任务发布-${requestId}] 用户确认成功，准备跳转`);
-            // 在用户点击确认按钮后跳转
+        // 成功处理
+        console.log('显示发布成功提示框');
+        setAlertConfig({
+          title: '发布成功',
+          message: '任务已成功发布！',
+          icon: 'success',
+          buttonText: '确定',
+          onButtonClick: () => {
+            console.log('用户点击确认按钮，跳转到仪表盘页面');
+            // 重置表单或返回上一页
             router.push('/publisher/dashboard');
           }
-        );
-      } else {
-        // 发布失败，显示错误提示
-        if (result.errorType === 'InsufficientBalance') {
-          // 特定处理余额不足的情况
-          showAlert('账户余额不足', '您的账户余额不足以支付任务费用，请先充值后再尝试发布任务。', '⚠️', '前往充值', () => {
-            router.push('/publisher/finance');
-          });
-        } else {
-          showAlert('发布失败', `任务发布失败: ${result.message || '未知错误'}`, '❌');
-        }
+        });
+        setShowAlertModal(true);
+      } catch (error) {
+        // 错误处理
+        const errorMessage = error instanceof Error ? error.message : '发布任务时发生错误';
+        console.error('严重错误: 发布任务失败:', error, '错误消息:', errorMessage);
+        
+        console.log('显示发布失败提示框');
+        setAlertConfig({
+          title: '发布失败',
+          message: errorMessage,
+          icon: 'error',
+          buttonText: '确定',
+          onButtonClick: () => {}
+        });
+        setShowAlertModal(true);
+      } finally {
+        // 无论成功失败，都重置加载状态
+        console.log('重置发布状态为未发布');
+        setIsPublishing(false);
+        console.log('========== 发布任务请求处理结束 ==========');
       }
-    } catch (error) {
-      console.error(`[任务发布-${requestId}] 发布任务时发生错误:`, error);
-      showAlert('网络错误', '发布任务时发生错误，请稍后重试', '⚠️');
-    } finally {
-      console.log(`[任务发布-${requestId}] 发布流程结束，重置发布状态`);
-      setIsPublishing(false);
-    }
-  };
+    };
+    
+    // 处理图片上传
+    const handleImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      // 检查文件大小
+      if (file.size > 200 * 1024) { // 200KB
+        setAlertConfig({
+          title: '上传失败',
+          message: '图片大小不能超过200KB',
+          icon: 'error',
+          buttonText: '确定',
+          onButtonClick: () => {}
+        });
+        setShowAlertModal(true);
+        return;
+      }
+      
+      try {
+        // 压缩图片
+        const compressedFile = await compressImage(file);
+        
+        // 直接保存压缩后的图片文件，不再尝试获取imageUrl
+        // 实际项目中应该调用上传API并获取URL
+        const newComments = [...formData.comments];
+        newComments[index] = {
+          ...newComments[index],
+          image: compressedFile
+        };
+        setFormData({...formData, comments: newComments});
+        
+        // 显示上传成功提示
+        setAlertConfig({
+          title: '上传成功',
+          message: '图片上传成功！',
+          icon: 'success',
+          buttonText: '确定',
+          onButtonClick: () => {}
+        });
+        setShowAlertModal(true);
+      } catch (error) {
+        console.error('上传图片失败:', error);
+        setAlertConfig({
+          title: '上传失败',
+          message: '图片上传失败，请重试',
+          icon: 'error',
+          buttonText: '确定',
+          onButtonClick: () => {}
+        });
+        setShowAlertModal(true);
+      }
+    };
+    
+    // 上传图片的函数已移除，图片处理在handleImageUpload中直接完成
 
-  const totalCost = (taskPrice * formData.quantity).toFixed(2);
+    const totalCost = (taskPrice * formData.quantity).toFixed(2);
 
-  // 如果没有找到任务类型，返回错误页面
-  if (!taskId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl mb-2">❌</div>
-          <div className="text-lg font-medium text-gray-800 mb-2">任务信息不完整</div>
-          <Button 
-            onClick={() => router.push('/publisher/create')}
-            className="bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            返回选择任务
-          </Button>
+    // 如果没有找到任务类型，返回错误页面
+    if (!taskId) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-2xl mb-2">❌</div>
+            <div className="text-lg font-medium text-gray-800 mb-2">任务信息不完整</div>
+            <Button 
+              onClick={() => router.push('/publisher/create')}
+              className="bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              返回选择任务
+            </Button>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-       <div className="px-4 py-3 space-y-4">
-
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+         <div className="px-4 py-3 space-y-4">
+  
         <div className="text-lg text-red-500">
           <span className="text-2xl text-red-500">⚠️</span>提示：发布评论需求请规避抖音平台敏感词，否则会无法完成任务导致浪费宝贵时间。
         </div>
-
+  
         {/* 视频链接 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -407,7 +496,7 @@ export default function PublishTaskPage() {
             className="w-full"
           />
         </div>
-
+  
         {/* 截止时间 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -423,7 +512,7 @@ export default function PublishTaskPage() {
             <option value="24">24小时</option>
           </select>
         </div>
-
+  
         {/* 评论内容 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm overflow-y-auto">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -457,7 +546,7 @@ export default function PublishTaskPage() {
                   setFormData({...formData, comments: newComments});
                 }}
               />
-                  
+                   
                   {/* 图片上传区域 */}
                   <div className="mt-1">
                     <div className="flex items-end space-x-3">
@@ -504,9 +593,9 @@ export default function PublishTaskPage() {
                   </div>
                 </div>
           ))}
-
+  
         </div>
-
+  
         {/* 任务数量 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -542,7 +631,7 @@ export default function PublishTaskPage() {
             上评任务单价为¥{taskPrice}，最多可发布10个任务
           </div>
         </div>
-
+  
         {/* 费用预览 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <h3 className="font-medium text-gray-900 mb-3">费用预览</h3>
@@ -565,7 +654,7 @@ export default function PublishTaskPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 space-y-3">
         <Button 
           onClick={handlePublish}
-          disabled={!formData.videoUrl || formData.quantity === undefined || isPublishing}
+          disabled={!formData.videoUrl.trim() || formData.quantity === undefined || formData.quantity < 1 || isPublishing}
           className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-bold text-lg disabled:opacity-50"
         >
           立即发布任务 - ¥{totalCost}

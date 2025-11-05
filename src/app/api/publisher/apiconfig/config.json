@@ -1,6 +1,6 @@
 {
   "baseUrl": "http://localhost:8083/api",
-  "timeout": 10000,
+  "timeout": 3000,
   "headers": {
     "accept": "*/*",
     "Content-Type": "application/json"
@@ -22,6 +22,10 @@
       "walletinfo": "/wallet/info",
       "topup": "/biz/wallet/topup",
       "withdraw": "/biz/wallet/withdraw"
+    },
+    "task": {
+      "publish": "/tasks/publish",
+      "mypublished": "/tasks/my-published"
     }
   },
   "mockMode": false,
