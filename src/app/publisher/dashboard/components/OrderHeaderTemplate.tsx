@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { SearchOutlined, RightOutlined } from '@ant-design/icons';
 
 
