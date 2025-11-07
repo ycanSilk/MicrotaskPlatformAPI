@@ -45,7 +45,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onAccountClick }) =>
       >
         <div className="flex justify-between items-start mb-3">
           <div className="text-sm font-medium text-gray-500">订单号: {account.orderNumber}</div>
-          <div className={`text-sm px-2 py-1 rounded-full ${getOrderStatusClass(account.orderStatus)}`}>
+          <div className={`text-sm px-2 py-1 rounded-full`}>
             {account.orderStatus}
           </div>
         </div>

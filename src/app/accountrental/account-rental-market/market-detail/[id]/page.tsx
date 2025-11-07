@@ -14,18 +14,42 @@ const fetchAccountDetail = async (accountId: string): Promise<AccountRentalInfo>
   // 模拟API请求延迟
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  // 返回模拟数据，只包含新接口所需的字段
+  // 返回完整的模拟数据，包含所有必需字段
   return {
     id: accountId,
-    rentalDescription: '抖音美食账号出租，专注餐厅探店和美食测评，互动率高',
+    platform: '抖音',
+    accountTitle: '美食探店达人',
+    followersRange: '50-100万',
+    engagementRate: '3.5%',
+    contentCategory: '美食',
+    region: '全国',
+    accountAge: '1年半',
+    accountScore: 4.8,
+    orderPrice: 800,
     price: 800,
+    rentalDuration: 30,
+    minimumRentalHours: 4,
+    deliveryTime: 24,
+    maxConcurrentUsers: 1,
+    responseTime: 12,
+    includedFeatures: ['评论', '私信', '数据分析'],
+    description: '专业美食账号，主要发布餐厅探店和美食测评内容，互动率高',
+    rentalDescription: '抖音美食账号出租，专注餐厅探店和美食测评，互动率高',
+    advantages: ['粉丝粘性高', '互动率好', '内容质量稳定'],
+    restrictions: ['禁止发布违规内容', '禁止修改账号信息'],
+    isVerified: true,
+    rating: 4.8,
+    rentalCount: 12,
+    availableCount: 1,
     publishTime: '2024-06-20T10:30:00Z',
-    orderNumber: 'ORD202406201030001',
-    orderStatus: '待确认',
-    rentalDays: 30,
+    status: '可用',
     images: [
               'images/0e92a4599d02a7.jpg'      
-            ]
+            ],
+    publisherName: '美食工作室',
+    orderNumber: 'ORD202406201030001',
+    orderStatus: '待确认',
+    rentalDays: 30
   };
 };
 
@@ -182,7 +206,7 @@ const AccountDetailPage = ({
                 <div className="mb-6">
                   <div className="flex items-end">
                     <span className="text-3xl font-bold text-red-600">¥{account.price}</span>
-                    <span className="text-sm text-gray-500 ml-2 mb-1">（单价：¥{(account.price / account.rentalDays).toFixed(2)}/天）</span>
+                    <span className="text-sm text-gray-500 ml-2 mb-1">（单价：¥{(account.rentalDays ? (account.price / account.rentalDays) : 0).toFixed(2)}/天）</span>
                   </div>
                 </div>
                 

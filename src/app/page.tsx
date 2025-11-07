@@ -129,7 +129,7 @@ export default function HomePage() {
                 <span className="mr-2">✓</span>接口状态监控
               </div>
             </div>
-            <a href="/api-page/logintest" className="block w-full py-3 px-4 bg-indigo-500 text-white rounded-lg text-center text-sm font-medium hover:bg-indigo-600 transition-colors">
+            <a href="/apitest/" className="block w-full py-3 px-4 bg-indigo-500 text-white rounded-lg text-center text-sm font-medium hover:bg-indigo-600 transition-colors">
               进入API测试平台 →
             </a>
           </div>

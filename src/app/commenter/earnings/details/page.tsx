@@ -1,7 +1,31 @@
 'use client';
 import React, { useState } from 'react';
 import EarningsDetails from '../components/EarningsDetails';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
+// 本地实现Commenter认证信息获取
+const CommenterAuthStorage = {
+  getAuth: () => {
+    try {
+      // 首先尝试直接从localStorage获取认证信息
+      const authData = localStorage.getItem('commenter_auth');
+      if (authData) {
+        return JSON.parse(authData);
+      }
+      
+      // 兼容旧的存储方式
+      const userJson = localStorage.getItem('commenter_user');
+      const token = localStorage.getItem('commenter_token');
+      if (userJson && token) {
+        const user = JSON.parse(userJson);
+        return { user, token };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取认证信息失败:', error);
+      return null;
+    }
+  }
+};
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import type { User } from '@/types';
 import { useRouter } from 'next/navigation';

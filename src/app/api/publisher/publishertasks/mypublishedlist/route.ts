@@ -26,7 +26,6 @@ export async function POST(request: Request) {
       const requestClone = request.clone();
       const rawBody = await requestClone.text();
       requestData = JSON.parse(rawBody);
-      console.log(formatLog(operation, `请求参数: page=${requestData.page}, size=${requestData.size}, sortField=${requestData.sortField || 'createTime'}`));
     } catch (jsonError) {
      return NextResponse.json(
         { success: false, message: '无效的JSON格式' },
