@@ -28,11 +28,9 @@ export const getTokenFromCookie = (
     const cookieStore = cookies();
     const cookieToken = cookieStore.get(cookieName);
     token = cookieToken?.value || '';
-    console.log(formatLog(operation, `从Cookie获取token: ${token ? '已获取到token' : '未获取到token'}`));
   } catch (cookieError) {
     console.error(formatLog(operation, `无法从Cookie获取token: ${(cookieError as Error).message}`));
   }
-  
   return token;
 };
 
@@ -52,7 +50,6 @@ const getTokenManagerByModule = (moduleType: ModuleType) => {
     case ModuleType.PUBLIC:
       return publicTokenManager;
     default:
-      console.warn(formatLog('getTokenManagerByModule', `未知模块类型: ${moduleType}，默认使用公共模块`));
       return publicTokenManager;
   }
 };
@@ -68,19 +65,15 @@ export const getTokenInfoFromManager = (
   operation: string = 'UNKNOWN'
 ) => {
   try {
-    console.log(formatLog(operation, `从Token管理器获取${moduleType}模块的token信息`));
     const tokenManager = getTokenManagerByModule(moduleType);
     
     if (!tokenManager) {
-      console.error(formatLog(operation, `无法获取${moduleType}模块的Token管理器`));
       return null;
     }
     
     const authData = tokenManager.getAuthData();
     const isAuthenticated = tokenManager.isAuthenticated();
-    
-    console.log(formatLog(operation, `${moduleType}模块认证状态: ${isAuthenticated ? '已认证' : '未认证'}`));
-    
+
     return {
       authData,
       isAuthenticated,
@@ -88,7 +81,6 @@ export const getTokenInfoFromManager = (
       cookieName: tokenManager.getCookieName()
     };
   } catch (error) {
-    console.error(formatLog(operation, `从Token管理器获取token信息时发生错误: ${(error as Error).message}`));
     return null;
   }
 };
@@ -104,13 +96,10 @@ export const getToken = (
   operation: string = 'UNKNOWN'
 ): { token: string; isAuthenticated: boolean; moduleType: ModuleType; cookieName: string } => {
   try {
-    console.log(formatLog(operation, `开始获取${moduleType}模块的token`));
-    
     // 获取Token管理器信息
     const managerInfo = getTokenInfoFromManager(moduleType, operation);
     
     if (!managerInfo) {
-      console.warn(formatLog(operation, `无法获取${moduleType}模块的Token管理器信息`));
       return {
         token: '',
         isAuthenticated: false,
@@ -129,7 +118,6 @@ export const getToken = (
       cookieName: managerInfo.cookieName
     };
   } catch (error) {
-    console.error(formatLog(operation, `获取${moduleType}模块token时发生错误: ${(error as Error).message}`));
     return {
       token: '',
       isAuthenticated: false,
@@ -146,9 +134,7 @@ export const getToken = (
  */
 export const getAllModuleTokens = (
   operation: string = 'UNKNOWN'
-): Record<ModuleType, { token: string; isAuthenticated: boolean; cookieName: string }> => {
-  console.log(formatLog(operation, '获取所有模块的token信息'));
-  
+): Record<ModuleType, { token: string; isAuthenticated: boolean; cookieName: string }> => { 
   return {
     [ModuleType.COMMENTER]: getToken(ModuleType.COMMENTER, operation),
     [ModuleType.PUBLISHER]: getToken(ModuleType.PUBLISHER, operation),
@@ -195,10 +181,8 @@ export const isUserLoggedIn = (
   try {
     const tokenManager = getTokenManagerByModule(moduleType);
     const isLoggedIn = tokenManager.isAuthenticated();
-    console.log(formatLog(operation, `${moduleType}模块用户登录状态: ${isLoggedIn ? '已登录' : '未登录'}`));
     return isLoggedIn;
   } catch (error) {
-    console.error(formatLog(operation, `检查${moduleType}模块用户登录状态时发生错误: ${(error as Error).message}`));
     return false;
   }
 };

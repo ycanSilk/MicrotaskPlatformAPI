@@ -95,17 +95,17 @@ const RejectedTasksTab: React.FC<RejectedTasksTabProps> = ({
                   {task.statusText || '已驳回'}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  {getTaskTypeName(task.taskType) || '评论'}
+                  {task.commentType || '评论'}
                 </span>
               </div>
-              <div className="text-sm text-black block">
-                发布时间：{task.publishTime || '未知时间'}
+              <div className="text-xs text-gray-500 flex items-center justify-between">
+                <span>平台: {task.mainTaskPlatform || '-'}</span>
+                <span>接受时间: {task.acceptTime || '-'}</span>
               </div>
-              {task.submitTime && (
-              <div className="text-sm text-black block  mt-2">
-                  提交时间：{task.submitTime}
+              <div className="text-xs text-gray-500 flex items-center justify-between mt-1">
+                <span>评论类型: {task.commentType || '-'}</span>
+                <span>提交时间: {task.submitTime || '-'}</span>
               </div>
-              )}
             </div>
           </div>
 
@@ -113,44 +113,80 @@ const RejectedTasksTab: React.FC<RejectedTasksTabProps> = ({
             要求：{task.requirements || '无特殊要求'}
           </div>
           
-          {/* 审核意见区域 - 异常订单必须显示审核意见 */}
-          <div className="mb-4 bg-red-50 p-3 rounded-lg border border-red-100">
-            <h4 className="text-sm font-medium text-red-700 mb-1"><MessageOutlined className="inline-block mr-1" /> 驳回原因</h4>
-            <p className="text-sm text-gray-700 bg-white p-3 rounded border border-red-100 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-              {task.reviewNote || '暂无驳回原因'}
-            </p>
-          </div>
-          
-          {/* 截图显示区域 */}
-          {task.submitScreenshotUrl && (
-            <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
-              <div className='text-sm text-blue-500 pl-2 py-2'>提交的任务截图：</div>
-              <div 
-                className={`w-[130px] h-[130px] relative cursor-pointer overflow-hidden rounded-lg border border-gray-300 bg-gray-50 transition-colors hover:border-blue-400 ${task.submitScreenshotUrl ? 'hover:shadow-md' : ''} flex items-center justify-center`}
-                onClick={() => task.submitScreenshotUrl && handleViewImage(task.submitScreenshotUrl)}
-              >
-                <img 
-                  src={task.submitScreenshotUrl} 
-                  alt="任务截图" 
-                  className="w-full h-full object-contain"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all">
-                  <span className="text-blue-500 text-lg opacity-0 hover:opacity-100 transition-opacity">点击放大</span>
-                </div>
+          {/* 驳回原因 */}
+          {(task.rejectReason || task.verifyComment) && (
+            <div className="mb-4 border border-red-200 rounded-lg p-3 bg-red-50">
+              <div className="text-sm text-red-700 block mb-2">驳回原因：</div>
+              <div className="text-sm bg-white p-2 rounded border border-red-200 text-gray-800">
+                {task.rejectReason || task.verifyComment || '无具体原因'}
               </div>
-              <p className="text-xs text-blue-500 mt-1 pl-2">
-                点击可放大查看截图
-              </p>
+            <div className="text-xs text-red-500 mt-1 pl-2">
+              请根据驳回原因修改任务内容后重新提交
+            </div>
             </div>
           )}
           
-          {/* 查看详情按钮 */}
-          <div className="flex space-x-2">
+          {/* 截图显示区域 */}
+          <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-white">
+            <div className="text-sm text-gray-700 mb-2">已上传截图：</div>
+            <div className="grid grid-cols-2 gap-2">
+              {task.submittedImages && task.submittedImages.split(',').map((url, index) => (
+                <a
+                  key={index}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block relative overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-all group"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleViewImage(url);
+                  }}
+                >
+                  <img
+                    src={url}
+                    alt={`任务截图 ${index + 1}`}
+                    className="w-full h-24 object-cover transition-transform group-hover:scale-105"
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all">
+                    <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity">查看大图</span>
+                  </span>
+                </a>
+              ))}
+              {!task.submittedImages && (
+                <div className="w-full h-24 flex items-center justify-center text-gray-400 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
+                  <span className="text-sm ml-1">未上传截图</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* 任务操作区 */}
+          <div className="flex justify-end mt-4 gap-2">
+            {task.canCancel && (
+              <button 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1.5 px-4 rounded text-sm font-medium transition-colors"
+                onClick={() => {
+                  const confirmCancel = confirm('确定要放弃该任务吗？放弃后不可恢复。');
+                  if (confirmCancel) {
+                    // 这里应该调用放弃任务的API
+                    setModalMessage('任务已放弃');
+                    setShowModal(true);
+                    // 重新加载任务列表
+                    router.refresh();
+                  }
+                }}
+              >
+                放弃任务
+              </button>
+            )}
             <button 
-              className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
-              onClick={() => router.push(`/commenter/rejected-task-detail?id=${task.id}`)}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-4 rounded text-sm font-medium transition-colors"
+              onClick={() => {
+                // 跳转到任务详情页进行修改
+                router.push(`/commenter/task-detail/${task.id}`);
+              }}
             >
-              异常处理
+              修改并重新提交
             </button>
           </div>
         </div>

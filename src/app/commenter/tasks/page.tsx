@@ -8,129 +8,100 @@ import PendingReviewTasksTab from './components/PendingReviewTasksTab';
 import CompletedTasksTab from './components/CompletedTasksTab';
 import RejectedTasksTab from './components/RejectedTasksTab';
 
-// 定义任务状态类型
-type TaskStatus = 'sub_progress' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect' | 'sub_rejected';
+// 定义前端任务状态类型
+type TaskStatus = 'ACCEPTED' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect' | 'sub_rejected';
 
-// 定义任务接口
+// 定义任务接口 - 根据响应数据示例重新定义
 interface Task {
   id: string;
-  parentId?: string;
-  title?: string;
-  price?: number;
-  unitPrice?: number;
-  status: string;
-  statusText?: string;
-  statusColor?: string;
-  requiringVideoUrl?: string;
-  deadline?: string;
-  progress?: number;
-  submitTime?: string;
-  completedTime?: string;
-  reviewNote?: string;
-  requirements: string;
-  publishTime: string;
-  videoUrl?: string;
-  mention?: string;
+  mainTaskId: string;
+  mainTaskTitle: string;
+  mainTaskPlatform: string;
+  workerId: string;
+  workerName: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  commentGroup: string;
+  commentType: string;
+  unitPrice: number;
+  userReward: number;
+  agentReward: number;
+  status: string; // 后端状态
+  acceptTime: string;
+  expireTime: string;
+  submitTime: string | null;
+  completeTime: string | null;
+  settleTime: string | null;
+  submittedImages: string | null;
+  submittedLinkUrl: string | null;
+  submittedComment: string | null;
+  verificationNotes: string | null;
+  rejectReason: string | null;
+  cancelReason: string | null;
+  cancelTime: string | null;
+  releaseCount: number;
+  settled: boolean;
+  verifierId: string | null;
+  verifierName: string | null;
+  createTime: string;
+  updateTime: string;
+  taskDescription: string | null;
+  taskRequirements: string | null;
+  taskDeadline: string | null;
+  remainingMinutes: number | null;
+  isExpired: boolean | null;
+  isAutoVerified: boolean | null;
+  canSubmit: boolean | null;
+  canCancel: boolean | null;
+  canVerify: boolean | null;
+  verifyResult: string | null;
+  verifyTime: string | null;
+  verifyComment: string | null;
+  settlementStatus: string | null;
+  settlementTime: string | null;
+  settlementRemark: string | null;
+  workerRating: number | null;
+  workerComment: string | null;
+  publisherRating: number | null;
+  publisherComment: string | null;
+  firstGroupComment: string | null;
+  secondGroupComment: string | null;
+  firstGroupImages: string | null;
+  secondGroupImages: string | null;
+  
+  // 前端需要的字段
   screenshotUrl?: string;
-  recommendedComment?: string;
-  commentContent?: string;
-  subOrderNumber?: string;
-  orderNumber?: string;
-  taskType?: string;
-  submitdvideoUrl?: string;
-  submitScreenshotUrl?: string;
-  requiringCommentUrl?: string;
 }
 
 export default function CommenterTasksPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // 从URL参数中获取初始tab值，如果没有则默认为sub_progress
+  // 从URL参数中获取初始tab值，如果没有则默认为ACCEPTED
   const tabFromUrl = (searchParams?.get('tab') || '')?.trim() as TaskStatus | null;
-  const [activeTab, setActiveTab] = useState<TaskStatus>(tabFromUrl || 'sub_progress');
+  const [activeTab, setActiveTab] = useState<TaskStatus>(tabFromUrl || 'ACCEPTED');
   
-  // 冷却状态相关状态
-  const [coolingDown, setCoolingDown] = useState(false);
-  const [remainingTime, setRemainingTime] = useState({ minutes: 0, seconds: 0 });
-  const [tasks, setTasks] = useState<Task[]>([
-    // 添加静态渲染数据，这些数据会在API请求完成前显示
-    {
-      id: 'static-task-1',
-      subOrderNumber: 'COM20240612001',
-      orderNumber: 'PUB20240612001',
-      title: '组合任务：中下评评论',
-      unitPrice: 6.00,
-      status: 'sub_progress',
-      statusText: '进行中',
-      statusColor: 'bg-blue-100 text-blue-600',
-      requiringVideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',    //派单视频链接
-      requirements: '组合任务：中下评评论',
-      publishTime: '2024-06-12 10:30:00',
-      deadline: '2024-06-15 23:59:59',
-      taskType: 'comment_middle',
-      recommendedComment: '看看这条信息上是什么信息字段',    //推荐评论
-      submitdvideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',     //接待提交上传的视频评论连接
-      submitScreenshotUrl: '/images/1758380776810_96.jpg',   //接单上传提交的截图
-      requiringCommentUrl:'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7560656965447830784&type=general'  //派单的评论链接
-    },
-    {
-      id: 'static-task-2',
-      subOrderNumber: 'COM20240610002',
-      orderNumber: 'PUB20240610002',
-      title: '组合任务：中下评评论',
-      unitPrice: 6.00,
-      status: 'sub_pending_review',
-      statusText: '待审核',
-      statusColor: 'bg-orange-100 text-orange-600',
-      requiringVideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',    //派单视频链接
-      requirements: '组合任务：中下评评论',
-      publishTime: '2024-06-10 14:20:00',
-      submitTime: '2024-06-11 09:45:00',
-      taskType: 'comment_middle',
-      recommendedComment: '看看这条信息上是什么信息字段',    //推荐评论
-      submitdvideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',     //接待提交上传的视频评论连接
-      submitScreenshotUrl: '/images/1758380776810_96.jpg',   //接单上传提交的截图
-      requiringCommentUrl:'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7560656965447830784&type=general'  //派单的评论链接
-    },
-    {
-      id: 'static-task-3',
-      subOrderNumber: 'COM20240605003',
-      orderNumber: 'PUB20240605003',
-      title: '组合任务：中下评评论',
-      unitPrice: 6.00,
-      status: 'sub_completed',
-      statusText: '已完成',
-      statusColor: 'bg-green-100 text-green-600',
-      requiringVideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',    //派单视频链接
-      requirements: '组合任务：中下评评论',
-      publishTime: '2024-06-05 08:15:00',
-      submitTime: '2024-06-06 11:30:00',
-      completedTime: '2024-06-07 16:45:00',
-      taskType: 'comment_middle',
-      recommendedComment: '看看这条信息上是什么信息字段',    //推荐评论
-      submitdvideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general',     //接待提交上传的视频评论连接
-      submitScreenshotUrl: '/images/1758380776810_96.jpg',   //接单上传提交的截图
-      requiringCommentUrl:'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7560656965447830784&type=general'  //派单的评论链接
-    },
-    {
-      id: 'static-task-4',
-      subOrderNumber: 'COM20240608004',
-      orderNumber: 'PUB20240608004',
-      title: '抖音短视频点赞评论任务',
-      unitPrice: 5.88,
-      status: 'sub_rejected',
-      statusText: '已驳回',
-      statusColor: 'bg-red-100 text-red-700',
-      requirements: '1. 点赞视频\n2. 发表积极正面的评论\n3. 评论需包含关键词：优质内容、太精彩了\n4. 评论字数不少于10个字\n5. 完成后上传截图',
-      publishTime: '2024-06-08 14:30:00',
-      submitTime: '2024-06-09 09:20:00',
-      taskType: 'comment_middle',
-      reviewNote: '评论内容不符合要求，未包含指定关键词「优质内容」和「太精彩了」。请重新提交符合要求的评论内容。',
-      submitScreenshotUrl: '/images/1758596791656_544.jpg',
-      requiringVideoUrl: 'https://www.douyin.com/root/search/%E8%B6%85%E5%93%A5%E8%B6%85%E8%BD%A6?aid=5a719aba-452c-49c8-b8bb-548b1e4bc313&modal_id=7561069119617994024&type=general'
-    }
-  ]);
+  // 状态管理
+  // 定义响应数据接口，与后端返回格式完全一致
+  interface ApiResponse {
+    code: number;
+    message: string;
+    data: {
+      list: Task[];
+      total: number;
+      page: number;
+      size: number;
+      pages: number;
+    };
+    success: boolean;
+    timestamp: number;
+  }
+
+
+
+
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -142,109 +113,93 @@ export default function CommenterTasksPage() {
   const [showModal, setShowModal] = useState(false); // 控制模态框显示
   const [modalMessage, setModalMessage] = useState(''); // 模态框消息内容
   
+
+
   // 获取用户订单数据
   const fetchUserTasks = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     
     try {
-      // 不进行登录验证，直接显示静态数据
-      console.debug('直接显示静态任务数据');
       
-      // 设置短暂延迟以模拟加载过程
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 从localStorage获取认证token
+      const token = localStorage.getItem('commenter_auth_token') || '';
+      
+      // 调用后端API获取任务数据，发送空对象作为请求体避免解析错误
+      const response = await fetch('/api/commenter/task/myacceptedtaskslist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 向后端传递token，后端会从这里提取并用于认证
+          'X-Auth-Token': token
+        },
+        body: JSON.stringify({})
+      });
+      
+      // 检查响应状态
+      console.log('API响应状态码:', response.status);
+      console.log('API响应头部信息:', Array.from(response.headers.entries()));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // 解析响应数据
+      const responseData: ApiResponse = await response.json();
+      // 记录API响应日志，帮助调试
+      console.log('API返回完整数据:', responseData);
+      console.log('API返回状态码:', responseData.code);
+      console.log('API返回消息:', responseData.message);
+      console.log('API返回数据结构F12输出:', JSON.stringify(responseData.data, null, 2));
+      
+
+      // 检查响应状态码
+      if (responseData.code === 401) {
+        // 未授权错误处理
+        setErrorMessage(responseData.message || '未登录，请先登录');
+        setTasks([]);
+        return;
+      }
+      
+      // 检查API响应是否成功
+      if (!responseData.success || !responseData.data) {
+        // API调用成功但数据为空或错误
+        console.log('API返回数据异常，状态:', responseData.code, '消息:', responseData.message);
+        setTasks([]);
+        setErrorMessage(responseData.message || 'API数据异常');
+        return;
+      }
+      
+      // 更新任务列表 - 即使list为空也是正常情况，不应显示错误
+      const taskList = responseData.data.list || [];
+
+      console.log('设置任务列表:', taskList.length, '个任务');
+      setTasks(taskList);
+      
+      // 如果任务列表为空，设置相应的提示信息
+      if (taskList.length === 0) {
+        setErrorMessage('暂无任务数据');
+      }
       
     } catch (error) {
       console.error('处理任务数据时发生错误:', error);
-      setErrorMessage('加载任务失败');
+      setTasks([]);
+      setErrorMessage('网络异常，请稍后重试');
     } finally {
       setIsLoading(false);
     }
   }
   
-  // 检查冷却状态
-  useEffect(() => {
-    const checkCoolingStatus = () => {
-      const isCoolingDown = localStorage.getItem('commenter_cooling_down') === 'true';
-      const coolingEndTimeStr = localStorage.getItem('commenter_cooling_end_time');
-      
-      if (isCoolingDown && coolingEndTimeStr) {
-        const coolingEndTime = parseInt(coolingEndTimeStr, 10);
-        const now = Date.now();
-        
-        if (now < coolingEndTime) {
-          setCoolingDown(true);
-          
-          // 计算剩余时间
-          const remainingMs = coolingEndTime - now;
-          const minutes = Math.floor(remainingMs / (1000 * 60));
-          const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-          setRemainingTime({ minutes, seconds });
-          
-          // 清除过期的冷却状态
-          const timeUntilExpiry = coolingEndTime - now;
-          setTimeout(() => {
-            localStorage.removeItem('commenter_cooling_down');
-            localStorage.removeItem('commenter_cooling_end_time');
-            setCoolingDown(false);
-          }, timeUntilExpiry);
-        } else {
-          // 冷却时间已过，清除状态
-          localStorage.removeItem('commenter_cooling_down');
-          localStorage.removeItem('commenter_cooling_end_time');
-        }
-      }
-    };
-    
-    checkCoolingStatus();
-    
-    // 监听storage事件，当冷却状态在其他页面发生变化时更新
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'commenter_cooling_down' || e.key === 'commenter_cooling_end_time') {
-        checkCoolingStatus();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+
   
   // 初始化数据
   useEffect(() => {
     fetchUserTasks();
-  }, []);
+  }, [])
+
+  // 认证逻辑已整合到fetchUserTasks函数中
   
-  // 冷却倒计时更新
-  useEffect(() => {
-    if (!coolingDown) return;
-    
-    const timer = setInterval(() => {
-      const coolingEndTimeStr = localStorage.getItem('commenter_cooling_end_time');
-      if (!coolingEndTimeStr) {
-        setCoolingDown(false);
-        clearInterval(timer);
-        return;
-      }
-      
-      const coolingEndTime = parseInt(coolingEndTimeStr, 10);
-      const now = Date.now();
-      
-      if (now >= coolingEndTime) {
-        setCoolingDown(false);
-        setRemainingTime({ minutes: 0, seconds: 0 });
-        localStorage.removeItem('commenter_cooling_down');
-        localStorage.removeItem('commenter_cooling_end_time');
-        clearInterval(timer);
-      } else {
-        const remainingMs = coolingEndTime - now;
-        const minutes = Math.floor(remainingMs / (1000 * 60));
-        const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
-        setRemainingTime({ minutes, seconds });
-      }
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [coolingDown]);
+
 
   // 处理标签切换，同时更新URL参数
   const handleTabChange = (tab: TaskStatus) => {
@@ -258,29 +213,8 @@ export default function CommenterTasksPage() {
     window.history.replaceState(null, '', `?${newParams.toString()}`);
   };
 
-  // 任务类型映射函数 - 将英文taskType转换为中文名称
-  const getTaskTypeName = (taskType?: string): string => {
-    const taskTypeMap: Record<string, string> = {
-      'comment_middle': '中下评评论',
-      'account_rental': '账号出租',
-      'video_send': '视频分享'
-    };
-    return taskTypeMap[taskType || ''] || taskType || '';
-  };
-  
-  // 过滤不同状态的任务
-  const getFilteredTasks = (status: TaskStatus) => {
-    return tasks.filter(task => task.status === status);
-  };
-  
-  const subProgressTasks = getFilteredTasks('sub_progress');
-  const subPendingReviewTasks = getFilteredTasks('sub_pending_review');
-  const subCompletedTasks = getFilteredTasks('sub_completed');
-  const waitingCollectTasks = getFilteredTasks('waiting_collect');
-  const subRejectedTasks = getFilteredTasks('sub_rejected');
-  
-  const currentTasks = getFilteredTasks(activeTab);
-  
+
+
   // 获取按钮样式
   const getTabButtonStyle = (status: TaskStatus) => {
     const isActive = activeTab === status;
@@ -309,12 +243,6 @@ export default function CommenterTasksPage() {
 
   // 上传截图按钮功能 - 优化版：只在本地保存压缩后的图片，不立即上传到服务器
   const handleUploadScreenshot = (taskId: string) => {
-    // 检查是否处于冷却状态
-    if (coolingDown) {
-      setModalMessage(`截图上传受限：正在冷却期，剩余 ${remainingTime.minutes}:${remainingTime.seconds.toString().padStart(2, '0')} 分钟`);
-      setShowModal(true);
-      return;
-    }
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
@@ -367,12 +295,6 @@ export default function CommenterTasksPage() {
   
   // 提交订单按钮功能 - 优化版：在提交订单时一并上传截图
   const handleSubmitOrder = async (taskId: string) => {
-    // 检查是否处于冷却状态
-    if (coolingDown) {
-      setModalMessage(`任务提交受限：正在冷却期，剩余 ${remainingTime.minutes}:${remainingTime.seconds.toString().padStart(2, '0')} 分钟`);
-      setShowModal(true);
-      return;
-    }
     
     try {
       // 添加验证逻辑：检查是否已上传截图
@@ -588,12 +510,6 @@ export default function CommenterTasksPage() {
   
   // 上传链接功能
   const handleUploadLink = async (taskId: string, reviewLink?: string) => {
-    // 检查是否处于冷却状态
-    if (coolingDown) {
-      setModalMessage(`链接上传受限：正在冷却期，剩余 ${remainingTime.minutes}:${remainingTime.seconds.toString().padStart(2, '0')} 分钟`);
-      setShowModal(true);
-      return;
-    }
     
     try {
       setLinkUploadStatus(prev => ({ ...prev, [taskId]: 'uploading' }));
@@ -660,7 +576,7 @@ export default function CommenterTasksPage() {
   // 获取任务操作按钮组
   const getTaskButtons = (task: Task) => {
     switch (task.status) {
-      case 'sub_progress':
+      case 'ACCEPTED':
         return (
           <div className="flex space-x-2">
             <button 
@@ -693,13 +609,7 @@ export default function CommenterTasksPage() {
             >
               {linkUploadStatus[task.id] === 'uploading' ? '上传中...' : '上传链接'}
             </button>
-            <button 
-              className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-              onClick={() => handleSubmitOrder(task.id)}
-              disabled={isSubmitting || !task.screenshotUrl}
-            >
-              提交订单
-            </button>
+            {/* 提交订单按钮已移至ProgressTasksTab组件中实现 */}
             <button 
               className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               onClick={() => handleViewDetails(task.id)}
@@ -730,9 +640,7 @@ export default function CommenterTasksPage() {
   };
 
   return (
-    <>
-      {/* 冷却提示条已移除，仅在抢单大厅显示 */}
-      {/* 图片查看器模态框 */}
+    <>  
       {selectedImage && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90" 
@@ -769,12 +677,12 @@ export default function CommenterTasksPage() {
       {/* 任务状态筛选（合并统计和筛选功能） */}
       <div className="mx-4 mt-4 flex space-x-2">
         <button 
-          onClick={() => handleTabChange('sub_progress')}
-          className={getTabButtonStyle('sub_progress')}
+          onClick={() => handleTabChange('ACCEPTED')}
+          className={getTabButtonStyle('ACCEPTED')}
         >
           <div className="flex flex-col items-center">
-            <div className={activeTab === 'sub_progress' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-blue-500'}>
-              {subProgressTasks.length}
+            <div className={activeTab === 'ACCEPTED' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-blue-500'}>
+              2
             </div>
             <span className="text-xs">进行中</span>
           </div>
@@ -785,7 +693,7 @@ export default function CommenterTasksPage() {
         >
           <div className="flex flex-col items-center">
             <div className={activeTab === 'sub_pending_review' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-orange-500'}>
-              {subPendingReviewTasks.length}
+             3
             </div>
             <span className="text-xs">待审核</span>
           </div>
@@ -796,7 +704,7 @@ export default function CommenterTasksPage() {
         >
           <div className="flex flex-col items-center">
             <div className={activeTab === 'sub_completed' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-green-500'}>
-              {subCompletedTasks.length}
+              1
             </div>
             <span className="text-xs">已完成</span>
           </div>
@@ -807,7 +715,7 @@ export default function CommenterTasksPage() {
         >
           <div className="flex flex-col items-center">
             <div className={activeTab === 'sub_rejected' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-red-500'}>
-              {subRejectedTasks.length}
+              4
             </div>
             <span className="text-xs">异常订单</span>
           </div>
@@ -817,66 +725,51 @@ export default function CommenterTasksPage() {
       {/* 错误提示 */}
       {errorMessage && (
         <div className="mx-4 mt-3 bg-red-50 text-red-600 p-3 rounded-lg text-sm">
-          {errorMessage}
+          <p>{errorMessage}</p>
         </div>
       )}
 
       {/* 根据当前选中的标签渲染对应的组件 */}
+
+      {/* 根据当前选中的标签渲染对应的组件 */}
       <div className="mx-4 mt-6">
-        {activeTab === 'sub_progress' && (
-          <ProgressTasksTab 
-            tasks={subProgressTasks} 
-            isLoading={isLoading} 
-            isSubmitting={isSubmitting} 
-            uploadStatus={uploadStatus} 
-            linkUploadStatus={linkUploadStatus} 
-            handleUploadScreenshot={handleUploadScreenshot} 
-            handleUploadLink={handleUploadLink} 
-            handleSubmitOrder={handleSubmitOrder} 
-            handleViewDetails={handleViewDetails} 
-            handleViewImage={handleViewImage} 
-            handleCopyComment={handleCopyComment} 
-            handleRemoveImage={handleRemoveImage} 
-            fetchUserTasks={fetchUserTasks} 
-            getTaskTypeName={getTaskTypeName}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
-          />
+        {activeTab === 'ACCEPTED' && (
+          <>
+            {console.log('所有任务:', tasks)}
+            {console.log('进行中任务数量:', tasks.filter(task => task.status === 'ACCEPTED').length)}
+            {console.log('任务状态值:', tasks.map(task => task.status))}
+            <ProgressTasksTab 
+              tasks={tasks.filter(task => task.status === 'ACCEPTED')}
+              handleViewImage={handleViewImage}
+              fetchUserTasks={fetchUserTasks}
+              setModalMessage={setModalMessage}
+              setShowModal={setShowModal}
+              handleCopyComment={handleCopyComment}
+              handleUploadScreenshot={handleUploadScreenshot}
+              handleRemoveImage={handleRemoveImage}
+              handleSubmitOrder={handleSubmitOrder}
+              isSubmitting={isSubmitting}
+              uploadStatus={uploadStatus}
+            />
+          </>
         )}
         
         {activeTab === 'sub_pending_review' && (
           <PendingReviewTasksTab 
-            tasks={subPendingReviewTasks} 
-            isLoading={isLoading} 
-            handleViewDetails={handleViewDetails} 
-            handleViewImage={handleViewImage} 
-            fetchUserTasks={fetchUserTasks} 
-            getTaskTypeName={getTaskTypeName}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
+            tasks={tasks.filter(task => task.status === 'sub_pending_review')}
+            handleViewImage={handleViewImage}
           />
         )}
         
         {activeTab === 'sub_completed' && (
           <CompletedTasksTab 
-            tasks={subCompletedTasks} 
-            isLoading={isLoading} 
-            handleViewImage={handleViewImage} 
-            fetchUserTasks={fetchUserTasks} 
-            getTaskTypeName={getTaskTypeName}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
+            tasks={tasks.filter(task => task.status === 'sub_completed')}
           />
         )}
+        
         {activeTab === 'sub_rejected' && (
           <RejectedTasksTab 
-            tasks={subRejectedTasks} 
-            isLoading={isLoading} 
-            handleViewImage={handleViewImage} 
-            fetchUserTasks={fetchUserTasks} 
-            getTaskTypeName={getTaskTypeName}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
+            tasks={tasks.filter(task => task.status === 'sub_rejected')}
           />
         )}
       </div>

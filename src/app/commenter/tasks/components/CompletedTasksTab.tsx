@@ -2,36 +2,68 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageOutlined } from '@ant-design/icons';
 
-// 定义任务接口
+// 定义后端返回的任务接口
 export interface Task {
   id: string;
-  parentId?: string;
-  title?: string;
-  price?: number;
-  unitPrice?: number;
+  mainTaskId: string;
+  mainTaskTitle: string;
+  mainTaskPlatform: string;
+  workerId: string;
+  workerName: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  commentGroup: string;
+  commentType: string;
+  unitPrice: number;
+  userReward: number;
+  agentReward: number;
   status: string;
+  acceptTime: string;
+  expireTime: string;
+  submitTime: string | null;
+  completeTime: string | null;
+  settleTime: string | null;
+  submittedImages: string | null;
+  submittedLinkUrl: string | null;
+  submittedComment: string | null;
+  verificationNotes: string | null;
+  rejectReason: string | null;
+  cancelReason: string | null;
+  cancelTime: string | null;
+  releaseCount: number;
+  settled: boolean;
+  verifierId: string | null;
+  verifierName: string | null;
+  createTime: string;
+  updateTime: string;
+  taskDescription: string | null;
+  taskRequirements: string | null;
+  taskDeadline: string | null;
+  remainingMinutes: number | null;
+  isExpired: boolean | null;
+  isAutoVerified: boolean | null;
+  canSubmit: boolean | null;
+  canCancel: boolean | null;
+  canVerify: boolean | null;
+  verifyResult: string | null;
+  verifyTime: string | null;
+  verifyComment: string | null;
+  settlementStatus: string | null;
+  settlementTime: string | null;
+  settlementRemark: string | null;
+  workerRating: number | null;
+  workerComment: string | null;
+  publisherRating: number | null;
+  publisherComment: string | null;
+  firstGroupComment: string | null;
+  secondGroupComment: string | null;
+  firstGroupImages: string | null;
+  secondGroupImages: string | null;
+  
+  // 前端需要的额外字段
   statusText?: string;
   statusColor?: string;
-  description?: string;
-  deadline?: string;
-  progress?: number;
-  submitTime?: string;
-  completedTime?: string;
-  reviewNote?: string;
-  requirements: string;
-  publishTime: string;
-  videoUrl?: string;
-  mention?: string;
   screenshotUrl?: string;
-  recommendedComment?: string;
-  commentContent?: string;
-  subOrderNumber?: string;
-  orderNumber?: string;
-  taskType?: string;
-  requiringVideoUrl?: string;
-  submitdvideoUrl?: string;
-  submitScreenshotUrl?: string;
-  requiringCommentUrl?: string;
 }
 
 interface CompletedTasksTabProps {
@@ -61,29 +93,25 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
         <div key={task.id || 'unknown'} className="rounded-lg p-4 mb-4 shadow-sm transition-all hover:shadow-md bg-white">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm text-black inline-block flex items-center">
-              订单号：{task.subOrderNumber || task.orderNumber || '未命名任务'}
+              任务标题：{task.mainTaskTitle || '未命名任务'}
               <button 
                 className="ml-2 text-blue-500 hover:text-blue-700 transition-colors"
                 onClick={() => {
-                  const orderNumber = task.subOrderNumber || task.orderNumber;
-                  if (orderNumber) {
-                    navigator.clipboard.writeText(orderNumber).then(() => {
-                      // 使用模态框显示复制成功提示，而不是alert
-                      setModalMessage('订单号已复制到剪贴板');
-                      setShowModal(true);
-                    }).catch(err => {
-                      console.error('复制失败:', err);
-                      // 使用模态框显示错误提示
-                      setModalMessage('复制失败，请手动复制');
-                      setShowModal(true);
-                    });
-                  }
+                  navigator.clipboard.writeText(task.id).then(() => {
+                    // 使用模态框显示复制成功提示
+                    setModalMessage('任务ID已复制到剪贴板');
+                    setShowModal(true);
+                  }).catch(err => {
+                    console.error('复制失败:', err);
+                    setModalMessage('复制失败，请手动复制');
+                    setShowModal(true);
+                  });
                 }}
               >
                 <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span className="text-xs inline-block">复制</span>
+                <span className="text-xs inline-block">复制任务ID</span>
               </button>
             </h3>
           </div>
@@ -97,11 +125,17 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
                   {task.statusText || '已完成'}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  {getTaskTypeName(task.taskType) || '评论'}
+                  {getTaskTypeName(task.commentType) || '评论'}
+                </span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 ml-2">
+                  {task.mainTaskPlatform || '抖音'}
                 </span>
               </div>
               <div className="text-sm text-black block">
-                发布时间：{task.publishTime || '未知时间'}
+                接受时间：{task.acceptTime}
+              </div>
+              <div className="text-sm text-black block">
+                完成时间：{task.completeTime || '未知时间'}
               </div>
               {/* 完成时间 */}
               {task.completedTime && (
@@ -113,14 +147,14 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
                
           </div>
 
-          <div className="text-sm mb-2 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-            要求：{task.requirements || '无特殊要求'}
-          </div>
+          <div className="text-sm text-black mb-2 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3 block">
+              要求：{task.taskRequirements || task.taskDescription || '无特殊要求'}
+            </div>
           
 
           
           {/* 打开视频按钮 */}
-          {task.submitdvideoUrl && (
+          {task.submitVideoUrl && (
             <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
               <span className="text-sm text-blue-700 mr-2">任务视频点击进入：</span>
               <button 
@@ -173,7 +207,7 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
             <div className="mb-4 bg-orange-50 p-3 rounded-lg border border-orange-100">
               <h4 className="text-sm font-medium text-orange-700 mb-1"><MessageOutlined className="inline-block mr-1" /> 审核意见</h4>
               <p className="text-sm text-gray-700 bg-white p-3 rounded border border-orange-100 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-                {task.reviewNote}
+                {task.verifyComment || task.verificationNotes || '暂无审核意见'}
               </p>
             </div>
           )}

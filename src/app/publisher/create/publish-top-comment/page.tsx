@@ -267,7 +267,7 @@ export default function PublishTaskPage() {
           
           const requestBody = {
             title: '测试中评',
-            description: '这是一条中评评论测试发布信息',
+            description: '这是一条中评评论任务',
             platform: 'DOUYIN',
             taskType: 'COMMENT',
             totalQuantity: formData.quantity,

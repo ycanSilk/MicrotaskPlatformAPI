@@ -91,7 +91,7 @@ const validationRules = {
 
 export default function CommenterLoginPage() {
   const [formData, setFormData] = useState<LoginFormData>({
-    username: 'ceshi',
+    username: 'jdceshi',
     password: '123456',
     captcha: ''
   });
@@ -176,7 +176,7 @@ export default function CommenterLoginPage() {
     // 设置默认测试账号信息
     setFormData(prev => ({
       ...prev,
-      username: 'ceshi',
+      username: 'jdceshi',
       password: '123456',
       // captcha 不自动填充
     }));

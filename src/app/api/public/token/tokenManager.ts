@@ -34,16 +34,12 @@ class SessionStorageWrapper {
   setItem(key: string, value: string): boolean {
     try {
       if (!isBrowser()) {
-        console.debug(`[${this.modulePrefix}] SessionStorage: 非浏览器环境，无法设置 '${key}'`);
         return false;
-      }
-      
+      }   
       const prefixedKey = this.getPrefixedKey(key);
-      console.debug(`[${this.modulePrefix}] SessionStorage: 设置键 '${prefixedKey}'`);
       sessionStorage.setItem(prefixedKey, value);
       return true;
     } catch (error) {
-      console.error(`[${this.modulePrefix}] SessionStorage.setItem(${key}) 失败:`, error);
       return false;
     }
   }
@@ -51,15 +47,12 @@ class SessionStorageWrapper {
   getItem(key: string): string | null {
     try {
       if (!isBrowser()) {
-        console.debug(`[${this.modulePrefix}] SessionStorage: 非浏览器环境，无法获取 '${key}'`);
         return null;
       }
       
       const prefixedKey = this.getPrefixedKey(key);
-      console.debug(`[${this.modulePrefix}] SessionStorage: 获取键 '${prefixedKey}'`);
       return sessionStorage.getItem(prefixedKey);
     } catch (error) {
-      console.error(`[${this.modulePrefix}] SessionStorage.getItem(${key}) 失败:`, error);
       return null;
     }
   }
@@ -67,16 +60,12 @@ class SessionStorageWrapper {
   removeItem(key: string): boolean {
     try {
       if (!isBrowser()) {
-        console.debug(`[${this.modulePrefix}] SessionStorage: 非浏览器环境，无法移除 '${key}'`);
         return false;
       }
-      
       const prefixedKey = this.getPrefixedKey(key);
-      console.debug(`[${this.modulePrefix}] SessionStorage: 移除键 '${prefixedKey}'`);
       sessionStorage.removeItem(prefixedKey);
       return true;
     } catch (error) {
-      console.error(`[${this.modulePrefix}] SessionStorage.removeItem(${key}) 失败:`, error);
       return false;
     }
   }
@@ -108,8 +97,6 @@ export class TokenManager {
     this.userInfoKey = 'user_info';
     this.cookieName = `${moduleType}_token`;
     this.sessionStorage = new SessionStorageWrapper(this.modulePrefix);
-    
-    console.log(`[${this.moduleType}] TokenManager: 初始化完成`);
   }
   
   /**
@@ -119,11 +106,8 @@ export class TokenManager {
    */
   saveAuthData(authData: { userInfo?: any }): boolean {
     try {
-      console.log(`[${this.moduleType}] TokenManager.saveAuthData: 开始保存认证状态数据`);
-      
       // 首先检查是否在浏览器环境中
       if (!isBrowser()) {
-        console.warn(`[${this.moduleType}] TokenManager.saveAuthData: 警告: 尝试在非浏览器环境中保存认证数据`);
         return false;
       }
 
@@ -137,19 +121,14 @@ export class TokenManager {
       // 保存用户信息到sessionStorage，但不保存token
       if (authData.userInfo) {
         try {
-          console.log(`[${this.moduleType}] TokenManager.saveAuthData: 准备保存用户信息到sessionStorage`);
           const userInfoString = JSON.stringify(authData.userInfo);
           this.sessionStorage.setItem(this.userInfoKey, userInfoString);
-          console.log(`[${this.moduleType}] TokenManager.saveAuthData: 用户信息已成功保存`);
         } catch (userInfoError) {
-          console.warn(`[${this.moduleType}] TokenManager.saveAuthData: 保存用户信息失败:`, userInfoError);
         }
       }
       
-      console.log(`[${this.moduleType}] TokenManager.saveAuthData: 认证状态保存完成`);
       return true;
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.saveAuthData: 保存认证数据过程中发生错误:`, error);
       return false;
     }
   }
@@ -160,11 +139,8 @@ export class TokenManager {
    */
   getAuthData(): { userInfo?: any } | null {
     try {
-      console.log(`[${this.moduleType}] TokenManager.getAuthData: 开始获取认证状态数据`);
-      
-      // 首先检查是否在浏览器环境中
+
       if (!isBrowser()) {
-        console.warn(`[${this.moduleType}] TokenManager.getAuthData: 警告: 尝试在非浏览器环境中获取认证数据`);
         return null;
       }
 
@@ -174,7 +150,6 @@ export class TokenManager {
       // 检查会话标记
       const sessionActive = this.sessionStorage.getItem(this.sessionKey) === 'true';
       if (!sessionActive) {
-        console.log(`[${this.moduleType}] TokenManager.getAuthData: 会话已过期或无效`);
         return null;
       }
       
@@ -184,20 +159,16 @@ export class TokenManager {
         const userInfoStr = this.sessionStorage.getItem(this.userInfoKey);
         if (userInfoStr) {
           userInfo = JSON.parse(userInfoStr);
-          console.log(`[${this.moduleType}] TokenManager.getAuthData: 成功获取用户信息`);
         } else {
           console.log(`[${this.moduleType}] TokenManager.getAuthData: 未找到用户信息`);
         }
       } catch (parseError) {
         console.warn(`[${this.moduleType}] TokenManager.getAuthData: 解析用户信息失败:`, parseError);
       }
-      
-      console.log(`[${this.moduleType}] TokenManager.getAuthData: 认证数据获取完成`);
       return {
         userInfo
       };
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.getAuthData: 获取认证数据时发生错误:`, error);
       return null;
     }
   }
@@ -208,18 +179,14 @@ export class TokenManager {
    */
   getUserInfo(): any {
     try {
-      console.log(`[${this.moduleType}] TokenManager.getUserInfo: 开始获取用户信息`);
       const userInfoStr = this.sessionStorage.getItem(this.userInfoKey);
       
       if (userInfoStr) {
-        console.log(`[${this.moduleType}] TokenManager.getUserInfo: 找到用户信息，长度: ${userInfoStr.length}`);
         return JSON.parse(userInfoStr);
       }
-      
-      console.log(`[${this.moduleType}] TokenManager.getUserInfo: 未找到用户信息`);
+
       return {};
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.getUserInfo: 获取用户信息时发生错误:`, error);
       return {};
     }
   }
@@ -230,25 +197,20 @@ export class TokenManager {
    */
   isAuthenticated(): boolean {
     try {
-      console.log(`[${this.moduleType}] TokenManager.isAuthenticated: 开始检查用户登录状态`);
-      
-      // 检查浏览器环境
+    
       if (!isBrowser()) {
-        console.log(`[${this.moduleType}] TokenManager.isAuthenticated: 在非浏览器环境中，默认未登录`);
         return false;
       }
       
       // 检查会话状态
       const sessionActive = this.sessionStorage.getItem(this.sessionKey) === 'true';
       if (!sessionActive) {
-        console.log(`[${this.moduleType}] TokenManager.isAuthenticated: 会话无效或已过期`);
         this.isAuthenticatedFlag = false;
         return false;
       }
       
       // 检查会话是否过期
       if (this.isSessionExpired()) {
-        console.log(`[${this.moduleType}] TokenManager.isAuthenticated: 会话已超过最大不活动时间`);
         this.isAuthenticatedFlag = false;
         return false;
       }
@@ -258,10 +220,9 @@ export class TokenManager {
       
       // 注意：在HttpOnly Cookie机制下，我们无法直接检查token是否有效
       // 实际的token验证将在服务器端通过请求头中的Cookie进行
-      console.log(`[${this.moduleType}] TokenManager.isAuthenticated: 基于会话状态，用户已登录`);
+
       return true;
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.isAuthenticated: 检查登录状态时发生错误:`, error);
       this.isAuthenticatedFlag = false;
       return false;
     }
@@ -273,24 +234,20 @@ export class TokenManager {
    */
   removeAuthData(): boolean {
     try {
-      console.log(`[${this.moduleType}] TokenManager.removeAuthData: 开始清除认证数据`);
-      
-      // 清除会话数据
+
       this.sessionStorage.removeItem(this.sessionKey);
       this.sessionStorage.removeItem(this.sessionLastActivityKey);
       this.sessionStorage.removeItem(this.userInfoKey);
-      console.log(`[${this.moduleType}] TokenManager.removeAuthData: 会话数据已清除`);
+
       
       // 重置认证标志
       this.isAuthenticatedFlag = false;
       
       // 注意：HttpOnly Cookie不能通过JavaScript删除
       // 需要通过向服务器发送请求来清除服务器端的Cookie
-      console.log(`[${this.moduleType}] TokenManager.removeAuthData: 前端认证状态已清除，HttpOnly Cookie需通过服务器端清除`);
-      
+   
       return true;
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.removeAuthData: 移除认证数据时发生错误:`, error);
       return false;
     }
   }
@@ -311,12 +268,8 @@ export class TokenManager {
    * @returns 是否处理成功
    */
   handleLoginResponse(loginResponse: { success: boolean; data?: { userInfo?: any } }): boolean {
-    try {
-      console.log(`[${this.moduleType}] TokenManager.handleLoginResponse: 开始处理登录响应`);
-      
-      // 验证登录响应
+    try {    
       if (!loginResponse.success) {
-        console.error(`[${this.moduleType}] TokenManager.handleLoginResponse: 无效的登录响应`);
         return false;
       }
       
@@ -325,14 +278,11 @@ export class TokenManager {
         userInfo: loginResponse.data?.userInfo
       };
       
-      console.log(`[${this.moduleType}] TokenManager.handleLoginResponse: 准备保存认证状态数据`);
       // 保存认证状态数据
       const saveResult = this.saveAuthData(authData);
-      console.log(`[${this.moduleType}] TokenManager.handleLoginResponse: 登录响应处理${saveResult ? '成功' : '失败'}`);
-      
+    
       return saveResult;
     } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.handleLoginResponse: 处理登录响应时发生错误:`, error);
       return false;
     }
   }
@@ -356,8 +306,7 @@ export class TokenManager {
       }
       
       return isExpired;
-    } catch (error) {
-      console.error(`[${this.moduleType}] TokenManager.isSessionExpired: 检查会话过期状态时发生错误:`, error);
+    } catch (error) {      
       return true;
     }
   }

@@ -1,4 +1,5 @@
 'use client';
+import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EditOutlined, CopyOutlined, LinkOutlined } from '@ant-design/icons';
@@ -171,6 +172,64 @@ export default function ActiveTabPage() {
     // 这里可以添加具体的操作逻辑
   };
 
+  // 调用子任务列表API
+  const fetchSubtaskList = async (taskId: string) => {
+    try {
+      setLoading(true);
+      console.log(`开始获取任务 ${taskId} 的子任务列表...`);
+      
+      // 构建请求参数 - 确保与后端默认值一致
+      const requestParams = {
+        page: 0,
+        size: 10,
+        sortField: 'createTime',
+        sortOrder: 'DESC',
+        platform: '',
+        taskType: '',
+        minPrice: 0,
+        maxPrice: 9999, // 与后端默认值保持一致
+        keyword: ''
+      };
+      
+      console.log(`准备调用子任务列表API，taskId: ${taskId}`);
+      
+      // 调用后端API，将taskId作为查询参数传递
+      const response = await fetch(`/api/publisher/publishertasks/subtasklist?taskId=${taskId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // 传递当前页面的cookie，确保认证信息正确传递
+        credentials: 'include',
+        body: JSON.stringify(requestParams)
+      });
+      
+      console.log('子任务列表API响应状态:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('子任务列表API响应:', result);
+      
+      if (result.success && result.data) {
+        console.log('获取子任务列表成功，数量:', result.data.subtasks?.length || 0);
+        // 构建URL并添加查询参数
+        const url = `/publisher/orders/task-detail/${taskId}?subtasks=${encodeURIComponent(JSON.stringify(result.data.subtasks))}`;
+        router.push(url);
+      } else {
+        throw new Error(result.message || '获取子任务列表失败');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '获取子任务列表失败';
+      console.error('获取子任务列表时发生错误:', errorMessage, err);
+      // 显示错误提示
+      alert(`获取子任务列表失败: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+      console.log('子任务列表获取完成');
+    }
+  };
+
   // 过滤最近订单
   const filterRecentOrders = (tasks: Task[]) => {
     return tasks.filter(task => {
@@ -245,9 +304,11 @@ export default function ActiveTabPage() {
     // 处理查看详情
     const handleViewDetails = () => {
       if (onViewDetails) {
+        // 调用父组件传入的方法，现在这个方法会调用fetchSubtaskList
         onViewDetails(task.id);
       } else {
-        router.push(`/publisher/orders/task-detail/${task.id}`);
+        // 直接调用fetchSubtaskList函数获取子任务列表
+        fetchSubtaskList(task.id);
       }
     };
 
@@ -399,7 +460,8 @@ export default function ActiveTabPage() {
                 if (task.taskType === 'ACCOUNT_RENTAL') {
                   router.push(`/publisher/orders/account-rental/${orderId}`);
                 } else {
-                  router.push(`/publisher/orders/task-detail/${orderId}`);
+                  // 调用fetchSubtaskList获取子任务列表，然后跳转到详情页
+                  fetchSubtaskList(orderId);
                 }
               }}
               onReorder={(orderId) => handleTaskAction(orderId, 'reorder')}

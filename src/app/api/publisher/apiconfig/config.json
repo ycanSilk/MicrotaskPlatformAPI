@@ -25,7 +25,10 @@
     },
     "task": {
       "publish": "/tasks/publish",
-      "mypublished": "/tasks/my-published"
+      "mypublished": "/tasks/my-published",
+      "pendingverify": "/tasks/pending-verify",
+      "reviewtask": "/tasks/accepted/{subTaskId}/verify",
+      "taskcount": "/tasks/stats"
     }
   },
   "mockMode": false,

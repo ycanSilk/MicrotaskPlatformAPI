@@ -22,6 +22,11 @@
     "bankcards": {
       "banklist": "/bank/list",
       "bankdetail": "/bank/detail"
+    },
+    "task": {
+      "accepttask": "/tasks/{taskId}/accept",
+      "myacceptedtasks": "/tasks/my-accepted",
+      "submittask": "/tasks/accepted/{subTaskId}/submit"
     }
   },
   "mockMode": false,

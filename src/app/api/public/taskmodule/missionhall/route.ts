@@ -33,7 +33,6 @@ export async function POST(request: Request) {
       const rawBody = await request.text();
       requestData = JSON.parse(rawBody);
     } catch (jsonError) {
-      console.error('解析请求体失败:', jsonError);
       return NextResponse.json(
         createStandardResponse(400, '请求参数格式错误', {
           list: [],
@@ -83,7 +82,6 @@ export async function POST(request: Request) {
     if (!token) {
       const cookieStore = cookies();
       const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
-      // 确保cookieStore存在且get方法可用
       if (cookieStore && typeof cookieStore.get === 'function') {
         for (const key of tokenKeys) {
           const cookieToken = cookieStore.get(key)?.value;
@@ -129,9 +127,8 @@ export async function POST(request: Request) {
     try {
       if (config && config.baseUrl && config.endpoints && config.endpoints.task && config.endpoints.task.missionhall) {
         apiUrl = `${config.baseUrl}${config.endpoints.task.missionhall}`;
-        // 输出请求日志
-        console.log('请求URL:', apiUrl);
-        console.log('请求参数:', requestParams);
+        console.log('token:', token);
+        console.log('请求URL:', apiUrl, '请求参数:', requestParams);
       } else {
         throw new Error('配置信息不完整，无法构建API URL');
       }
@@ -167,9 +164,11 @@ export async function POST(request: Request) {
       try {
         const responseData = await response.json();
         
-        // 构建返回数据
+        // 构建返回数据 - 直接使用API返回的数据
+        const listData = Array.isArray(responseData?.data?.list) ? responseData.data.list : (responseData?.data?.list || []);
+        
         const dataContent = {
-          list: responseData?.data?.list || [],
+          list: listData,
           total: responseData?.data?.total || 0,
           page: responseData?.data?.page || requestParams.page,
           size: responseData?.data?.size || requestParams.size,
@@ -184,12 +183,11 @@ export async function POST(request: Request) {
           response.status >= 200 && response.status < 300
         );
         
-        // 输出返回数据日志
-        console.log('返回数据:', standardResponse);
+        // 输出响应结果日志
+        console.log('响应状态码:', response.status, '返回数据:', standardResponse);
         
         return NextResponse.json(standardResponse, { status: response.status });
       } catch (jsonError) {
-        console.error('解析API响应失败:', jsonError);
         return NextResponse.json(
           createStandardResponse(500, '解析响应失败', {
             list: [],
@@ -204,7 +202,6 @@ export async function POST(request: Request) {
         );
       }
     } catch (fetchError) {
-      console.error('API请求失败:', fetchError);
       return NextResponse.json(
           createStandardResponse(500, '请求外部服务失败', {
             list: [],
@@ -220,7 +217,6 @@ export async function POST(request: Request) {
     }
     
   } catch (error) {
-    console.error('服务器内部错误:', error);
     return NextResponse.json(
       createStandardResponse(500, '服务器内部错误', {
         list: [],
@@ -236,44 +232,5 @@ export async function POST(request: Request) {
   }
 }
 
-// 处理不支持的HTTP方法
-export async function GET(request: Request) {
-  return NextResponse.json(
-    createStandardResponse(405, '不支持的请求方法', {
-      list: [],
-      total: 0,
-      page: 0,
-      size: 10,
-      pages: 0
-    },
-    false
-    ), 
-    { status: 405, headers: { 'Allow': 'POST' } }
-  );
-}
 
-export async function PUT(request: Request) {
-  return NextResponse.json(
-    createStandardResponse(405, '不支持的请求方法', {
-      list: [],
-      total: 0,
-      page: 0,
-      size: 10,
-      pages: 0
-    }), 
-    { status: 405, headers: { 'Allow': 'POST' } }
-  );
-}
 
-export async function DELETE(request: Request) {
-  return NextResponse.json(
-    createStandardResponse(405, '不支持的请求方法', {
-      list: [],
-      total: 0,
-      page: 0,
-      size: 10,
-      pages: 0
-    }), 
-    { status: 405, headers: { 'Allow': 'POST' } }
-  );
-}

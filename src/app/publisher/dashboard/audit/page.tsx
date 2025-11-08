@@ -1,21 +1,86 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 // Publisher auth storage removed
 import OrderHeaderTemplate from '../components/OrderHeaderTemplate';
 
+// 确保导入类型和必要的依赖
+
 // 定义数据类型
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+  success: boolean;
+  timestamp: number;
+}
+
+interface PaginationData {
+  list: PendingOrder[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 interface PendingOrder {
   id: string;
-  taskTitle: string;
-  commenterName: string;
-  submitTime: string;
-  updatedTime?: string;
-  content: string;
-  images: string[];
+  mainTaskId: string;
+  mainTaskTitle: string;
+  mainTaskPlatform: string;
+  workerId: string;
+  workerName: string;
+  agentId: string;
+  agentName: string;
+  commentGroup: string;
+  commentType: string;
+  unitPrice: number;
+  userReward: number;
+  agentReward: number;
   status: string;
-  orderNumber?: string;
+  acceptTime: string;
+  expireTime: string;
+  submitTime: string;
+  completeTime: string;
+  settleTime: string;
+  submittedImages: string;
+  submittedLinkUrl: string;
+  submittedComment: string;
+  verificationNotes: string;
+  rejectReason: string;
+  cancelReason: string;
+  cancelTime: string;
+  releaseCount: number;
+  settled: boolean;
+  verifierId: string;
+  verifierName: string;
+  createTime: string;
+  updateTime: string;
+  taskDescription: string;
+  taskRequirements: string;
+  taskDeadline: string;
+  remainingMinutes: number;
+  isExpired: boolean;
+  isAutoVerified: boolean;
+  canSubmit: boolean;
+  canCancel: boolean;
+  canVerify: boolean;
+  verifyResult: string;
+  verifyTime: string;
+  verifyComment: string;
+  settlementStatus: string;
+  settlementTime: string;
+  settlementRemark: string;
+  workerRating: number;
+  workerComment: string;
+  publisherRating: number;
+  publisherComment: string;
+  firstGroupComment: string;
+  secondGroupComment: string;
+  firstGroupImages: string;
+  secondGroupImages: string;
 }
 
 export default function AuditTabPage() {
@@ -25,6 +90,7 @@ export default function AuditTabPage() {
   const [sortBy, setSortBy] = useState('time');
   const [loading, setLoading] = useState(true);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const [paginationData, setPaginationData] = useState<PaginationData | null>(null);
   // 显示复制成功提示
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
@@ -33,62 +99,92 @@ export default function AuditTabPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [currentOrderId, setCurrentOrderId] = useState('');
+  const [verificationNotes, setVerificationNotes] = useState<{[key: string]: string}>({});
+  const [currentOrder, setCurrentOrder] = useState<PendingOrder | null>(null);
   // 图片查看器状态
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState('');
 
-  // 模拟订单数据
-  const mockOrders: PendingOrder[] = [
-    {
-      id: 'SUB1758353659512002',
-      orderNumber: 'SUB1758353659512002',
-      taskTitle: '使用提供的账号登录后，按照要求浏览指定内容并发表评论',
-      commenterName: '测试评论员1',
-      submitTime: new Date(Date.now() - 3600000).toISOString(), // 1小时前
-      updatedTime: new Date(Date.now() - 1800000).toISOString(), // 30分钟前
-      content: '这个内容很有价值，学到了很多东西。希望以后能有更多这样的优质内容分享。',
-      images: ['/images/1758380776810_96.jpg'],
-      status: 'reviewing'
-    },
-    {
-      id: 'SUB1758353659512003',
-      orderNumber: 'SUB1758353659512003',
-      taskTitle: '视频内容评论任务，需要观看完整视频并给出真实评价',
-      commenterName: '测试评论员2',
-      submitTime: new Date(Date.now() - 7200000).toISOString(), // 2小时前
-      updatedTime: new Date(Date.now() - 5400000).toISOString(), // 1.5小时前
-      content: '视频制作非常精良，内容讲解清晰易懂，强烈推荐给大家观看。',
-      images: ['/images/1758384598887_578.jpg'],
-      status: 'reviewing'
-    },
-    {
-      id: 'SUB1758353659512004',
-      orderNumber: 'SUB1758353659512004',
-      taskTitle: '账号租赁任务，按照要求使用指定账号进行操作',
-      commenterName: '测试评论员3',
-      submitTime: new Date(Date.now() - 10800000).toISOString(), // 3小时前
-      updatedTime: new Date(Date.now() - 9000000).toISOString(), // 2.5小时前
-      content: '已完成账号租赁任务，所有操作都已按照要求完成，请查看截图确认。',
-      images: ['/images/1758596791656_544.jpg', '/images/1758380776810_96.jpg'],
-      status: 'reviewing'
+  // 获取待审核订单数据
+  const fetchPendingOrders = async () => {
+    try {
+      setLoading(true);
+
+      // 构建请求参数
+      const requestData = {
+        page: 0,
+        size: 10,
+        sortField: 'createTime',
+        sortOrder: 'DESC',
+        platform: 'DOUYIN',
+        taskType: 'COMMENT',
+        keyword: searchTerm
+      };
+      
+      // 记录API调用开始
+      console.log('开始调用待审核订单API:', {
+        endpoint: '/api/publisher/publishertasks/pendingverifylist',
+        method: 'POST',
+        requestData: requestData
+      });
+      
+      const startTime = performance.now();
+      
+      const response = await fetch('/api/publisher/publishertasks/pendingverifylist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      const endTime = performance.now();
+      
+      // 记录响应状态
+      console.log('API调用响应状态:', {
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: `${(endTime - startTime).toFixed(2)}ms`
+      });
+      
+      const data: ApiResponse<PaginationData> = await response.json();
+      
+      // 记录API响应数据
+      console.log('API响应数据:', {
+        success: data.success,
+        code: data.code,
+        message: data.message,
+        totalCount: data.data?.total,
+        taskCount: data.data?.list.length
+      });
+      
+      // 更新状态
+      setPendingOrders(data.data?.list || []);
+      setPaginationData(data.data || {
+        list: [],
+        total: 0,
+        page: 1,
+        size: 10,
+        pages: 0
+      });
+    } catch (error) {
+      console.error('获取待审核订单失败:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  // 直接使用模拟数据进行渲染
-  useEffect(() => {
-    console.log('使用模拟数据进行渲染');
-    setPendingOrders(mockOrders);
-    setLoading(false);
-  }, []);
-
-  // 处理搜索
-  const handleSearch = () => {
-    // 搜索逻辑将在AuditTab组件中处理
   };
 
+  // 组件挂载时获取数据
+  useEffect(() => {
+    fetchPendingOrders();
+  }, []);
+
+  // 处理搜索函数已在其他位置定义
+
   // 处理订单审核
-  const handleOrderReview = (orderId: string, action: string) => {
-    setCurrentOrderId(orderId);
+  const handleOrderReview = (order: PendingOrder, action: string) => {
+    setCurrentOrderId(order.id);
+    setCurrentOrder(order);
     if (action === 'approve') {
       setShowApproveModal(true);
     } else if (action === 'reject') {
@@ -98,25 +194,93 @@ export default function AuditTabPage() {
   };
 
   // 确认审核通过
-  const confirmApprove = () => {
-    // 这里添加审核通过的逻辑
-    console.log(`订单 ${currentOrderId} 已审核通过`);
-    showCopySuccess('订单已审核通过');
-    setShowApproveModal(false);
-    // 在实际应用中，这里应该更新订单状态
+  const confirmApprove = async () => {
+    if (!currentOrder) return;
+    
+    try {
+      setLoading(true);
+      
+      // 构建请求参数
+      const requestData = {
+        subTaskId: currentOrderId,
+        verifyResult: 'PASS',
+        verifyNotes: verificationNotes[currentOrderId] || '',
+        evidenceImages: currentOrder.submittedImages
+      };
+      
+      console.log('调用审核通过API:', {
+        endpoint: '/api/publisher/publishertasks/reviewtask',
+        requestData: requestData
+      });
+      
+      const startTime = performance.now();
+      
+      const response = await fetch('/api/publisher/publishertasks/reviewtask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      const endTime = performance.now();
+      
+      console.log('API调用响应状态:', {
+        status: response.status,
+        responseTime: `${(endTime - startTime).toFixed(2)}ms`
+      });
+      
+      const data = await response.json();
+      
+      if (data.success || data.code === 1) {
+        console.log(`订单 ${currentOrderId} 已审核通过`);
+        showCopySuccess('订单已审核通过');
+        setShowApproveModal(false);
+        
+        // 重新获取订单列表
+        fetchPendingOrders();
+      } else {
+        throw new Error(data.message || '审核失败');
+      }
+    } catch (error) {
+      console.error('审核通过失败:', error);
+      showCopySuccess('审核失败，请重试');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 确认驳回
-  const confirmReject = () => {
+  const confirmReject = async () => {
     if (!rejectReason.trim()) {
       alert('请输入驳回理由');
       return;
     }
-    // 这里添加驳回的逻辑
-    console.log(`订单 ${currentOrderId} 已驳回，理由：${rejectReason}`);
-    showCopySuccess('订单已驳回');
-    setShowRejectModal(false);
-    // 在实际应用中，这里应该更新订单状态
+    
+    try {
+      // 在实际应用中，这里应该调用API进行驳回操作
+      // const response = await fetch('/api/publisher/verify/reject', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify({ orderId: currentOrderId, reason: rejectReason }),
+      // });
+      // const data = await response.json();
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log(`订单 ${currentOrderId} 已驳回，理由：${rejectReason}`);
+      showCopySuccess('订单已驳回');
+      setShowRejectModal(false);
+      
+      // 重新获取订单列表
+      fetchPendingOrders();
+    } catch (error) {
+      console.error('驳回失败:', error);
+      showCopySuccess('驳回失败，请重试');
+    }
   };
 
   // 打开图片查看器
@@ -141,13 +305,13 @@ export default function AuditTabPage() {
   };
 
   // 搜索订单
-  const searchOrders = (orders: any[]) => {
+  const searchOrders = (orders: PendingOrder[]) => {
     if (!searchTerm.trim()) return orders;
     
     return orders.filter(order => 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.taskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.content.toLowerCase().includes(searchTerm.toLowerCase())
+      order.mainTaskTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.submittedComment.toLowerCase().includes(searchTerm.toLowerCase())
     );
   };
 
@@ -204,6 +368,12 @@ export default function AuditTabPage() {
 
   // 获取过滤和搜索后的订单
   const filteredOrders = sortAuditTasks(searchOrders(filterRecentOrders(pendingOrders)));
+  
+  // 处理搜索
+  const handleSearch = () => {
+    // 实际应用中，这里可以重新调用API进行搜索
+    // 目前仍然使用前端过滤
+  };
 
   return (
     <div className="mx-4 mt-6 space-y-4">
@@ -217,7 +387,7 @@ export default function AuditTabPage() {
       {/* 使用标准模板组件 */}
       <OrderHeaderTemplate
         title="待审核的订单"
-        totalCount={pendingOrders.length}
+        totalCount={paginationData?.total || pendingOrders.length}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         handleSearch={handleSearch}
@@ -233,12 +403,12 @@ export default function AuditTabPage() {
           {/* 订单号 */}
           <div className="flex items-center mb-1 overflow-hidden">
             <div className="flex-1 mr-2 whitespace-nowrap overflow-hidden text-truncate">
-              订单号：{order.orderNumber || order.id}
+              订单号：{order.id}
             </div>
             <div className="relative">
               <button 
                 className="text-blue-600 hover:text-blue-700 whitespace-nowrap text-sm"
-                onClick={() => handleCopyOrderNumber(order.orderNumber || order.id)}
+                onClick={() => handleCopyOrderNumber(order.id)}
               >
                 <span>⧉ 复制</span>
               </button>
@@ -248,49 +418,52 @@ export default function AuditTabPage() {
           {/* 订单状态和任务类型 - 同一行且独立占一行 */}
           <div className="flex items-center mb-1 space-x-4">
             <div className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">
-              待审核
+              {order.status === 'PENDING' ? '待审核' : order.status}
             </div>
             <div className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs">
-              {order.taskTitle.includes('账号租赁') ? '账号租赁' : order.taskTitle.includes('视频发布') ? '视频发布' : '评论任务'}
+              {order.mainTaskPlatform}
             </div>
           </div>
           
           {/* 价格和状态信息 */}
           <div className="mb-1">
             <div className="flex items-center mb-1">
-              <span className="text-sm text-black font-medium">价格：</span>
-              <span className="text-sm text-black">¥6.00</span>
+              <span className="text-sm text-black font-medium">单价：</span>
+              <span className="text-sm text-black">¥{order.unitPrice.toFixed(2)}</span>
             </div>
           </div>
           
           {/* 时间信息 - 各自独占一行 */}
           <div className="text-sm text-black mb-1">
-            发布时间：2025-10-15 12:00:00
+            发布时间：{order.createTime}
           </div>
           <div className="text-sm text-black mb-1">
-            提交时间：2025-10-15 14:00:00
+            提交时间：{order.submitTime}
           </div>
           
           {/* 领取用户信息展示 */}
           <div className="text-black text-sm mb-1 w-full rounded-lg">
-              要求：组合任务，中下评评论
+              评论员：{order.workerName}
+          </div>
+          <div className="text-black text-sm mb-1 w-full rounded-lg">
+              评论类型：{order.commentType}
           </div>
 
           <div className="text-sm text-red-500 mb-1">温馨提示：审核过程中如目标视频丢失，将以接单员完成任务截图为准给予审核结算</div>
           
           {/* 评论展示和复制功能 */}
-          {order.content && (
+          {order.submittedComment && (
             <div className="mb-3 p-2 border border-gray-200 rounded-lg bg-blue-50">
               <div className="flex items-start justify-between mb-1">
                 <span className="text-sm font-medium text-blue-700">提交的评论：</span>
                 <button
                   className="text-blue-600 hover:text-blue-700 text-xs flex items-center"
-                  onClick={() => handleCopyComment(order.content || '')}
+                  onClick={() => handleCopyComment(order.submittedComment || '')}
                 >
                   <span className="mr-1">⧉</span> 复制评论
                 </button>
               </div>
-              <p className="text-sm text-blue-700 whitespace-pre-wrap">{order.content}</p>
+              <p className="text-sm text-blue-700 whitespace-pre-wrap">{order.submittedComment}</p>
             </div>
           )}
 
@@ -314,16 +487,17 @@ export default function AuditTabPage() {
           {/* 截图显示区域 - 自适应高度，居中显示 */}
           <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
             <div className='text-sm text-blue-600 pl-2 py-2'>完成任务截图上传：</div>
-            {order.images && order.images.length > 0 ? (
+            {order.submittedImages ? (
               <div className="grid grid-cols-3 gap-2">
-                {order.images.map((imageUrl: string, imgIndex: number) => (
+                {/* 假设submittedImages是逗号分隔的URL字符串 */}
+                {order.submittedImages.split(',').map((imageUrl: string, imgIndex: number) => (
                   <div 
                     key={imgIndex}
                     className="w-[90px] h-[90px] relative cursor-pointer overflow-hidden rounded-lg border border-gray-300 bg-gray-50 transition-colors hover:border-blue-400 hover:shadow-md flex items-center justify-center"
-                    onClick={() => openImageViewer(imageUrl)}
+                    onClick={() => openImageViewer(imageUrl.trim())}
                   >
                     <img 
-                      src={imageUrl} 
+                      src={imageUrl.trim()} 
                       alt={`任务截图 ${imgIndex + 1}`} 
                       className="w-full h-full object-contain"
                     />
@@ -345,18 +519,32 @@ export default function AuditTabPage() {
               点击可放大查看截图
             </p>
           </div>
+          
+          {/* 审核备注输入框 */}
+          <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+            <label className="block text-sm font-medium text-gray-700 mb-1">审核备注（选填）</label>
+            <textarea 
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-y min-h-[80px]"
+              placeholder="请输入审核备注信息..."
+              value={verificationNotes[order.id] || ''}
+              onChange={(e) => setVerificationNotes(prev => ({...prev, [order.id]: e.target.value}))}
+              disabled={false}
+            />
+          </div>
 
           {/* 按钮区域 */}
             <div className="mt-4 flex gap-2 justify-end">
               <button 
                 className="py-2 px-4 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
-                onClick={() => handleOrderReview(order.id, 'approve')}
+                onClick={() => handleOrderReview(order, 'approve')}
+                disabled={false}
               >
                 审核通过
               </button>
               <button 
                 className="py-2 px-4 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
-                onClick={() => handleOrderReview(order.id, 'reject')}
+                onClick={() => handleOrderReview(order, 'reject')}
+                disabled={!order.canVerify}
               >
                 驳回订单
               </button>

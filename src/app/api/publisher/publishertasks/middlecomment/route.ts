@@ -201,7 +201,7 @@ export async function POST(request: Request) {
     // 构建完整的API请求体
     const apiRequestBody = {
       title: requestBody.taskTitle || '中评评论',
-      description: '这是一条中评评论测试发布信息',
+      description: '这是一条中评评论任务',
       platform: requestBody.platform || 'DOUYIN',
       taskType: 'COMMENT',
       totalQuantity: quantity,

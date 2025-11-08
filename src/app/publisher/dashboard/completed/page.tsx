@@ -1,153 +1,159 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-// Publisher auth storage removed
+import { useRouter } from 'next/navigation';
 import OrderHeaderTemplate from '../components/OrderHeaderTemplate';
 
-// 定义数据类型
+// 任务类型定义，根据API返回数据结构
 interface Task {
   id: string;
+  publisherId: string;
+  publisherName: string | null;
   title: string;
-  category: string;
-  price: number;
+  description: string;
+  platform: string;
+  taskType: string;
   status: string;
-  statusText: string;
-  statusColor: string;
-  participants: number;
-  maxParticipants: number;
-  completed: number;
-  inProgress: number;
-  pending: number;
-  publishTime: string;
+  totalQuantity: number;
+  completedQuantity: number;
+  availableCount: number;
+  unitPrice: number;
+  totalAmount: number;
   deadline: string;
-  description: string;
+  requirements: string;
+  publishedTime: string;
+  completedTime: string | null;
+  createTime: string;
+  updateTime: string;
+  pendingSubTaskCount: number | null;
+  acceptedSubTaskCount: number | null;
+  submittedSubTaskCount: number | null;
+  completedSubTaskCount: number | null;
+  completionRate: number | null;
+  remainingDays: number | null;
+  isExpired: boolean | null;
+  publisherAvatar: string | null;
+  publisherTaskCount: number | null;
+  publisherSuccessRate: number | null;
+  commentDetail: any | null;
+  canAccept: boolean | null;
+  cannotAcceptReason: string | null;
 }
 
-// 定义子订单接口
-interface SubOrder {
-  id: string;
-  orderId: string;
-  userId: string;
-  userName: string;
-  status: 'completed' | 'processing' | 'reviewing' | 'pending';
-  reward: number;
+// API响应类型
+interface ApiResponse {
+  code: number;
+  message: string;
+  data: {
+    list: Task[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  };
+  success: boolean;
+  timestamp: number;
 }
 
-// 定义订单接口
-interface Order {
-  id: string;
-  orderNumber: string;
-  title: string;
-  status: 'completed' | 'processing' | 'reviewing' | 'pending';
-  publishTime: string;
-  deadline: string;
-  price: number;
-  type: 'comment' | 'share' | 'other';
-  description: string;
-  subOrders: SubOrder[];
-}
+
 
 export default function CompletedTabPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [apiResponse, setApiResponse] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('time');
-  const [loading, setLoading] = useState(true);
-  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
-    // 显示复制成功提示 - 全局管理
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
 
-  // 静态模拟数据
-  const mockCompletedTasks: Task[] = [
-    {
-      id: "COMPLETE001",
-      title: "微博内容转发评论",
-      category: "评论任务",
-      price: 2.0,
-      status: "completed",
-      statusText: "已完成",
-      statusColor: "green",
-      participants: 20,
-      maxParticipants: 20,
-      completed: 20,
-      inProgress: 0,
-      pending: 0,
-      publishTime: "2025-10-15 10:20:00",
-      deadline: "2025-10-22 10:20:00",
-      description: "转发指定微博内容并添加原创评论，评论需积极正面，不少于8个字。"
-    },
-    {
-      id: "COMPLETE002",
-      title: "抖音账号关注",
-      category: "其他任务",
-      price: 1.5,
-      status: "completed",
-      statusText: "已完成",
-      statusColor: "green",
-      participants: 50,
-      maxParticipants: 50,
-      completed: 50,
-      inProgress: 0,
-      pending: 0,
-      publishTime: "2025-10-12 15:30:00",
-      deadline: "2025-10-19 15:30:00",
-      description: "关注指定抖音账号，保持关注时间不少于7天，截图留存作为凭证。"
-    },
-    {
-      id: "COMPLETE003",
-      title: "小红书笔记收藏",
-      category: "分享任务",
-      price: 2.8,
-      status: "completed",
-      statusText: "已完成",
-      statusColor: "green",
-      participants: 15,
-      maxParticipants: 15,
-      completed: 15,
-      inProgress: 0,
-      pending: 0,
-      publishTime: "2025-10-10 09:45:00",
-      deadline: "2025-10-17 09:45:00",
-      description: "收藏指定小红书笔记并点赞，确保账号活跃度，提高笔记热度。"
-    }
-  ];
-
-  // 直接使用静态数据，无需动态获取
   useEffect(() => {
-    setLoading(true);
+    console.log('组件挂载，开始初始化...');
     
-    // 直接设置静态数据
-    setCompletedTasks(mockCompletedTasks);
-    setLoading(false);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        console.log('开始获取任务数据...');
+        
+        // 构建请求参数
+        const requestParams = {
+          page: 0,
+          size: 10,
+          sortField: 'createTime',
+          sortOrder: 'DESC',
+          platform: 'DOUYIN',
+          taskType: 'COMMENT',
+          minPrice: 1,
+          maxPrice: 999999,
+          keyword: ''
+        };
+        
+        console.log('请求参数:', requestParams);
+        
+        // 调用后端API
+        const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestParams)
+        });
+        
+        console.log('API响应状态:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result: ApiResponse = await response.json();
+        setApiResponse(result);
+        if (result.success && result.data) {
+          // 注意：检查后端实际返回的是tasks还是list
+          const taskList = result.data.list || [];
+          console.log('实际任务列表:', taskList);
+          
+          // 筛选已完成的任务
+          const filteredTasks = taskList.filter((task: Task) => task.status === 'COMPLETED');
+          console.log('筛选后任务列表:', filteredTasks);
+          
+          setTasks(filteredTasks);
+        } else {
+          throw new Error(result.message || '获取任务失败');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '获取数据失败';
+        console.error('获取数据时发生错误:', errorMessage, err);
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+        console.log('数据获取完成，loading状态:', false);
+        console.log('最终tasks状态:', tasks);
+      }
+    };
+    
+    fetchData();
   }, []);
 
   // 处理搜索
   const handleSearch = () => {
-    // 搜索逻辑将在TasksTab组件中处理
+    // 搜索逻辑将在UI中处理
   };
 
   // 处理任务操作
   const handleTaskAction = (taskId: string, action: string) => {
-    if (action === '再次下单') {
-      router.push(`/publisher/create/supplementaryorder?id=${taskId}`);
-    }
+    // 这里可以添加具体的操作逻辑
   };
 
   // 过滤最近订单
-  const filterRecentOrders = (tasks: any[]) => {
+  const filterRecentOrders = (tasks: Task[]) => {
     return tasks.filter(task => {
-      const taskTime = new Date(task.publishTime).getTime();
+      const taskTime = new Date(task.createTime).getTime();
       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
       return taskTime >= sevenDaysAgo;
     });
   };
 
   // 搜索订单
-  const searchOrders = (tasks: any[]) => {
+  const searchOrders = (tasks: Task[]) => {
     if (!searchTerm.trim()) return tasks;
-    
     return tasks.filter(task => 
       task.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -155,33 +161,9 @@ export default function CompletedTabPage() {
     );
   };
 
-  // 排序任务
-  const sortTasks = (tasks: Task[]) => {
-    return [...tasks].sort((a, b) => {
-      switch (sortBy) {
-        case 'time':
-          return new Date(b.publishTime).getTime() - new Date(a.publishTime).getTime();
-        case 'price':
-          return b.price - a.price;
-        case 'status':
-          return a.statusText.localeCompare(b.statusText);
-        default:
-          return 0;
-      }
-    });
-  };
-
-  // 显示加载状态
-  if (loading) {
-    return (
-      <div className="pb-20 flex items-center justify-center h-64">
-        <div className="">加载中...</div>
-      </div>
-    );
-  }
 
 
-
+  // 显示复制成功提示
   const showCopySuccess = (message: string) => {
     setTooltipMessage(message);
     setShowCopyTooltip(true);
@@ -199,136 +181,92 @@ export default function CompletedTabPage() {
     });
   };
 
-  // 将任务转换为订单格式
-  const convertToOrderFormat = (task: Task, index: number): Order => {
-    return {
-      id: task.id,
-      orderNumber: `ORDER${task.id}${index}`,
-      title: task.title,
-      status: 'completed' as const,
-      publishTime: task.publishTime,
-      deadline: task.deadline,
-      price: task.price,
-      type: task.category === '评论任务' ? 'comment' : task.category === '分享任务' ? 'share' : 'other',
-      description: task.description,
-      subOrders: [
-        ...Array.from({ length: task.completed || 0 }).map((_, i) => ({
-          id: `sub-${task.id}-completed-${i}`,
-          orderId: task.id,
-          userId: '',
-          userName: '',
-          status: 'completed' as const,
-          reward: typeof task.price === 'number' ? task.price : 0
-        })),
-        ...Array.from({ length: task.inProgress || 0 }).map((_, i) => ({
-          id: `sub-${task.id}-processing-${i}`,
-          orderId: task.id,
-          userId: '',
-          userName: '',
-          status: 'processing' as const,
-          reward: typeof task.price === 'number' ? task.price : 0
-        })),
-        ...Array.from({ length: task.pending || 0 }).map((_, i) => ({
-          id: `sub-${task.id}-pending-${i}`,
-          orderId: task.id,
-          userId: '',
-          userName: '',
-          status: 'pending' as const,
-          reward: typeof task.price === 'number' ? task.price : 0
-        }))
-      ]
-    };
+  // 复制评论功能
+  const handleCopyComment = (comment: string) => {
+    navigator.clipboard.writeText(comment).then(() => {
+      showCopySuccess('评论已复制');
+    }).catch(() => {
+      // 静默处理复制失败
+    });
   };
 
-  // 获取过滤和搜索后的任务
-  const filteredTasks = sortTasks(searchOrders(filterRecentOrders(completedTasks)));
-  
-  // 订单卡片组件 - 使用全局提示管理复制操作
-  const MainOrderCard = ({ order, onCopyOrderNumber }: { order: Order, onCopyOrderNumber: (orderNumber: string) => void }) => {
-    // 计算子订单统计
-    const subOrderStats = order.subOrders.reduce((acc, subOrder) => {
-      acc[subOrder.status] = (acc[subOrder.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
 
-    // 获取状态样式
-    const getStatusStyle = (status: string) => {
-      switch (status) {
-        case 'completed':
-          return 'bg-green-100 text-green-800';
-        case 'processing':
-          return 'bg-blue-100 text-blue-800';
-        case 'reviewing':
-          return 'bg-yellow-100 text-yellow-800';
-        case 'pending':
-          return 'bg-gray-100 text-gray-800';
-        default:
-          return 'bg-gray-100 text-gray-800';
+
+  // MainOrderCard组件定义，直接使用Task类型
+  const MainOrderCard = ({ task, onCopyOrderNumber, onCopyComment, onViewDetails, onReorder }: {
+    task: Task;
+    onCopyOrderNumber?: (orderNumber: string) => void;
+    onCopyComment?: (comment: string) => void;
+    onViewDetails?: (orderId: string) => void;
+    onReorder?: (orderId: string) => void;
+  }) => {
+    const router = useRouter();
+
+    // 直接使用API返回的原始统计数据
+
+    // 处理复制订单号 - 仅调用父组件传入的方法
+    const handleCopyOrderNumber = () => {
+      if (onCopyOrderNumber) {
+        onCopyOrderNumber(task.id);
       }
     };
 
-    // 日期格式化
-    const formatDate = (dateString: string) => {
-      try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('zh-CN', { 
-          year: 'numeric', 
-          month: '2-digit', 
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } catch (error) {
-        return dateString;
+    // 处理查看详情
+    const handleViewDetails = () => {
+      if (onViewDetails) {
+        onViewDetails(task.id);
+      } else {
+        router.push(`/publisher/orders/task-detail/${task.id}`);
       }
     };
 
-    // 任务类型图标
-    const getTaskTypeIcon = (type: string) => {
-      switch (type) {
-        case 'comment':
-          return '💬';
-        case 'share':
-          return '🔗';
-        default:
-          return '📋';
+    // 处理补单
+    const handleReorder = () => {
+      if (onReorder) {
+        onReorder(task.id);
+      } else {
+        // 跳转到新的补单页面
+        router.push(`/publisher/create/supplementaryorder?reorder=true&orderId=${task.id}&title=${encodeURIComponent(task.title)}&description=${encodeURIComponent(task.description)}&budget=${task.totalAmount.toString()}&subOrderCount=${task.totalQuantity}`);
       }
     };
 
     return (
-      <div className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-all mb-1">
-        {/* 订单号和复制按钮 */}
-        <div className="flex justify-between items-center mb-1">
-          <div className="text-sm font-medium  truncate w-2/3">
-            订单号：{order.orderNumber}
+      <div className="p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow mb-1 bg-white">
+        <div className="flex items-center mb-1 overflow-hidden">
+          <div className="flex-1 mr-2 whitespace-nowrap overflow-hidden text-truncate text-black text-sm">
+            任务ID：{task.id}
           </div>
           <div className="relative">
-            <button
-              onClick={() => onCopyOrderNumber(order.orderNumber)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
+            <button 
+              className="text-blue-600 hover:text-blue-700 whitespace-nowrap text-sm"
+              onClick={handleCopyOrderNumber}
             >
-              ⧉ 复制
+              <span>⧉ 复制</span>
             </button>
           </div>
         </div>
-
-        {/* 创建时间 */}
-        <div className="text-sm  mb-1">
-          创建时间：{formatDate(order.publishTime)}
+        <div className="flex items-center space-x-3 mb-1 pb-1">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-sm  bg-blue-100 text-blue-700`}>
+            任务状态：{task.status}
+          </span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm  bg-blue-100 text-blue-700">
+            任务类型：{task.taskType}
+          </span>
         </div>
-        <div className="text-sm  mb-1">
-          完成时间：{formatDate(order.deadline)}
+        <div className="mb-1 text-sm text-black text-sm">
+          发布时间：{task.createTime}
         </div>
-
-        
-
-        {/* 描述 */}
-        <div className="text-sm mb-1 line-clamp-2">
-          {order.description}
+        <div className="mb-1 text-sm text-black text-sm ">
+          截止时间：{task.deadline}
         </div>
-
+        <div className="text-black text-sm mb-1 w-full rounded-lg">
+           任务要求：{task.requirements}
+        </div>
+        <div className="mb-1 text-sm text-black text-sm">
+          任务描述：{task.description}
+        </div>
         <div className="mb-1 bg-blue-50 border border-blue-500 py-2 px-3 rounded-lg">
-          <p className='mb-1 text-sm text-blue-600'>任务视频点击进入：</p>
+          <p className='mb-1  text-sm text-blue-600'>任务视频点击进入：</p>
           <a 
             href="http://localhost:3000/publisher/dashboard?tab=active" 
             target="_blank" 
@@ -340,38 +278,31 @@ export default function CompletedTabPage() {
               window.open('https://www.douyin.com', '_blank');
             }}
           >
-            <span className="mr-1">⦿</span> 打开视频
+             打开视频
           </a>
-          
+        </div>
+        
+        <div className="flex gap-2 mb-1">
+          <div className="flex-1 bg-green-600 rounded-lg p-1 text-center">
+            <span className="text-white text-sm mb-1">总价</span>
+            <span className="text-white text-sm block">¥{(task.totalAmount || 0).toFixed(2)}</span>
+          </div>
+          <div className="flex-1 bg-green-600 rounded-lg p-1 text-center">
+            <span className="text-white text-sm mb-1">总数量</span>
+            <span className="text-white text-sm block">{task.totalQuantity || 0}</span>
+          </div>
         </div>
 
-        {/* 任务类型和预算 */}
-        <div className="flex items-center mb-1 gap-2">
-            <div className={`text-xs px-2 py-1 rounded-full ${getStatusStyle(order.status)}`}>
-              {order.status === 'completed' ? '已完成' : '进行中'}
-            </div>
-            <div className="text-sm font-medium text-gray-900">
-              子订单数：{order.subOrders.length}
-            </div>
-            <div className="text-sm font-medium text-gray-900">
-              价格：¥{order.price.toFixed(2)}
-            </div>
-        </div>
-
-
-
-
-        {/* 操作按钮 */}
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={() => router.push(`/publisher/orders/task-detail/${order.id}`)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+        <div className="flex justify-end">
+          <button 
+            className="bg-blue-600 hover:bg-blue-700 text-white  py-2 px-4 rounded-md transition-colors"
+            onClick={handleViewDetails}
           >
             查看详情
           </button>
           <button
-            onClick={() => handleTaskAction(order.id, '再次下单')}
-            className="px-4 py-2 bg-orange-500 text-white rounded-md text-sm font-medium hover:bg-orange-600 transition-colors"
+            onClick={handleReorder}
+            className="px-4 py-2 bg-orange-500 text-white rounded-md text-sm font-medium hover:bg-orange-600 transition-colors ml-2"
           >
             再次下单
           </button>
@@ -379,6 +310,37 @@ export default function CompletedTabPage() {
       </div>
     );
   };
+
+  // 获取过滤和搜索后的订单 - 默认按时间排序
+  const filteredTasks = searchOrders(filterRecentOrders(tasks)).sort((a, b) => {
+    const dateA = a.createTime ? new Date(a.createTime).getTime() : 0;
+    const dateB = b.createTime ? new Date(b.createTime).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  // 渲染加载状态
+  if (loading) {
+    return (
+      <div className="pb-20 flex items-center justify-center h-64">
+        <div className="text-gray-500">加载中...</div>
+      </div>
+    );
+  }
+
+  // 渲染错误状态
+  if (error) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-red-500 mb-4">{error}</p>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={() => window.location.reload()}
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-4 mt-6 space-y-4">
@@ -389,35 +351,39 @@ export default function CompletedTabPage() {
         </div>
       )}
       
-      {/* 使用标准模板组件 */}
+      {/* 使用标准模板组件 - 移除排序功能 */}
       <OrderHeaderTemplate
         title="已完成的订单"
-        totalCount={completedTasks.length}
+        totalCount={filteredTasks.length}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         handleSearch={handleSearch}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        viewAllUrl="/publisher/orders"
+        viewAllUrl="/publisher/orders/completed"
         onViewAllClick={() => router.push('/publisher/orders')}
       />
       
       {/* 任务列表 */}
       <div>
         {filteredTasks.length > 0 ? (
-          filteredTasks.map((task, index) => {
-            const order = convertToOrderFormat(task, index);
-            return (
-              <MainOrderCard
-                key={`completed-${task.id}-${index}`}
-                order={order}
-                onCopyOrderNumber={handleCopyOrderNumber}
-              />
-            );
-          })
+          filteredTasks.map((task) => (
+            <MainOrderCard
+              key={task.id}
+              task={task}
+              onCopyOrderNumber={handleCopyOrderNumber}
+              onCopyComment={handleCopyComment}
+              onViewDetails={(orderId: string) => {
+                if (task.taskType && task.taskType === 'ACCOUNT_RENTAL') {
+                  router.push(`/publisher/orders/account-rental/${orderId}`);
+                } else {
+                  router.push(`/publisher/orders/task-detail/${orderId}`);
+                }
+              }}
+              onReorder={(orderId) => handleTaskAction(orderId, 'reorder')}
+            />
+          ))
         ) : (
           <div className="text-center py-8 bg-white rounded-lg shadow-sm">
-            <p className="">暂无相关任务</p>
+            <p className="text-gray-500">暂无相关任务</p>
           </div>
         )}
       </div>

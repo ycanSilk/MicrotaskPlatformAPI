@@ -2,187 +2,382 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { EditOutlined, CopyOutlined, LinkOutlined } from '@ant-design/icons';
 
-// 定义任务接口
-export interface Task {
-  id: string;
-  parentId?: string;
-  title?: string;
-  price?: number;
-  unitPrice?: number;
-  status: string;
-  statusText?: string;
-  statusColor?: string;
-  description?: string;
-  deadline?: string;
-  progress?: number;
-  submitTime?: string;
-  completedTime?: string;
-  reviewNote?: string;
-  requirements: string;
-  publishTime: string;
-  videoUrl?: string;
-  mention?: string;
-  screenshotUrl?: string;
-  recommendedComment?: string;
-  commentContent?: string;
-  subOrderNumber?: string;
-  orderNumber?: string;
-  taskType?: string;
-  requiringVideoUrl?: string;
-  submitdvideoUrl?: string;
-  submitScreenshotUrl?: string;
-  requiringCommentUrl?: string;
+// 定义表单提交数据类型
+interface SubmitFormData {
+  subtaskId: string;
+  submittedLinkUrl: string;
+  submittedImages: string;
+  submittedComment?: string;
 }
 
-export type TaskStatus = 'sub_progress' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect';
+// 定义后端返回的任务接口
+export interface Task {
+  id: string;
+  mainTaskId: string;
+  mainTaskTitle: string;
+  mainTaskPlatform: string;
+  workerId: string;
+  workerName: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  commentGroup: string;
+  commentType: string;
+  unitPrice: number;
+  userReward: number;
+  agentReward: number;
+  status: string; // 后端状态
+  acceptTime: string;
+  expireTime: string;
+  submitTime: string | null;
+  completeTime: string | null;
+  settleTime: string | null;
+  submittedImages: string | null;
+  submittedLinkUrl: string | null;
+  submittedComment: string | null;
+  verificationNotes: string | null;
+  rejectReason: string | null;
+  cancelReason: string | null;
+  cancelTime: string | null;
+  releaseCount: number;
+  settled: boolean;
+  verifierId: string | null;
+  verifierName: string | null;
+  createTime: string;
+  updateTime: string;
+  taskDescription: string | null;
+  taskRequirements: string | null;
+  taskDeadline: string | null;
+  remainingMinutes: number | null;
+  isExpired: boolean | null;
+  isAutoVerified: boolean | null;
+  canSubmit: boolean | null;
+  canCancel: boolean | null;
+  canVerify: boolean | null;
+  verifyResult: string | null;
+  verifyTime: string | null;
+  verifyComment: string | null;
+  settlementStatus: string | null;
+  settlementTime: string | null;
+  settlementRemark: string | null;
+  workerRating: number | null;
+  workerComment: string | null;
+  publisherRating: number | null;
+  publisherComment: string | null;
+  firstGroupComment: string | null;
+  secondGroupComment: string | null;
+  firstGroupImages: string | null;
+  secondGroupImages: string | null;
+  
+  // 前端需要的字段
+  screenshotUrl?: string;
+}
+
+export type TaskStatus = 'sub_progress' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect' | 'sub_rejected';
 
 interface ProgressTasksTabProps {
   tasks: Task[];
-  uploadStatus: Record<string, string>;
-  linkUploadStatus: Record<string, string>;
-  isSubmitting: boolean;
-  isLoading: boolean;
-  handleCopyComment: (taskId: string, comment?: string) => void;
-  handleUploadScreenshot: (taskId: string) => void;
-  handleUploadLink: (taskId: string, reviewLink?: string) => Promise<void>;
-  handleSubmitOrder: (taskId: string) => void;
-  handleViewDetails: (taskId: string) => void;
   handleViewImage: (imageUrl: string) => void;
-  handleRemoveImage: (taskId: string) => void;
-  getTaskTypeName: (taskType?: string) => string;
-  fetchUserTasks: () => void;
+  fetchUserTasks: () => Promise<void>;
   setModalMessage: (message: string) => void;
   setShowModal: (show: boolean) => void;
+  handleCopyComment?: (taskId: string, comment?: string) => void;
+  handleUploadScreenshot?: (taskId: string) => void;
+  handleRemoveImage?: (taskId: string) => void;
+  handleSubmitOrder?: (taskId: string) => void;
+  isSubmitting?: boolean;
+  uploadStatus?: Record<string, 'compressing' | 'uploading' | 'success' | 'error'>;
 }
 
-const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({
-  tasks,
-  uploadStatus,
-  linkUploadStatus,
-  isSubmitting,
-  isLoading,
-  handleCopyComment,
-  handleUploadScreenshot,
-  handleUploadLink,
-  handleSubmitOrder,
-  handleViewDetails,
-  handleViewImage,
-  handleRemoveImage,
-  getTaskTypeName,
-  fetchUserTasks,
-  setModalMessage,
-  setShowModal
-}) => {
-  const router = useRouter();
+const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewImage, fetchUserTasks, setModalMessage, setShowModal, handleCopyComment, handleUploadScreenshot, handleRemoveImage, handleSubmitOrder, isSubmitting }) => {
+  // 组件内部状态管理
   const [reviewLinks, setReviewLinks] = useState<Record<string, string>>({});
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  // modal相关状态通过props传入，无需在组件内部重复声明
+    
   // 处理评论链接输入变化
   const handleReviewLinkChange = (taskId: string, value: string) => {
     setReviewLinks(prev => ({ ...prev, [taskId]: value }));
-  };
-
-  // 提交订单时同时提交评论链接
-  const handleSubmitOrderWithLink = async (taskId: string) => {
-    const reviewLink = reviewLinks[taskId];
-    if (reviewLink) {
-      // 先上传链接
-      await handleUploadLink(taskId, reviewLink);
+    // 清除相关错误提示
+    if (errors[taskId]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[taskId];
+        return newErrors;
+      });
     }
-    // 然后提交订单
-    handleSubmitOrder(taskId);
+  };
+  
+  // 处理取消任务
+  const handleCancelTask = async (taskId: string) => {
+    if (confirm('确定要取消此任务吗？')) {
+      setIsLoading(true);
+      try {
+        // 调用取消任务的API
+        const response = await fetch('/api/commenter/task/canceltask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ taskId }),
+        });
+        
+        const data = await response.json();
+        if (data.success || data.status === 'success') {
+          setModalMessage('任务取消成功');
+          setShowModal(true);
+          // 通过props传入的函数刷新任务列表
+          await fetchUserTasks();
+        } else {
+          setModalMessage(`取消失败: ${data.message || '未知错误'}`);
+          setShowModal(true);
+        }
+      } catch (error) {
+        console.error('取消任务出错:', error);
+        setModalMessage('取消任务时发生错误，请稍后重试');
+        setShowModal(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+  
+  // 获取任务类型名称
+  const getTaskTypeName = (commentType?: string): string => {
+    const typeMap: Record<string, string> = {
+      'video_comment': '视频评论',
+      'article_comment': '文章评论',
+      'product_review': '商品评价',
+    };
+    return typeMap[commentType || ''] || '评论';
   };
 
-  // 获取任务操作按钮组
-  const getTaskButtons = (task: Task) => {
-    return (
-      <div className="flex space-x-2">
-        <button 
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${ 
-            uploadStatus[task.id] === 'compressing' || uploadStatus[task.id] === 'uploading' 
-              ? 'bg-gray-400 text-white cursor-not-allowed' 
-              : uploadStatus[task.id] === 'success' 
-                ? 'bg-green-500 text-white' 
-                : uploadStatus[task.id] === 'error' 
-                  ? 'bg-red-500 text-white' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
-          onClick={() => handleUploadScreenshot(task.id)}
-          disabled={uploadStatus[task.id] === 'compressing' || uploadStatus[task.id] === 'uploading'}
-        >
-          {uploadStatus[task.id] === 'compressing' ? '压缩中...' : uploadStatus[task.id] === 'uploading' ? '上传中...' : '上传截图'}
-        </button>
-        <button 
-          className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-          onClick={() => handleSubmitOrderWithLink(task.id)}
-          disabled={isSubmitting || !task.screenshotUrl}
-        >
-          提交订单
-        </button>
-      </div>
-    );
-  }
-
+    // 图片上传功能
+    const uploadImage = async (taskId: string, file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        // 检查文件类型
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          reject(new Error('不支持的图片格式，请上传JPG、PNG、GIF或WebP格式的图片'));
+          return;
+        }
+        
+        // 检查文件大小（限制为5MB）
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          reject(new Error('图片文件过大，请上传小于5MB的图片'));
+          return;
+        }
+        
+        // 创建FormData对象
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('taskId', taskId);
+        
+        // 创建XMLHttpRequest以支持进度监控
+        const xhr = new XMLHttpRequest();
+        
+        // 监听上传进度
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(prev => ({ ...prev, [taskId]: percentComplete }));
+          }
+        });
+        
+        // 处理完成事件
+        xhr.addEventListener('load', () => {
+          setUploadProgress(prev => ({ ...prev, [taskId]: 100 }));
+          if (xhr.status === 200) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              if (response.success && response.data && response.data.imageUrl) {
+                resolve(response.data.imageUrl);
+              } else {
+                reject(new Error(response.message || '图片上传失败'));
+              }
+            } catch (error) {
+              reject(new Error('图片上传响应解析失败'));
+            }
+          } else {
+            reject(new Error(`图片上传失败: HTTP ${xhr.status}`));
+          }
+        });
+        
+        // 处理错误事件
+        xhr.addEventListener('error', () => {
+          reject(new Error('网络错误，图片上传失败'));
+        });
+        
+        // 发送请求
+        xhr.open('POST', '/api/upload/image');
+        xhr.send(formData);
+      });
+    };
+    
+    // 表单验证和提交处理
+    const handleSubmitOrderForm = async (task: Task) => {
+      // 清除之前的错误
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[task.id];
+        return newErrors;
+      });
+      
+      // 表单验证
+      const videoUrl = reviewLinks[task.id] || task.submittedLinkUrl || '';
+      const imageUrl = task.screenshotUrl || task.submittedImages;
+      
+      // 验证task.id是否存在
+      if (!task.id) {
+        setModalMessage('任务ID无效，无法提交');
+        setShowModal(true);
+        return;
+      }
+      
+      // 验证图片URL不能为空
+      if (!imageUrl) {
+        setErrors(prev => ({ ...prev, [task.id]: '请上传任务截图' }));
+        setModalMessage('请上传任务截图');
+        setShowModal(true);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        // 不需要设置taskId，直接使用isLoading状态控制按钮文本
+        
+        // 构建请求数据
+        const formData: SubmitFormData = {
+          subtaskId: task.id,
+          submittedLinkUrl: videoUrl,
+          submittedImages: imageUrl,
+          submittedComment: task.firstGroupComment || task.secondGroupComment || task.submittedComment || ''
+        };
+        
+        console.log('提交订单数据:', formData);
+        
+        // 调用后端API
+        const response = await fetch('/api/commenter/task/submittask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        // 处理API响应
+        if (response.ok && (data.success || data.status === 'success')) {
+          setModalMessage('任务提交成功');
+          setShowModal(true);
+          // 刷新任务列表 - 使用传入的fetchUserTasks回调
+          fetchUserTasks && fetchUserTasks();
+        } else {
+          throw new Error(data.message || '任务提交失败');
+        }
+      } catch (error) {
+        console.error('提交订单失败:', error);
+        setModalMessage(error instanceof Error ? error.message : '网络错误，请检查网络连接后重试');
+        setShowModal(true);
+      } finally {
+        setIsLoading(false);
+        // 已移除对uploadProgress.taskId的管理
+      }
+    };
+    
   return (
     <div className="mt-6">
-      {tasks.map((task) => (
+      {/* 加载状态显示 */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-blue-600">加载中...</span>
+        </div>
+      )}
+
+      {/* 错误状态显示 */}
+      {!isLoading && tasks.length === 0 && (
+        <div className="text-center py-10 bg-gray-50 rounded-lg">
+          <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="mt-4 text-gray-500">暂无进行中的任务</p>
+          <button 
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition-colors"
+            onClick={fetchUserTasks}
+          >
+            刷新任务列表
+          </button>
+        </div>
+      )}
+
+      {/* 任务列表 */}
+      {!isLoading && tasks.length > 0 && tasks.map((task) => (
         <div key={task.id || 'unknown'} className="rounded-lg p-4 mb-4 shadow-sm transition-all hover:shadow-md bg-white">
+          {/* 添加任务操作按钮组 */}
+          {task.canCancel && (
+            <button
+              className="text-xs bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors mb-2"
+              onClick={() => handleCancelTask(task.id)}
+              disabled={isSubmitting}
+            >
+              取消任务
+            </button>
+          )}
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm text-black inline-block flex items-center">
-              订单号：{task.subOrderNumber || task.orderNumber || '未命名任务'}
+              任务标题：{task.mainTaskTitle || '未命名任务'}
               <button 
                 className="ml-2 text-blue-500 hover:text-blue-700 transition-colors"
                 onClick={() => {
-                  const orderNumber = task.subOrderNumber || task.orderNumber;
-                  if (orderNumber) {
-                    navigator.clipboard.writeText(orderNumber).then(() => {
-                      // 使用模态框显示复制成功提示，而不是alert
-                      setModalMessage('订单号已复制到剪贴板');
-                      setShowModal(true);
-                    }).catch(err => {
-                      console.error('复制失败:', err);
-                      // 使用模态框显示错误提示
-                      setModalMessage('复制失败，请手动复制');
-                      setShowModal(true);
-                    });
-                  }
+                  navigator.clipboard.writeText(task.id).then(() => {
+                    // 使用模态框显示复制成功提示
+                    setModalMessage('任务ID已复制到剪贴板');
+                    setShowModal(true);
+                  }).catch(err => {
+                    console.error('复制失败:', err);
+                    setModalMessage('复制失败，请手动复制');
+                    setShowModal(true);
+                  });
                 }}
               >
                 <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span className="text-xs inline-block">复制</span>
+                <span className="text-xs inline-block">复制任务ID</span>
               </button>
             </h3>
           </div>
            
           {/* 价格和任务信息区域 - 显示单价、任务状态和发布时间 */}
           <div className="mb-2">
-            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || task.price || 0).toFixed(2)}</div>
+            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice ).toFixed(2)}</div>
               <div className="space-y-2 mb-1">
                 <div>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 mr-2">
-                    {task.statusText || '进行中'}
-                  </span>
+
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                    {getTaskTypeName(task.taskType) || '评论'}
+                    {task.commentType}
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 ml-2">
+                    {task.mainTaskPlatform}
                   </span>
                 </div>
                 <div className="text-sm text-black block">
-                  {task.publishTime || '未知时间'}
+                  接受时间：{task.acceptTime}
                 </div>  
-                {/* 时间信息 */}
-                {task.deadline && (
-                  <div className="text-sm text-black block">
-                    截止时间：{task.deadline}
-                  </div>
-                )}
+                <div className="text-sm text-black block">
+                  截止时间：{task.expireTime}
+                </div>
               </div>
           </div>
           
          
 
           <div className="text-sm text-black mb-2 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3 block">
-            要求：{task.requirements || '无特殊要求'}
+            要求：{task.taskRequirements}
           </div>
           
           {/* 推荐评论区域 - 所有任务都显示 */}
@@ -190,31 +385,27 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({
           <div className="flex justify-between items-center mb-1">
             <h4 className="text-sm font-medium text-blue-700"><EditOutlined className="inline-block mr-1" /> 推荐评论</h4>
             <button 
-              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
-              onClick={() => handleCopyComment(task.id, task.recommendedComment)}
+              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-500 transition-colors"
+              onClick={() => handleCopyComment(task.id, task.firstGroupComment || task.secondGroupComment || task.submittedComment)}
             >
               <CopyOutlined className="inline-block mr-1" /> 复制评论
             </button>
           </div>
           <p className="text-sm text-black bg-white p-3 rounded border border-blue-100 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-            {task.recommendedComment || '暂无推荐评论内容，请根据任务要求自行撰写。'}
+            {task.firstGroupComment}
           </p>
         </div>
      
-          {/* 打开视频按钮 */}
-          {task.requiringVideoUrl && (
+          {/* 提交的图片显示 */}
+          {task.submittedImages && (
             <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
-              <span className="text-sm text-blue-700 mr-2">任务视频点击进入：</span>
-              <button 
-                className="mt-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-                onClick={() => window.open(task.requiringVideoUrl, '_blank')}
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                打开视频
-              </button>
+              <span className="text-sm text-blue-700 mr-2">已提交的截图：</span>
+              <img 
+                src={task.submittedImages} 
+                alt="已提交的截图" 
+                className="mt-1 max-w-full h-auto rounded"
+                onClick={() => handleViewImage(task.submittedImages)}
+              />
             </div>
           )}
           
@@ -229,25 +420,28 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({
         </label>
         <input
           type="text"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors[task.id] ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="完成任务评论的链接输入"
-          value={reviewLinks[task.id] || task.submitdvideoUrl || ''}
+          value={reviewLinks[task.id] || task.submittedLinkUrl || ''}
           onChange={(e) => handleReviewLinkChange(task.id, e.target.value)}
         />
-        {linkUploadStatus[task.id] === 'uploading' && (
-          <div className="mt-1 text-xs text-black">链接上传中...</div>
-        )}
-        {linkUploadStatus[task.id] === 'success' && (
-          <div className="mt-1 text-xs text-green-600">链接上传成功</div>
-        )}
-        {linkUploadStatus[task.id] === 'error' && (
-          <div className="mt-1 text-xs text-red-600">链接上传失败</div>
-        )}
+        {reviewLinks[task.id] || task.submittedLinkUrl ? (
+          <button
+            className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+            onClick={() => window.open(reviewLinks[task.id] || task.submittedLinkUrl, '_blank')}
+          >
+            打开视频
+          </button>
+        ) : null}
       </div>
 
           {/* 截图显示区域 - 自适应高度，居中显示 */}
           <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
             <div className='text-sm text-blue-500 pl-2 py-2'>完成任务截图上传：</div>
+            {/* 显示错误信息 */}
+            {errors[task.id] && (
+              <div className="text-red-500 text-xs mb-2 pl-2">{errors[task.id]}</div>
+            )}
             <div 
               className={`w-[130px] h-[130px] relative cursor-pointer overflow-hidden rounded-lg border border-gray-300 bg-gray-50 transition-colors hover:border-blue-400 ${task.screenshotUrl ? 'hover:shadow-md' : ''} flex items-center justify-center`}
               onClick={() => task.screenshotUrl && handleViewImage(task.screenshotUrl)}
@@ -262,7 +456,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({
                   <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 flex items-center justify-center transition-all">
                     <span className="text-blue-500 text-lg opacity-0 hover:opacity-100 transition-opacity">点击放大</span>
                   </div>
-                  {/* 删除按钮 */}
+                  {/* 删除按钮 - 移除冷却时间限制 */}
                   <button
                     className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
                     onClick={(e) => {
@@ -287,8 +481,24 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({
             </p>
           </div>
           
-          {/* 添加防御性编程，确保即使task有问题也不会导致运行时错误 */}
-          {task && typeof getTaskButtons === 'function' && getTaskButtons(task)}
+          {/* 任务操作按钮 */}
+          <div className="flex space-x-2">
+            <button 
+              className="flex-1 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-700 transition-colors"
+              onClick={() => handleUploadScreenshot!(task.id)}
+            >
+              上传截图
+            </button>
+            <button 
+              className="flex-1 bg-blue-500 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              onClick={() => handleSubmitOrderForm(task)}
+              disabled={!task.screenshotUrl || isLoading || !task.id}
+            >
+              {isLoading ? '提交中...' : '提交订单'}
+            </button>
+          </div>
+          
+          
         </div>
       ))}
     </div>
