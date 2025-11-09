@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 // 订单任务类型枚举 - 使用数字定义以符合数据库设计
 // 0: 评论任务, 1: 视频发布, 2: 账号租赁

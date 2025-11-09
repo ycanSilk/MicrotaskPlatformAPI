@@ -174,59 +174,65 @@ export default function ActiveTabPage() {
 
   // 调用子任务列表API
   const fetchSubtaskList = async (taskId: string) => {
+    console.log('=== 获取子任务列表开始 ===', { taskId });
+    
     try {
       setLoading(true);
-      console.log(`开始获取任务 ${taskId} 的子任务列表...`);
+      console.log(`发送获取子任务列表请求到后端API`);
       
-      // 构建请求参数 - 确保与后端默认值一致
+      // 构建请求参数
       const requestParams = {
+        taskId,
         page: 0,
         size: 10,
         sortField: 'createTime',
-        sortOrder: 'DESC',
-        platform: '',
-        taskType: '',
-        minPrice: 0,
-        maxPrice: 9999, // 与后端默认值保持一致
-        keyword: ''
+        sortOrder: 'DESC'
       };
       
-      console.log(`准备调用子任务列表API，taskId: ${taskId}`);
-      
-      // 调用后端API，将taskId作为查询参数传递
-      const response = await fetch(`/api/publisher/publishertasks/subtasklist?taskId=${taskId}`, {
+      // 调用后端API
+      const response = await fetch('/api/publisher/publishertasks/subtasklist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        // 传递当前页面的cookie，确保认证信息正确传递
-        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(requestParams)
       });
-      
-      console.log('子任务列表API响应状态:', response.status, response.statusText);
-      
+
+      // 检查响应状态
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error('子任务列表API返回非成功状态:', response.status);
+        // 尝试解析错误响应
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `获取子任务列表失败，状态码: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`获取子任务列表失败，状态码: ${response.status}`);
+        }
+      }
+
+      // 解析响应数据
+      const responseData = await response.json();
+      console.log('子任务列表API响应数据:', responseData);
+      
+      // 检查API调用是否成功
+      if (!responseData.success) {
+        console.error('子任务列表API返回失败标志:', responseData.message);
+        throw new Error(responseData.message || '获取子任务列表失败');
       }
       
-      const result = await response.json();
-      console.log('子任务列表API响应:', result);
+      console.log('获取子任务列表成功');
       
-      if (result.success && result.data) {
-        console.log('获取子任务列表成功，数量:', result.data.subtasks?.length || 0);
-        // 构建URL并添加查询参数
-        const url = `/publisher/orders/task-detail/${taskId}?subtasks=${encodeURIComponent(JSON.stringify(result.data.subtasks))}`;
-        router.push(url);
-      } else {
-        throw new Error(result.message || '获取子任务列表失败');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '获取子任务列表失败';
-      console.error('获取子任务列表时发生错误:', errorMessage, err);
-      // 显示错误提示
+      // 构建URL并添加查询参数
+      const url = `/publisher/orders/task-detail/${taskId}?subtasks=${encodeURIComponent(JSON.stringify(responseData.data?.subtasks || []))}`;
+      router.push(url);
+      
+    } catch (error) {
+      console.error('获取子任务列表错误:', error);
+      const errorMessage = error instanceof Error ? error.message : '获取子任务列表失败';
       alert(`获取子任务列表失败: ${errorMessage}`);
     } finally {
       setLoading(false);
-      console.log('子任务列表获取完成');
+      console.log('=== 获取子任务列表结束 ===');
     }
   };
 

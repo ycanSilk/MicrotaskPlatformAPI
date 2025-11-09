@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 // 订单状态枚举 - 使用数字定义以符合数据库设计
 // 0: 待处理, 1: 进行中, 2: 审核中, 3: 已完成, 4: 已拒绝, 5: 已取消

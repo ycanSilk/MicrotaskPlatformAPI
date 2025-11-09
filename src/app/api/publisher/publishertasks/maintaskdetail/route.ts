@@ -5,14 +5,11 @@ const config = require('../../apiconfig/config.json');
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('获取子任务列表API请求开始');
+    console.log('获取主任务详情API请求开始');
     
     // 从请求中获取taskId参数
     const requestData = await request.json();
-    const { taskId, page = 0, size = 10, sortField = 'createTime', sortOrder = 'DESC' } = requestData;
-    
-    console.log(`请求参数: taskId=${taskId}, page=${page}, size=${size}`);
-
+    const { taskId } = requestData;
     // 参数验证
     if (!taskId || typeof taskId !== 'string' || taskId.trim() === '') {
       console.log('参数验证失败: 任务ID不能为空');
@@ -53,7 +50,7 @@ export async function POST(request: NextRequest) {
     const defaultHeaders = config.headers;
     
     // 构造完整的API URL，将taskId作为路径参数
-    const apiUrl = `${baseUrl}/tasks/${taskId}/subtasks`;
+    const apiUrl = `${baseUrl}/tasks/${taskId}`;
     
     // 构造请求头，合并默认头和token头
     const requestHeaders: HeadersInit = {
@@ -64,35 +61,30 @@ export async function POST(request: NextRequest) {
 
     // 构造请求参数
     const requestParams = {
-      page,
-      size,
-      sortField,
-      sortOrder,
       ...requestData // 包含其他可能的参数
     };
 
-    console.log(`API URL: ${apiUrl}`);
-    console.log(`请求参数: ${JSON.stringify(requestParams)}`);
     
-    // 调用外部API获取子任务列表
+    
+    // 调用外部API获取主任务详情
     const response = await fetch(apiUrl, {
-      method: 'POST',
+      method: 'GET',
       headers: requestHeaders,
-      body: JSON.stringify(requestParams),
       signal: AbortSignal.timeout(timeout)
     });
     
     // 解析响应数据
     const data = await response.json();
-    
-    // 只输出一次简要的响应信息
-     console.log("这是获取子任务列表的API返回的日志输出:");
-    console.log("apiurl:", apiUrl);
-    console.log("这是获取子任务列表的API返回的日志输出:", token);
-    console.log('这是获取子任务列表的API返回的日志输出:', response);
-    console.log(`外部API响应: status=${response.status}, message=${data?.message || '无消息'}`);
-    console.log(`子任务列表数据: ${JSON.stringify(data?.data)}`);
 
+    console.log("这是主任务详情页面的API返回的日志输出:");
+    console.log(`请求参数: ${JSON.stringify(requestParams)}`);
+    console.log("apiurl:", apiUrl);
+    console.log("token:", token);
+    console.log('请求返回的数据:', response);
+    // 输出完整的响应结果，不做格式化处理
+    console.log('完整的响应结果数据:');
+    console.log(data);
+    
     // 根据外部API返回的success字段决定HTTP状态码
     // 如果外部API返回的success为false，应该返回适当的错误状态码
     let httpStatus = response.status;
@@ -105,11 +97,12 @@ export async function POST(request: NextRequest) {
         httpStatus = 400;
       }
     }
+    
     // 返回API响应
     return NextResponse.json(data, { status: httpStatus });
     
   } catch (error) {
-    console.error('获取子任务列表API调用失败:', error);
+    console.error('获取主任务详情API调用失败:', error);
     
     return NextResponse.json(
       { 
@@ -122,6 +115,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    console.log('获取子任务列表API请求结束');
+    console.log('获取主任务详情API请求结束');
   }
 }
