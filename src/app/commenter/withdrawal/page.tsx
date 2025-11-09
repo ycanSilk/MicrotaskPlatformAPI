@@ -1,12 +1,31 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
 import { CreditCardOutlined, AlipayOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
+// 由于找不到@/components/ui下的组件，我们使用原生HTML元素和Tailwind CSS来实现UI
+
+// 定义与后端API返回数据结构完全一致的数据类型接口
+interface ApiBankCard {
+  id: string;
+  userId: string;
+  cardholderName: string;
+  cardNumber: string;
+  bank: string;
+  issuingBank: string;
+  isDefault: boolean;
+  createTime: string;
+}
+
+interface ApiResponse {
+  code: number;
+  message: string;
+  data: ApiBankCard[];
+  success: boolean;
+  timestamp: number;
+}
+
+// 前端展示用的银行卡接口
 interface BankCard {
   id: string;
   bankName: string;
@@ -34,49 +53,69 @@ const WithdrawalPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [paymentPassword, setPaymentPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
-  // 模拟获取银行卡和支付宝账户数据
+  // 调用后端API获取银行卡列表数据
   useEffect(() => {
     const fetchPaymentMethods = async () => {
       try {
         setLoading(true);
-        // 模拟网络请求延迟
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // 模拟银行卡数据
-        const mockBankCards: BankCard[] = [
-          {
-            id: 'bank-001',
-            bankName: '工商银行',
-            cardNumber: '6222 **** **** 5678',
-            holderName: '张三',
-            isDefault: true
+        
+        // 调用后端API获取银行卡列表
+        const response = await fetch('/api/public/bank/getbankcardslist', {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
           },
-          {
-            id: 'bank-002',
-            bankName: '建设银行',
-            cardNumber: '6217 **** **** 1234',
-            holderName: '张三',
-            isDefault: false
-          }
-        ];
-
-        // 模拟支付宝账户数据
+          // 设置超时处理
+          signal: AbortSignal.timeout(10000),
+          // 凭证设置，确保cookie可以被发送到API
+          credentials: 'include' as RequestCredentials
+        });
+        
+        // 检查响应状态
+        if (!response.ok) {
+          throw new Error(`请求失败，状态码: ${response.status}`);
+        }
+        
+        // 解析响应数据
+        const apiResponse: ApiResponse = await response.json();
+        
+        // 处理API返回的错误
+        if (!apiResponse.success) {
+          const errorMsg = apiResponse.message || '获取银行卡列表失败';
+          throw new Error(errorMsg);
+        }
+        
+        // 将API返回的数据转换为前端显示需要的格式
+        const formattedBankCards: BankCard[] = (apiResponse.data || []).map((card: ApiBankCard) => ({
+          id: card.id,
+          bankName: card.bank || card.issuingBank || '未知银行',
+          cardNumber: formatBankCardNumber(card.cardNumber),
+          holderName: card.cardholderName,
+          isDefault: card.isDefault
+        }));
+        
+        // 模拟支付宝账户数据（暂不调用API）
         const mockAlipayAccounts: AlipayAccount[] = [
           {
             id: 'alipay-001',
-            accountName: '张三',
-            accountNumber: '138****5678',
-            isDefault: true
+            accountName: '测试',
+            accountNumber: '13794719208',
+            isDefault: true,
+            
           }
         ];
 
-        setBankCards(mockBankCards);
+        setBankCards(formattedBankCards);
         setAlipayAccounts(mockAlipayAccounts);
 
-        // 设置默认选择的卡片
-        if (mockBankCards.length > 0) {
-          const defaultBank = mockBankCards.find(card => card.isDefault) || mockBankCards[0];
+        // 设置默认选择的卡片 - 将isDefault字段为true的银行卡设置为默认选中状态
+        if (formattedBankCards.length > 0) {
+          const defaultBank = formattedBankCards.find(card => card.isDefault) || formattedBankCards[0];
           setSelectedBankId(defaultBank.id);
         }
 
@@ -86,7 +125,11 @@ const WithdrawalPage = () => {
         }
       } catch (err) {
         console.error('获取支付方式失败:', err);
-        setError('获取支付方式失败，请稍后重试');
+        if (err instanceof Error) {
+          setError(`获取支付方式失败: ${err.message}`);
+        } else {
+          setError('获取支付方式失败，请稍后重试');
+        }
       } finally {
         setLoading(false);
       }
@@ -130,8 +173,8 @@ const WithdrawalPage = () => {
   // 处理金额输入变化
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // 只允许输入数字和小数点
-    const filteredValue = value.replace(/[^0-9.]/g, '');
+    // 只允许输入整数
+    const filteredValue = value.replace(/[^0-9]/g, '');
     setAmount(filteredValue);
     setError('');
   };
@@ -142,8 +185,8 @@ const WithdrawalPage = () => {
     setError('');
   };
 
-  // 处理提现提交
-  const handleSubmit = async () => {
+  // 处理提现提交 - 先弹出密码输入框
+  const handleSubmit = () => {
     // 验证金额
     const validation = validateAmount(amount);
     if (!validation.isValid) {
@@ -158,21 +201,101 @@ const WithdrawalPage = () => {
       return;
     }
 
+    // 清除之前的密码和错误信息
+    setPaymentPassword('');
+    setPasswordError('');
+    // 显示支付密码输入框
+    setShowPasswordModal(true);
+  };
+
+  // 处理支付密码验证和实际提现提交
+  const handlePasswordConfirm = async () => {
+    // 验证支付密码不为空 - 添加日志调试
+    console.log('handlePasswordConfirm called, paymentPassword:', paymentPassword);
+    
+    if (!paymentPassword || paymentPassword.trim() === '') {
+      console.log('Password is empty or whitespace');
+      setPasswordError('请输入支付密码');
+      return;
+    }
+
     try {
       setLoading(true);
-      setError('');
+      setPasswordError('');
 
-      // 模拟提交提现申请
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 获取当前选中的银行卡完整信息
+      const selectedBankCard = getSelectedBankCard();
+      
+      console.log('Withdrawal request data:', {
+        withdrawalMethod,
+        selectedBankCard: selectedBankCard?.id,
+        amount: amount,
+        paymentPassword: '******' // 掩码显示密码
+      });
+      
+      if (withdrawalMethod === 'bank' && selectedBankCard) {
+        // 调用后端API提交提现申请，并传递支付密码
+        console.log('Calling bank withdrawal API...');
+        const response = await fetch('/api/public/walletmanagement/balancewithdrawal', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            amount: parseFloat(amount),
+            bankCardId: selectedBankCard.id,
+            bankCard: selectedBankCard,
+            withdrawalMethod: 'bank',
+            paymentPassword: paymentPassword  // 添加支付密码字段
+          }),
+          credentials: 'include' as RequestCredentials
+        });
+        
+        console.log('API response status:', response.status);
+        
+        // 检查响应状态
+        if (!response.ok) {
+          throw new Error(`请求失败，状态码: ${response.status}`);
+        }
+        
+        // 解析响应数据
+        const result = await response.json();
+        console.log('API response data:', result);
+        
+        // 处理API返回的错误
+        if (!result.success) {
+          const errorMsg = result.message || '提交提现申请失败';
+          throw new Error(errorMsg);
+        }
+      }
 
-      // 直接跳转到提现记录页面
+      // 关闭密码输入框
+      setShowPasswordModal(false);
+      // 提现成功后跳转到提现记录页面
       router.push('/commenter/withdrawal/list');
     } catch (err) {
       console.error('提交提现申请失败:', err);
-      setError('提交提现申请失败，请稍后重试');
+      if (err instanceof Error) {
+        const errorMsg = `提交失败: ${err.message}`;
+        console.log(errorMsg);
+        setPasswordError(errorMsg);
+      } else {
+        const errorMsg = '提交失败，请稍后重试';
+        console.log(errorMsg);
+        setPasswordError(errorMsg);
+      }
     } finally {
       setLoading(false);
+      console.log('Withdrawal process completed');
     }
+  };
+
+  // 关闭密码输入框
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPaymentPassword('');
+    setPasswordError('');
   };
 
   // 获取选中的银行卡信息
@@ -209,7 +332,7 @@ const WithdrawalPage = () => {
        
       </div>
 
-      <Card className="mb-6">
+      <div className="mb-6 border border-gray-200 rounded-lg shadow-sm p-4">
         <div className="">
             <div className='p-4 bg-green-500 flex flex-col items-center justify-center h-[120px] rounded-md mb-4'> 
                 <div className=" text-white">可用余额: </div>
@@ -217,16 +340,20 @@ const WithdrawalPage = () => {
             </div>
             <div className="text-lg font-medium mb-2">提现金额:</div>         
             <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-lg font-medium">¥</span>
-                <Input
-                type="text"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="请输入提现金额"
-                className="pl-8 py-3 text-2xl font-medium"
-                disabled={loading || !!success}
-                />
+                <input
+                  type="text"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="请输入提现金额"
+                  className="pl-8  text-xl  border rounded w-full"
+                  disabled={loading || !!success}
+                  />
+                  {amount && (!/^\d+$/.test(amount) || parseInt(amount) % 100 !== 0) && (
+                    <p className="text-red-500 text-sm mt-1">提现金额必须是100的整数倍</p>
+                  )}
+                  <p className="text-sm text-red-500 mt-1">*提现金额必须是整数且是100的倍数</p>
             </div>
+            
 
             <div className="text-sm  mb-4">
                 <p>提现说明：</p>
@@ -241,24 +368,24 @@ const WithdrawalPage = () => {
             {/* 快捷金额选项 */}
             <div className="mb-4">
                 <p className="text-sm  mb-2">快捷提现金额：</p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="grid grid-cols-3 gap-2">
                 {[100, 200, 300, 500, 1000].map(value => (
-                    <Button
+                    <button
                     key={value}
-                    variant="secondary"
+                    type="button"
                     onClick={() => setAmount(value.toString())}
                     disabled={loading || !!success || value > availableBalance}
-                    className={`${value > availableBalance ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`${value > availableBalance ? 'opacity-50 cursor-not-allowed' : ''} bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded w-full`}
                     >
                     {value}元
-                    </Button>
+                    </button>
                 ))}
                 </div>
             </div>
         </div>
-      </Card>
+      </div>
 
-      <Card className="mb-6">
+      <div className="mb-6 border border-gray-200 rounded-lg shadow-sm p-4">
         <div className="p-4">
           <h2 className="text-lg font-medium mb-4">提现方式</h2>
           
@@ -274,9 +401,9 @@ const WithdrawalPage = () => {
               <CreditCardOutlined className="text-blue-600" />
               <span>银行卡</span>
               {bankCards.length > 0 && (
-                <Badge className="ml-auto">
-                  {bankCards.length}张卡
-                </Badge>
+                <span className="ml-auto bg-gray-100 text-gray-800 text-xs rounded px-2 py-1">
+                    {bankCards.length}张卡
+                </span>
               )}
             </div>
             
@@ -291,17 +418,17 @@ const WithdrawalPage = () => {
               <AlipayOutlined className="text-blue-500" />
               <span>支付宝</span>
               {alipayAccounts.length > 0 && (
-                <Badge className="ml-auto">
+                <span className="ml-auto bg-gray-100 text-gray-800 text-xs rounded px-2 py-1">
                   {alipayAccounts.length}个账户
-                </Badge>
+                </span>
               )}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {withdrawalMethod === 'bank' && bankCards.length > 0 && (
-        <Card className="mb-6">
+        <div className="mb-6 border border-gray-200 rounded-lg shadow-sm p-4">
           <div className="p-4">
             <h2 className="text-lg font-medium mb-4">选择银行卡</h2>
             <div className="space-y-3">
@@ -317,7 +444,7 @@ const WithdrawalPage = () => {
                   </div>
                   <div className="flex items-center">
                     {card.isDefault && (
-                      <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-200">默认</Badge>
+                      <span className="ml-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">默认</span>
                     )}
                     {selectedBankId === card.id && (
                       <div className="w-4 h-4 rounded-full border-2 border-blue-500 flex items-center justify-center">
@@ -329,11 +456,11 @@ const WithdrawalPage = () => {
               ))}
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {withdrawalMethod === 'alipay' && alipayAccounts.length > 0 && (
-        <Card className="mb-6">
+        <div className="mb-6 border border-gray-200 rounded-lg shadow-sm p-4">
           <div className="p-4">
             <h2 className="text-lg font-medium mb-4">选择支付宝账户</h2>
             <div className="space-y-3">
@@ -349,7 +476,7 @@ const WithdrawalPage = () => {
                   </div>
                   <div className="flex items-center">
                     {acc.isDefault && (
-                      <Badge className="mr-2 bg-green-100 text-green-800 hover:bg-green-200">默认</Badge>
+                      <span className="ml-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">默认</span>
                     )}
                     {selectedAlipayId === acc.id && (
                       <div className="w-4 h-4 rounded-full border-2 border-blue-500 flex items-center justify-center">
@@ -361,7 +488,7 @@ const WithdrawalPage = () => {
               ))}
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* 错误提示 */}
@@ -375,19 +502,69 @@ const WithdrawalPage = () => {
       {/* 成功提示 - 已移除，直接跳转 */}
 
       {/* 提现按钮 */}
-      <Button
+      <button
+        type="button"
         onClick={handleSubmit}
-        className="w-full py-6 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white"
+        className="w-full py-6 text-lg font-medium bg-blue-600 hover:bg-blue-700 text-white rounded"
         disabled={loading || !amount}
       >
         {loading ? '提交中...' : '确认提现'}
-      </Button>
+      </button>
 
       {/* 底部提示 */}
       <div className="mt-6 text-center text-xs ">
         <p>提现金额将在1-3个工作日内到账，请耐心等待</p>
         <p className="mt-1">如有疑问，请联系客服</p>
       </div>
+
+      {/* 支付密码输入弹窗 */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-md mx-4 p-6">
+            <h3 className="text-xl font-medium mb-4 text-center">输入支付密码</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">支付密码</label>
+              <input
+                type="password"
+                value={paymentPassword}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  console.log('Password input changed:', value);
+                  setPaymentPassword(value);
+                }}
+                placeholder="请输入支付密码"
+                className="w-full px-4 py-2 border border-gray-300 rounded"
+                disabled={loading}
+                // 添加autoComplete属性防止浏览器自动填充干扰
+                autoComplete="off"
+              />
+              {passwordError && (
+                <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+              )}
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={closePasswordModal}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                disabled={loading}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handlePasswordConfirm}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? '验证中...' : '确认'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,10 +1,25 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useParams } from 'next/navigation';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { Button, Card } from 'antd';
+
+// 导入交易记录类型定义，用于数据转换
+interface TransactionRecord {
+  orderNo: string;
+  transactionType: string;
+  typeDescription: string;
+  amount: number;
+  beforeBalance: number;
+  afterBalance: number;
+  status: string;
+  statusDescription: string;
+  description: string;
+  channel: string;
+  createTime: string;
+  updateTime: string;
+}
 
 // 交易详情类型定义
 interface TransactionDetail {
@@ -28,94 +43,158 @@ const TransactionDetailPage = () => {
   const [transactionDetail, setTransactionDetail] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 模拟获取交易详情数据
+  // 从localStorage获取交易详情数据
   useEffect(() => {
-    const fetchTransactionDetail = async () => {
+    const fetchTransactionDetail = () => {
       try {
         setLoading(true);
-        // 模拟网络请求延迟
-        await new Promise(resolve => setTimeout(resolve, 800));
         
-        // 交易详情静态数据映射，为特定ID提供对应数据
-        const transactionDetailsMap: Record<string, TransactionDetail> = {
-          'txn-001': {
-            id: 'txn-001',
-            type: 'rental_payment',
-            amount: -480.00,
-            balanceAfter: 8965.50,
-            datetime: '2023-07-01 10:25:00',
-            description: '评论账号租赁订单支付',
-            orderId: 'ORD-20230701-001',
-            status: 'completed',
-            otherParty: '平台系统',
-            remark: '评论账号租赁服务费用',
-            transactionNumber: 'TXN20230701102500001'
-          },
-          'txn-002': {
-            id: 'txn-002',
-            type: 'rental_income',
-            amount: 280.00,
-            balanceAfter: 9445.50,
-            datetime: '2023-06-28 16:30:00',
-            description: '发布任务佣金收入',
-            orderId: 'ORD-20230628-002',
-            status: 'completed',
-            otherParty: '平台系统',
-            remark: '任务完成佣金结算',
-            transactionNumber: 'TXN20230628163000002'
-          },
-          'recharge-001': {
-            id: 'recharge-001',
-            type: 'recharge',
-            amount: 2000.00,
-            balanceAfter: 10965.50,
-            datetime: '2023-06-30 16:45:00',
-            description: '账户充值',
-            orderId: 'RECH-20230630-001',
-            status: 'completed',
-            otherParty: '支付宝',
-            remark: '支付宝充值',
-            transactionNumber: 'RECH20230630164500001'
-          },
-          'withdraw-001': {
-            id: 'withdraw-001',
-            type: 'withdraw',
-            amount: -5000.00,
-            balanceAfter: 14165.50,
-            datetime: '2023-06-25 11:05:00',
-            description: '账户提现',
-            orderId: 'WITH-20230625-001',
-            status: 'completed',
-            otherParty: '工商银行 **** 5678',
-            remark: '提现到银行卡',
-            transactionNumber: 'WITH20230625110500001'
-          }
-        };
+        // 从localStorage获取交易记录数据
+        const transactionDataStr = localStorage.getItem('transactionData');
         
-        // 查找对应的交易详情，不存在则使用默认数据
-        const transactionDetail = transactionDetailsMap[transactionId] || {
-          id: transactionId || 'txn-default',
-          type: 'transfer',
-          amount: -2.61,
-          balanceAfter: 0.00,
-          datetime: '2025-03-09 11:25:14',
-          description: '转账',
-          status: 'completed',
-          otherParty: '转账',
-          remark: '花呗2025年03月自动还款',
-          transactionNumber: '20250309102551010428040032974100'
-        };
-        
-        setTransactionDetail(transactionDetail);
+        if (transactionDataStr) {
+          const transactionData: TransactionRecord = JSON.parse(transactionDataStr);
+          
+          // 转换TransactionRecord到TransactionDetail格式
+          const convertedDetail: TransactionDetail = {
+            id: transactionData.orderNo,
+            type: mapTransactionType(transactionData.transactionType),
+            amount: transactionData.amount,
+            balanceAfter: transactionData.afterBalance,
+            datetime: formatDateTime(transactionData.createTime),
+            description: transactionData.description || transactionData.typeDescription,
+            orderId: transactionData.orderNo,
+            status: mapTransactionStatus(transactionData.status),
+            // 保存原始typeDescription用于后续判断
+            otherParty: getTransactionAccount(transactionData),
+            remark: transactionData.description || transactionData.typeDescription,
+            transactionNumber: transactionData.orderNo
+          };
+          
+          setTransactionDetail(convertedDetail);
+        } else {
+          // 如果localStorage中没有数据，使用默认数据
+          setTransactionDetail({
+            id: transactionId || 'txn-default',
+            type: 'transfer',
+            amount: 0,
+            balanceAfter: 0,
+            datetime: new Date().toLocaleString('zh-CN'),
+            description: '交易详情',
+            status: 'completed',
+            otherParty: '未知',
+            remark: '',
+            transactionNumber: transactionId
+          });
+        }
       } catch (error) {
         console.error('获取交易详情失败:', error);
+        setTransactionDetail(null);
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchTransactionDetail();
   }, [transactionId]);
+  
+  // 将交易类型映射到详情页需要的类型格式
+  const mapTransactionType = (transactionType: string): TransactionDetail['type'] => {
+    switch (transactionType) {
+      case 'recharge':
+        return 'recharge';
+      case 'withdraw':
+        return 'withdraw';
+      case 'task_payment':
+        return 'task_payment';
+      case 'task_income':
+        return 'task_income';
+      case 'platform_fee':
+        return 'platform_fee';
+      case 'refund':
+        return 'refund';
+      case 'rental_payment':
+        return 'rental_payment';
+      case 'rental_income':
+        return 'rental_income';
+      default:
+        return 'transfer';
+    }
+  };
+  
+  // 将交易状态映射到详情页需要的状态格式
+  const mapTransactionStatus = (status: string): TransactionDetail['status'] => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'success':
+        return 'completed';
+      case 'pending':
+        return 'pending';
+      case 'failed':
+        return 'failed';
+      case 'processing':
+        return 'processing';
+      default:
+        return 'completed';
+    }
+  };
+  
+  // 根据typeDescription确定交易账户
+  const getTransactionAccount = (transaction: TransactionRecord): string => {
+    const typeDesc = transaction.typeDescription?.toLowerCase() || '';
+    
+    if (typeDesc.includes('提现')) {
+      return '银行卡账户';
+    } else if (transaction.amount > 0) {
+      return '平台';
+    } else {
+      return '余额';
+    }
+  };
+  
+  // 根据typeDescription和amount确定交易类型
+  const getTransactionTypeByDescription = (transaction: TransactionRecord): string => {
+    const typeDesc = transaction.typeDescription?.toLowerCase() || '';
+    
+    if (typeDesc.includes('提现')) {
+      return '提现';
+    } else if (transaction.amount > 0) {
+      return '收入';
+    } else {
+      return '支出';
+    }
+  };
+  
+  // 获取订单类型显示文本
+  const getOrderTypeText = (typeDescription: string): string => {
+    const typeDesc = typeDescription?.toLowerCase() || '';
+    
+    if (typeDesc.includes('任务奖励')) {
+      return '任务奖励';
+    } else if (typeDesc.includes('账号出租')) {
+      return '账号出租';
+    } else if (typeDesc.includes('提现')) {
+      return '提现';
+    } else if (typeDesc.includes('账号租赁')) {
+      return '账号租赁';
+    } else {
+      return typeDescription || '其他';
+    }
+  };
+  
+  // 格式化日期时间
+  const formatDateTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).replace(/\//g, '-');
+  };
 
   // 获取交易类型对应的中文名称
   const getTransactionTypeText = (type: string): string => {
@@ -126,16 +205,10 @@ const TransactionDetailPage = () => {
       task_income: '任务收入',
       platform_fee: '平台服务费',
       refund: '退款',
-      transfer: '转账',
       rental_payment: '租赁支付',
       rental_income: '租赁收入'
     };
     return typeMap[type] || type;
-  };
-
-  // 获取收支类型对应的中文名称
-  const getIncomeExpenseType = (amount: number): string => {
-    return amount > 0 ? '收入' : '支出';
   };
 
   // 返回上一页
@@ -194,7 +267,7 @@ const TransactionDetailPage = () => {
                 <span className="text-2xl text-amber-500">¥</span>
               </div>
               <h2 className="text-lg font-medium text-gray-900">
-                {getTransactionTypeText(transactionDetail.type)}
+                {getOrderTypeText(JSON.parse(localStorage.getItem('transactionData') || '{}').typeDescription || '')}
               </h2>
             </div>
 
@@ -217,13 +290,13 @@ const TransactionDetailPage = () => {
               <div className="flex justify-between py-2 border-b border-gray-100">
                 <span className="text-gray-500">交易类型</span>
                 <span className="text-gray-900 font-medium">
-                  {getIncomeExpenseType(transactionDetail.amount)}
+                  {getTransactionTypeByDescription(JSON.parse(localStorage.getItem('transactionData') || '{}'))}
                 </span>
               </div>
 
-              {/* 对方账户 */}
+              {/* 交易账户 */}
               <div className="flex justify-between py-2 border-b border-gray-100">
-                <span className="text-gray-500">对方账户</span>
+                <span className="text-gray-500">交易账户</span>
                 <span className="text-gray-900 font-medium">
                   {transactionDetail.otherParty || '-'}</span>
               </div>

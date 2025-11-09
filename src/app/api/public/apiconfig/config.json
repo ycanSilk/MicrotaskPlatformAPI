@@ -10,13 +10,19 @@
       "walletinfo": "/wallet/info",
       "bindAlipay": "/wallet/bind-alipay",
       "setpaymentpwd": "/wallet/security-password",
-      "topup": "/biz/wallet/topup",
-      "withdraw": "/biz/wallet/withdraw",
+      "withdraw": "/wallet/withdraw",
       "availablebalance": "/wallet/available-balance",
-      "validatepwd": "/wallet/validate-security-password?password="
+      "validatepwd": "/wallet/validate-security-password?password=",
+      "transactionrecord": "/wallet/transactions"
     },
     "task": {
       "missionhall": "/tasks/hall"
+    },
+    "bank": {
+      "getbankcardslist": "/bank-cards/",
+      "addbankcard": "/bank-cards/",
+      "setdefaultbankcard": "/bank-cards/{cardId}/default",
+      "getdefaultbankcard": "/bank-cards/default"
     }
   },
   "mockMode": false,

@@ -1,8 +1,7 @@
 'use client';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BankOutlined, EnvironmentOutlined, FlagOutlined, ToolOutlined, MessageOutlined, WalletOutlined, MedicineBoxOutlined, ShopOutlined, WarningOutlined, SunOutlined, GlobalOutlined, CreditCardOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
 
 // 定义银行列表数据
 const BANKS = [
@@ -19,12 +18,15 @@ const BANKS = [
   { code: 'HXB', name: '华夏银行', icon: <GlobalOutlined className="text-xl" /> }
 ];
 
+
+
 // 定义错误状态接口
 interface FormErrors {
   cardHolderName?: string;
   cardNumber?: string;
   bankCode?: string;
   phoneNumber?: string;
+  bankBranch?: string;
 }
 
 export default function BindBankCardPage() {
@@ -53,7 +55,9 @@ export default function BindBankCardPage() {
     return null;
   };
 
-  // 验证银行卡号（Luhn算法验证，更符合实际生产环境要求）
+
+
+  // 验证银行卡号（Luhn算法验证，储蓄卡固定16位）
   const validateCardNumber = (number: string): string | null => {
     const cleanedNumber = number.replace(/\s/g, '');
     
@@ -62,7 +66,7 @@ export default function BindBankCardPage() {
     }
     
     if (!/^\d{16,19}$/.test(cleanedNumber)) {
-      return '银行卡号格式不正确，应为16-19位数字';
+      return '银行卡号格式不正确，储蓄卡应为16-19位数字';
     }
     
     // Luhn算法验证
@@ -123,6 +127,18 @@ export default function BindBankCardPage() {
     return value.replace(/\s+/g, '').replace(/(\d{4})/g, '$1 ').trim();
   };
 
+  // 验证开户行
+  const validateBankBranch = (branch: string): string | null => {
+    if (!branch.trim()) {
+      return '开户行不能为空';
+    }
+    // 支持中文、英文、数字、常见标点符号，长度限制在2-100个字符
+    if (!/^[\u4e00-\u9fa5a-zA-Z0-9\s\u002D-\u002F\u0028-\u0029\u002E\u002C\u003A\u003B\u005F]{2,100}$/.test(branch)) {
+      return '开户行格式不正确，请输入2-100个字符的有效开户行名称';
+    }
+    return null;
+  };
+
   // 处理输入变化并清除对应字段错误
   const handleInputChange = (field: string, value: string) => {
     switch (field) {
@@ -133,8 +149,13 @@ export default function BindBankCardPage() {
         }
         break;
       case 'cardNumber':
-        const numericValue = value.replace(/\s+/g, '').replace(/[^\d]/g, '');
-        setCardNumber(numericValue);
+        // 只保留数字字符
+        const numericValue = value.replace(/[^0-9]/g, '');
+        // 限制最大数字长度为16位
+        const limitedValue = numericValue.slice(0, 19);
+        setCardNumber(limitedValue);
+        
+        // 清除卡号错误状态
         if (errors.cardNumber) {
           setErrors(prev => ({ ...prev, cardNumber: undefined }));
         }
@@ -148,6 +169,9 @@ export default function BindBankCardPage() {
         break;
       case 'bankBranch':
         setBankBranch(value);
+        if (errors.bankBranch) {
+          setErrors(prev => ({ ...prev, bankBranch: undefined }));
+        }
         break;
     }
   };
@@ -167,6 +191,9 @@ export default function BindBankCardPage() {
     
     const phoneError = validatePhoneNumber(phoneNumber);
     if (phoneError) newErrors.phoneNumber = phoneError;
+    
+    const branchError = validateBankBranch(bankBranch);
+    if (branchError) newErrors.bankBranch = branchError;
     
     setErrors(newErrors);
     
@@ -196,53 +223,27 @@ export default function BindBankCardPage() {
     setApiError(null);
     
     try {
-      // 获取当前登录用户信息
-    const getCurrentUser = () => {
-      if (typeof localStorage === 'undefined') return null;
-      try {
-        const authDataStr = localStorage.getItem('commenter_auth_data');
-        if (authDataStr) {
-          const authData = JSON.parse(authDataStr);
-          return {
-            id: authData.userId || '',
-            username: authData.username || '',
-            ...(authData.userInfo || {})
-          };
-        }
-      } catch (error) {
-        console.error('获取用户信息失败:', error);
-      }
-      return null;
-    };
-    
-    const currentUser = getCurrentUser();
-      if (!currentUser) {
-        setApiError('用户未登录，请重新登录');
-        // 跳转到登录页
-        setTimeout(() => {
-          router.push('/auth/login/commenterlogin');
-        }, 1500);
-        return;
-      }
-      
-      // 构建提交数据
-      const formData = {
-        cardHolderName,
+      // 构建提交数据，按照后端API要求的格式
+      const formData: any = {
+        userId: '', // 添加用户ID，实际应用中应从用户认证状态获取
+        cardholderName: cardHolderName, // 使用后端API要求的字段名
         cardNumber: cardNumber.replace(/\s/g, ''),
-        bankCode: selectedBank?.code,
-        bankName: selectedBank?.name,
-        phoneNumber: phoneNumber || undefined,
-        bankBranch: bankBranch || undefined
+        bank: selectedBank?.code,
+        issuingBank: bankBranch.trim() // 开户行作为必填项 
       };
+      
+      // 如果提供了手机号，也添加到表单数据中
+      if (phoneNumber) {
+        formData.phoneNumber = phoneNumber;
+      }
       
       console.log('提交的银行卡信息:', formData);
       
-      // 调用后端API
-      const response = await fetch('/api/commenter/bank/addbankcard', {
+      // 调用指定的后端API文件
+      const response = await fetch('/api/public/bank/addbankcard', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': currentUser.username // 设置X-User-Id请求头
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
@@ -264,11 +265,16 @@ export default function BindBankCardPage() {
       }, 3000);
       
     } catch (error) {
-      console.error('绑定银行卡失败:', error);
-      setApiError('网络错误，请稍后重试');
-    } finally {
-      setIsSubmitting(false);
-    }
+        console.error('绑定银行卡失败:', error);
+        // 提供更详细的错误信息
+        if (error instanceof Error) {
+          setApiError(`网络错误: ${error.message}，请稍后重试`);
+        } else {
+          setApiError('网络连接失败，请检查您的网络设置后重试');
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
   };
 
   return (
@@ -354,7 +360,7 @@ export default function BindBankCardPage() {
                   value={formatCardNumber(cardNumber)}
                   onChange={(e) => handleInputChange('cardNumber', e.target.value)}
                   placeholder="请输入银行卡号"
-                  maxLength={19}
+                  maxLength={23} // 16位数字 + 3个空格
                   className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all ${errors.cardNumber ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500'} text-gray-700`}
                 />
                 {errors.cardNumber && (
@@ -382,7 +388,9 @@ export default function BindBankCardPage() {
                 >
                   <div className="flex items-center">
                     <span className="text-xl mr-3">{selectedBank?.icon || <CreditCardOutlined className="text-xl" />}</span>
-                    <span className="text-gray-600">{selectedBank?.name || '请选择银行'}</span>
+                    <div>
+                      <span className="text-gray-600">{selectedBank?.name || '请选择银行'}</span>
+                    </div>
                   </div>
                   <svg className={`w-5 h-5 text-gray-500 transition-transform ${showBankList ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -444,16 +452,24 @@ export default function BindBankCardPage() {
               {/* 开户行（选填） */}
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  开户行 <span className="text-gray-400 text-xs">(选填)</span>
-                </label>
-                <input
-                  id="bankBranch"
-                  type="text"
-                  value={bankBranch}
-                  onChange={(e) => handleInputChange('bankBranch', e.target.value)}
-                  placeholder="请输入开户银行名称，如：某某银行某某分行"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                />
+                  开户行 <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="bankBranch"
+              type="text"
+              value={bankBranch}
+              onChange={(e) => handleInputChange('bankBranch', e.target.value)}
+              placeholder="请输入开户银行名称，如：某某银行某某分行"
+              className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition-all ${errors.bankBranch ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-blue-500'} text-gray-700`}
+            />
+            {errors.bankBranch && (
+              <p className="text-red-500 text-xs mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {errors.bankBranch}
+              </p>
+            )}
               </div>
 
               {/* 提交按钮 */}
