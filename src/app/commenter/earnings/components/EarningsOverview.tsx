@@ -114,27 +114,23 @@ const EarningsOverview: React.FC<EarningsOverviewProps> = ({
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow-md">
             <div className="text-center">
-              <div className="text-sm mb-1">今日收益</div>
-              <div className="text-base mb-1">¥{statsData.todayEarnings.toFixed(2)}</div>
+              <div className="text-base mb-1">今日收益：¥{statsData.todayEarnings.toFixed(2)}</div>
               <div className="text-xs opacity-90">任务: ¥{calculateTaskEarnings(statsData.todayEarnings).toFixed(2)}</div>
               <div className="text-xs opacity-90">佣金: ¥{calculateCommissionEarnings(statsData.todayEarnings).toFixed(2)}</div>
             </div>
           </div>
           <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 text-center shadow-sm">
-            <div style={{color: '#DD6B20', fontSize: '14px', marginBottom: '4px'}}>昨日</div>
-            <div style={{color: '#DD6B20', fontSize: '16px', marginBottom: '4px'}}>¥{statsData.yesterdayEarnings.toFixed(2)}</div>
+            <div style={{color: '#DD6B20', fontSize: '16px', marginBottom: '4px'}}>昨日收益：¥{statsData.yesterdayEarnings.toFixed(2)}</div>
             <div style={{color: '#C05621', fontSize: '12px'}}>任务: ¥{calculateTaskEarnings(statsData.yesterdayEarnings).toFixed(2)}</div>
             <div style={{color: '#ED8936', fontSize: '12px'}}>佣金: ¥{calculateCommissionEarnings(statsData.yesterdayEarnings).toFixed(2)}</div>
           </div>
           <div className="bg-green-50 border border-green-100 rounded-lg p-4 text-center shadow-sm">
-            <div style={{color: '#2F855A', fontSize: '14px', marginBottom: '4px'}}>本周</div>
-            <div style={{color: '#2F855A', fontSize: '16px', marginBottom: '4px'}}>¥{statsData.weeklyEarnings.toFixed(2)}</div>
+            <div style={{color: '#2F855A', fontSize: '16px', marginBottom: '4px'}}>本周收益：¥{statsData.weeklyEarnings.toFixed(2)}</div>
             <div style={{color: '#276749', fontSize: '12px'}}>任务: ¥{calculateTaskEarnings(statsData.weeklyEarnings).toFixed(2)}</div>
             <div style={{color: '#48BB78', fontSize: '12px'}}>佣金: ¥{calculateCommissionEarnings(statsData.weeklyEarnings).toFixed(2)}</div>
           </div>
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-center shadow-sm">
-            <div style={{color: '#2B6CB0', fontSize: '14px', marginBottom: '4px'}}>本月</div>
-            <div style={{color: '#2B6CB0', fontSize: '16px', marginBottom: '4px'}}>¥{statsData.monthlyEarnings.toFixed(2)}</div>            
+            <div style={{color: '#2B6CB0', fontSize: '16px', marginBottom: '4px'}}>本月收益：¥{statsData.monthlyEarnings.toFixed(2)}</div>            
             <div style={{color: '#2C5282', fontSize: '12px'}}>任务: ¥{calculateTaskEarnings(statsData.monthlyEarnings).toFixed(2)}</div>
             <div style={{color: '#4299E1', fontSize: '12px'}}>佣金: ¥{calculateCommissionEarnings(statsData.monthlyEarnings).toFixed(2)}</div>
           </div>

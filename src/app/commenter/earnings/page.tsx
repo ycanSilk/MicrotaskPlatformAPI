@@ -1,11 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import EarningsOverview from './components/EarningsOverview';
 import EarningsDetails from './components/EarningsDetails';
 
-// 定义类型接口
+// 动态导入overview页面
+const OverviewPage = lazy(() => import('./overview/page'));
+
+// 定义交易记录数据类型接口
+export interface TransactionItem {
+  orderNo: string;
+  transactionType: string;
+  typeDescription: string;
+  amount: number;
+  beforeBalance: number;
+  afterBalance: number;
+  status: string;
+  statusDescription: string;
+  description: string;
+  channel: string;
+  createTime: string;
+  updateTime: string;
+}
+
+// 定义API响应数据类型接口
+export interface TransactionResponse {
+  code: number;
+  message: string;
+  data: {
+    list: TransactionItem[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  };
+  success: boolean;
+  timestamp: number;
+}
+
+// 定义每日收益类型接口
 export interface DailyEarning {
   date: string;
   amount: number;
@@ -28,6 +61,7 @@ export interface CommenterAccount {
   referrerId?: string;
   createdAt?: string;
 }
+
 export interface EarningRecord {
   id: string;
   userId: string;
@@ -75,6 +109,7 @@ export default function CommenterEarningsPage() {
   const [currentEarnings, setCurrentEarnings] = useState<EarningRecord[]>([]);
   const [currentWithdrawals, setCurrentWithdrawals] = useState<WithdrawalRecord[]>([]);
   const [dailyEarnings, setDailyEarnings] = useState<DailyEarning[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [stats, setStats] = useState({
     todayEarnings: 0,
     yesterdayEarnings: 0,
@@ -83,91 +118,188 @@ export default function CommenterEarningsPage() {
   });
   const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview');
 
-  // 初始化数据 - 使用静态数据
+  // 计算不同时间维度的收益统计
+  const calculateEarningsStats = (transactions: TransactionItem[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    let totalEarnings = 0;
+    let todayEarnings = 0;
+    let yesterdayEarnings = 0;
+    let weeklyEarnings = 0;
+    let monthlyEarnings = 0;
+
+    transactions.forEach(transaction => {
+      // 只统计收益类型的交易（任务奖励）
+      if (transaction.transactionType === 'TASK_REWARD' && transaction.status === 'SUCCESS') {
+        const transactionDate = new Date(transaction.createTime);
+        const amount = transaction.amount;
+        
+        totalEarnings += amount;
+        
+        // 今天的收益
+        if (transactionDate >= today) {
+          todayEarnings += amount;
+          weeklyEarnings += amount;
+          monthlyEarnings += amount;
+        }
+        // 昨天的收益
+        else if (transactionDate >= yesterday && transactionDate < today) {
+          yesterdayEarnings += amount;
+          weeklyEarnings += amount;
+          monthlyEarnings += amount;
+        }
+        // 本周的其他日期
+        else if (transactionDate >= weekStart && transactionDate < yesterday) {
+          weeklyEarnings += amount;
+          monthlyEarnings += amount;
+        }
+        // 本月的其他日期
+        else if (transactionDate >= monthStart && transactionDate < weekStart) {
+          monthlyEarnings += amount;
+        }
+      }
+    });
+
+    return {
+      totalEarnings,
+      todayEarnings,
+      yesterdayEarnings,
+      weeklyEarnings,
+      monthlyEarnings
+    };
+  };
+
+  // 生成最近7天的每日收益数据
+  const generateDailyEarnings = (transactions: TransactionItem[]) => {
+    const dailyMap = new Map<string, number>();
+    const now = new Date();
+    
+    // 初始化最近7天的数据
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dailyMap.set(dateStr, 0);
+    }
+    
+    // 统计每日收益
+    transactions.forEach(transaction => {
+      if (transaction.transactionType === 'TASK_REWARD' && transaction.status === 'SUCCESS') {
+        const dateStr = transaction.createTime.split(' ')[0];
+        if (dailyMap.has(dateStr)) {
+          dailyMap.set(dateStr, (dailyMap.get(dateStr) || 0) + transaction.amount);
+        }
+      }
+    });
+    
+    // 转换为数组格式
+    const earnings: DailyEarning[] = [];
+    dailyMap.forEach((amount, date) => {
+      earnings.push({ date: date + 'T00:00:00.000Z', amount });
+    });
+    
+    return earnings;
+  };
+
+  // 将交易记录转换为收益记录格式
+  const convertToEarningRecords = (transactions: TransactionItem[]): EarningRecord[] => {
+    return transactions
+      .filter(t => t.transactionType === 'TASK_REWARD' && t.status === 'SUCCESS')
+      .map((t, index) => ({
+        id: t.orderNo || index.toString(),
+        userId: '',
+        taskId: t.orderNo,
+        taskName: t.typeDescription,
+        amount: t.amount,
+        type: 'task',
+        description: t.description,
+        createdAt: t.createTime
+      }));
+  };
+
+  // 获取交易记录并统计收益
   useEffect(() => {
-    const initializeData = () => {
+    const fetchTransactionData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // 设置默认用户账户信息（静态数据）
-        setCurrentUserAccount({
-          userId: 'mock-user-id',
-          availableBalance: 150.5,
-          frozenBalance: 50,
-          totalEarnings: 200.5,
-          todayEarnings: 12.5,
-          yesterdayEarnings: 8.0,
-          weeklyEarnings: 65.5,
-          monthlyEarnings: 180.0,
-          completedTasks: 25
-        });
-        
-        // 设置统计数据
-        setStats({
-          todayEarnings: 12.5,
-          yesterdayEarnings: 8.0,
-          weeklyEarnings: 65.5,
-          monthlyEarnings: 180.0
-        });
-        
-        // 设置每日收益数据
-        setDailyEarnings([
-          { date: new Date(Date.now() - 7 * 86400000).toISOString(), amount: 5.5 },
-          { date: new Date(Date.now() - 6 * 86400000).toISOString(), amount: 8.0 },
-          { date: new Date(Date.now() - 5 * 86400000).toISOString(), amount: 12.0 },
-          { date: new Date(Date.now() - 4 * 86400000).toISOString(), amount: 9.5 },
-          { date: new Date(Date.now() - 3 * 86400000).toISOString(), amount: 15.0 },
-          { date: new Date(Date.now() - 2 * 86400000).toISOString(), amount: 8.0 },
-          { date: new Date(Date.now() - 1 * 86400000).toISOString(), amount: 12.5 }
-        ]);
-
-        // 设置默认收益记录
-        setCurrentEarnings([
-          {
-            id: '1',
-            userId: 'mock-user-id',
-            taskId: 'task-1',
-            taskName: '评论任务',
-            amount: 12.5,
-            type: 'task',
-            description: '完成评论任务',
-            createdAt: new Date(Date.now() - 86400000).toISOString()
+        // 调用后端API获取交易记录
+        const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
           },
-          {
-            id: '2',
-            userId: 'mock-user-id',
-            taskId: 'task-2',
-            taskName: '点赞任务',
-            amount: 8.0,
-            type: 'task',
-            description: '完成点赞任务',
-            createdAt: new Date(Date.now() - 172800000).toISOString()
-          }
-        ]);
+          body: JSON.stringify({
+            userId: '',
+            transactionType: '',
+            status: '',
+            startDate: '',
+            endDate: '',
+            page: 1,
+            size: 50
+          })
+        });
 
-        // 设置默认提现记录
-        setCurrentWithdrawals([
-          {
-            id: '1',
-            userId: 'mock-user-id',
-            amount: 100.0,
-            fee: 0.5,
-            method: '微信',
-            status: 'approved',
-            requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-            processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
-          }
-        ]);
+        if (!response.ok) {
+          throw new Error('API请求失败');
+        }
+
+        const data: TransactionResponse = await response.json();
+
+        if (!data.success || data.code !== 200) {
+          throw new Error(data.message || '获取交易记录失败');
+        }
+
+        // 保存交易记录
+        setTransactions(data.data.list);
+
+        // 计算收益统计数据
+        const statsData = calculateEarningsStats(data.data.list);
+        setStats(statsData);
+        
+        // 构建用户账户信息
+        const account: CommenterAccount = {
+          userId: '',
+          availableBalance: data.data.list.length > 0 ? data.data.list[0].afterBalance : 0,
+          totalEarnings: statsData.totalEarnings,
+          todayEarnings: statsData.todayEarnings,
+          yesterdayEarnings: statsData.yesterdayEarnings,
+          weeklyEarnings: statsData.weeklyEarnings,
+          monthlyEarnings: statsData.monthlyEarnings,
+          completedTasks: data.data.list.filter(t => t.typeDescription.includes('任务')).length
+        };
+
+        setCurrentUserAccount(account);
+
+        // 生成每日收益数据
+        const last7DaysEarnings = generateDailyEarnings(data.data.list);
+        setDailyEarnings(last7DaysEarnings);
+
+        // 转换为收益记录格式
+        const earnings = convertToEarningRecords(data.data.list);
+        setCurrentEarnings(earnings);
+
+        // 提取提现记录（如果有）
+        // 这里简化处理，实际可能需要从其他API或单独处理
+        setCurrentWithdrawals([]);
+
       } catch (err) {
-        setError(err instanceof Error ? err.message : '加载数据失败');
-        console.error('初始化数据错误:', err);
+        const errorMessage = err instanceof Error ? err.message : '加载数据失败';
+        setError(errorMessage);
+        console.error('获取交易记录失败:', err);
       } finally {
         setIsLoading(false);
       }
     };
     
-    initializeData();
+    fetchTransactionData();
   }, []);
 
   // 处理选项卡切换
@@ -250,12 +382,9 @@ export default function CommenterEarningsPage() {
     
       {/* 根据activeTab渲染不同组件 */}
       {activeTab === 'overview' && (
-        <EarningsOverview 
-          currentUserAccount={currentUserAccount}
-          dailyEarnings={dailyEarnings}
-          stats={stats}
-          setActiveTab={setActiveTab}
-        />
+        <Suspense fallback={<div className="mx-4 mt-6">加载中...</div>}>
+          <OverviewPage />
+        </Suspense>
       )}
       
       {activeTab === 'details' && (

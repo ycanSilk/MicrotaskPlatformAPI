@@ -55,6 +55,8 @@ export async function POST(request: Request) {
     
     // 获取原始响应数据
     const responseData = await response.json();
+    console.log('获取交易记录API请求成功响应:');
+    console.log('返回的原始数据:responseData', responseData);
     
     // 直接返回API的原始响应
     return NextResponse.json(responseData, { status: response.status });

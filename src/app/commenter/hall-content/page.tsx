@@ -332,17 +332,17 @@ export default function CommenterHallContentPage() {
       console.log('抢单成功');
       
       // 显示成功消息
-      showAlert('抢单成功', '您已成功抢到该任务。单个抖音账号每天评论任务次数5次以内。超过5次可能会影响抖音账号权重导致无法正常显示评论影响个人账号的完成率。如个人有多个抖音账号，可以注册多个平台账号', 'success');
+      showAlert('抢单成功', '您已成功抢到该任务。单个抖音账号每天评论任务次数8次以内。超过8次可能会影响抖音账号权重导致无法正常显示评论影响个人账号的完成率。可通过升级账号开通快速评论结算通道', 'success');
       
       // 开始冷却计时
       console.log('调用冷却计时器开始5分钟冷却');
-      coolingTimerRef.current?.startCooling(5);
+      coolingTimerRef.current?.startCooling(3);
       
       // 抢单成功后延迟3秒跳转到任务页面
       setTimeout(() => {
         console.log('跳转到任务页面');
         router.push('/commenter/tasks');
-      }, 4000);
+      }, 3000);
       
       // 抢单成功后立即刷新列表
       await fetchAvailableTasks(0);

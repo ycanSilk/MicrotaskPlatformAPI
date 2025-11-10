@@ -1,5 +1,6 @@
 {
   "baseUrl": "http://localhost:8083/api",
+  "useEnvBaseUrl": true,
   "timeout": 5000,
   "headers": {
     "accept": "*/*",

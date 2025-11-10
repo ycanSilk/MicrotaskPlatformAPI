@@ -36,6 +36,37 @@ interface TransactionResponse {
   timestamp: number;
 }
 
+//钱包信息接口定义
+interface WalletInfoInfo {
+  userId: string,
+  totalBalance: number,
+  availableBalance: number,
+  frozenBalance: number,
+  totalIncome: number,
+  totalExpense: number,
+  status: string,
+  currency: string,
+  createTime: string
+}
+// 钱包信息类型定义
+  interface WalletInfoResponse {
+    code: number;
+    message: string;
+    data: {
+      userId: string,
+      totalBalance: number,
+      availableBalance: number,
+      frozenBalance: number,
+      totalIncome: number,
+      totalExpense: number,
+      status: string,
+      currency: string,
+      createTime: string
+    };
+    success: boolean;
+    timestamp: number;
+  }
+
 const BalancePage = () => {
   const router = useRouter();
   const [balance, setBalance] = useState(0.00);
@@ -45,15 +76,39 @@ const BalancePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  // 获取交易记录数据
+  
+
+  // 合并获取钱包信息和交易记录
   useEffect(() => {
-    const fetchTransactionData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // 调用后端API，请求更多数据以便我们能筛选出最新的20条
-        const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+        // 首先调用获取钱包信息API
+        const walletResponse = await fetch('/api/public/walletmanagement/getwalletinfo', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!walletResponse.ok) {
+          throw new Error(`获取钱包信息失败: ${walletResponse.status}`);
+        }
+        
+        const walletData: WalletInfoResponse = await walletResponse.json();
+        
+        if (walletData.success && walletData.data) {
+          // 设置余额和冻结金额
+          setBalance(walletData.data.availableBalance || 0);
+          setFrozenBalance(walletData.data.frozenBalance || 0);
+        } else {
+          throw new Error(walletData.message || '获取钱包信息失败');
+        }
+        
+        // 然后调用获取交易记录API
+        const transactionResponse = await fetch('/api/public/walletmanagement/transactionrecord', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -69,37 +124,30 @@ const BalancePage = () => {
           })
         });
         
-        if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status}`);
-        }
-        
-        const data: TransactionResponse = await response.json();
-        
-        if (data.success && data.data) {
-          // 确保交易记录按创建时间排序（最新的在前）
-          const sortedTransactions = [...data.data.list].sort((a, b) => 
-            new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
-          );
-          // 只保留最新的20条记录
-          const latestTransactions = sortedTransactions.slice(0, 20);
-          setTransactions(latestTransactions);
+        if (transactionResponse.ok) {
+          const transactionData: TransactionResponse = await transactionResponse.json();
           
-          // 如果有交易记录，使用最新一条记录的afterBalance作为当前余额
-          if (latestTransactions.length > 0) {
-            setBalance(latestTransactions[0].afterBalance);
+          if (transactionData.success && transactionData.data) {
+            // 确保交易记录按创建时间排序（最新的在前）
+            const sortedTransactions = [...transactionData.data.list].sort((a, b) => 
+              new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+            );
+            // 只保留最新的20条记录
+            const latestTransactions = sortedTransactions.slice(0, 20);
+            setTransactions(latestTransactions);
           }
         } else {
-          throw new Error(data.message || '获取交易记录失败');
+          console.warn('获取交易记录失败');
         }
       } catch (error) {
-        console.error('获取交易记录失败:', error);
-        setError(error instanceof Error ? error.message : '获取交易记录失败，请稍后重试');
+        console.error('获取数据失败:', error);
+        setError(error instanceof Error ? error.message : '获取数据失败，请稍后重试');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTransactionData();
+    fetchData();
   }, []);
 
   // 格式化日期

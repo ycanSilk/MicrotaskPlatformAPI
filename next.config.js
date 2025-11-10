@@ -5,18 +5,22 @@ const nextConfig = {
     typedRoutes: true,
   },
   // API代理配置，用于解决跨域问题
+  // 统一开发环境和生产环境的API代理配置
   async rewrites() {
+    // 使用统一的API地址，确保环境一致性
+    const apiBaseUrl = process.env.API_BASE_URL || 'https://catchweight-graphemically-eldora.ngrok-free.dev';
+    
     return [
       { source: '/api/users/me', destination: '/api/users/me' }, // 不转发到外部服务器
-      { source: '/api/users/register', destination: 'https://catchweight-graphemically-eldora.ngrok-free.dev/api/users/register' },
-      { source: '/api/users/login', destination: 'https://catchweight-graphemically-eldora.ngrok-free.dev/api/users/login' },
-      { source: '/api/users', destination: 'https://catchweight-graphemically-eldora.ngrok-free.dev/api/users' },
-      { source: '/api/:path*', destination: 'https://catchweight-graphemically-eldora.ngrok-free.dev/api/:path*' },
+      { source: '/api/users/register', destination: `${apiBaseUrl}/api/users/register` },
+      { source: '/api/users/login', destination: `${apiBaseUrl}/api/users/login` },
+      { source: '/api/users', destination: `${apiBaseUrl}/api/users` },
+      { source: '/api/:path*', destination: `${apiBaseUrl}/api/:path*` },
     ]
   },
   // H5移动端优化
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // 保留所有环境的日志输出，便于调试和问题排查
   },
   // 图片优化
   images: {
