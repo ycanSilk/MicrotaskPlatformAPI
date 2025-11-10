@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import path from 'path';
+import fs from 'fs';
 import config from '../../apiconfig/config.json';
 
 export async function POST(request: NextRequest) {

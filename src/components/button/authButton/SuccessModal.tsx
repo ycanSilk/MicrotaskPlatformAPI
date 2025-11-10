@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -26,12 +25,12 @@ export default function SuccessModal({
 }: SuccessModalProps) {
   const router = useRouter();
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     onClose();
     if (redirectUrl) {
       router.push(redirectUrl as any);
     }
-  };
+  }, [onClose, redirectUrl, router]);
 
   // 登录成功3秒后自动跳转
   useEffect(() => {

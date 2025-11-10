@@ -29,8 +29,10 @@ interface AuthGuardProps {
 // 公开路由（不需要登录）
 const publicRoutes = [
   '/auth/login/adminlogin',
-  '/auth/login/publisherlogin',
-  '/auth/login/commenterlogin',
+  '/publisher/auth/login', // 修正派单员登录路径
+  '/publisher/auth/register', // 添加派单员注册路径
+  '/commenter/auth/login',
+  '/commenter/auth/register',
   '/auth/register',
   '/auth/forgot-password',
   '/', // 首页
@@ -63,11 +65,11 @@ export const AuthGuard = ({ children, requiredRole, allowedRoles }: AuthGuardPro
       if (pathname?.startsWith('/admin')) {
         router.push('/auth/login/adminlogin');
       } else if (pathname?.startsWith('/publisher')) {
-        router.push('/auth/login/publisherlogin');
+        router.push('/publisher/auth/login'); // 修正为正确的派单员登录路径
       } else if (pathname?.startsWith('/commenter')) {
-        router.push('/auth/login/commenterlogin');
+        router.push('/commenter/auth/login');
       } else {
-        router.push('/auth/login/publisherlogin'); // 默认跳转到派单员登录页
+        router.push('/publisher/auth/login'); // 默认跳转到派单员登录页
       }
       return;
     }
@@ -75,8 +77,8 @@ export const AuthGuard = ({ children, requiredRole, allowedRoles }: AuthGuardPro
     // 如果用户已登录且在登录页，重定向到对应角色首页
     if (isAuthenticated && user && (
       pathname === '/auth/login/adminlogin' || 
-      pathname === '/auth/login/publisherlogin' || 
-      pathname === '/auth/login/commenterlogin'
+      pathname === '/publisher/auth/login' || // 修正派单员登录路径
+      pathname === '/commenter/auth/login'
     )) {
       const homePath = getRoleHomePath(user.role);
       router.push(homePath as any);

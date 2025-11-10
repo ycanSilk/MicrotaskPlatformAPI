@@ -12,7 +12,7 @@ import {
 } from '../config/routes';
 
 interface PublisherHeaderProps {
-  user: {
+  user?: {
     id: string;
     username?: string;
     name?: string;
@@ -23,7 +23,7 @@ interface PublisherHeaderProps {
   };
 }
 
-export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user }) => {
+export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user = null }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [showUserName, setShowUserName] = useState(false);

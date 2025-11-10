@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SuccessModal from '../../../../components/button/authButton/SuccessModal';
 
@@ -16,12 +16,20 @@ export default function PublisherRegisterPage() {
     captcha: '',
     agreeToTerms: false
   });
-  const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
+  const [captchaCode, setCaptchaCode] = useState('');
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // 只在客户端生成验证码，避免SSR和客户端渲染不匹配
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCaptchaCode(generateCaptcha());
+    }
+  }, []);
+  
   // 生成随机验证码
   function generateCaptcha(length = 4) {
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';

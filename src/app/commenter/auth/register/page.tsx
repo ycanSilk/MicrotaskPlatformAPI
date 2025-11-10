@@ -1,26 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SuccessModal from '../../../../components/button/authButton/SuccessModal';
 
 export default function CommenterRegisterPage() {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    email: '',
-    captcha: '',
-    inviteCode: '',
-    agreeToTerms: false
-  });
-  const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   // 生成随机验证码
   function generateCaptcha(length = 4) {
     const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -36,6 +20,28 @@ export default function CommenterRegisterPage() {
     setCaptchaCode(generateCaptcha());
     setFormData({ ...formData, captcha: '' });
   };
+
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    email: '',
+    captcha: '',
+    inviteCode: '',
+    agreeToTerms: false
+  });
+  const [captchaCode, setCaptchaCode] = useState('');
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  
+  // 只在客户端生成验证码，避免SSR和客户端渲染不匹配
+  useEffect(() => {
+    setCaptchaCode(generateCaptcha());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

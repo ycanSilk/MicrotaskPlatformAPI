@@ -1,44 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import EarningsOverview from '../components/EarningsOverview';
-
-// 本地实现Commenter认证信息获取
-const CommenterAuthStorage = {
-  getAuth: () => {
-    try {
-      // 首先尝试直接从localStorage获取认证信息
-      const authData = localStorage.getItem('commenter_auth');
-      if (authData) {
-        return JSON.parse(authData);
-      }
-      
-      // 兼容旧的存储方式
-      const userJson = localStorage.getItem('commenter_user');
-      const token = localStorage.getItem('commenter_token');
-      if (userJson && token) {
-        const user = JSON.parse(userJson);
-        return { user, token };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取认证信息失败:', error);
-      return null;
-    }
-  },
-  // 添加getCurrentUser方法获取当前用户
-  getCurrentUser: () => {
-    const auth = CommenterAuthStorage.getAuth();
-    return auth?.user || null;
-  }
-};
-
-import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
-import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
-
-// 创建FinanceModelAdapter实例
-const financeAdapter = FinanceModelAdapter.getInstance();
 
 // 定义类型接口
 export interface DailyEarning {
@@ -71,28 +34,36 @@ const OverviewPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 初始化数据
+  // 初始化数据 - 使用静态数据
   React.useEffect(() => {
-    const initializeData = async () => {
+    const initializeData = () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // 获取当前用户
-        const commenterUser = CommenterAuthStorage.getCurrentUser();
-        if (!commenterUser) {
-          router.push('/auth/login/commenterlogin');
-          return;
-        }
+        // 设置默认用户账户信息（静态数据）
+        setCurrentUserAccount({
+          userId: 'mock-user-id',
+          availableBalance: 150.5,
+          frozenBalance: 50,
+          totalEarnings: 200.5,
+          todayEarnings: 12.5,
+          yesterdayEarnings: 8.0,
+          weeklyEarnings: 65.5,
+          monthlyEarnings: 180.0,
+          completedTasks: 25
+        });
 
-        // 获取用户账户信息
-        const userAccount = await financeAdapter.getUserAccount(commenterUser.id);
-        if (userAccount) {
-          setCurrentUserAccount(userAccount);
-        }
-
-        // 设置默认统计数据
-        setDailyEarnings([]);
+        // 设置默认每日收益数据（静态数据）
+        setDailyEarnings([
+          { date: new Date(Date.now() - 7 * 86400000).toISOString(), amount: 5.5 },
+          { date: new Date(Date.now() - 6 * 86400000).toISOString(), amount: 8.0 },
+          { date: new Date(Date.now() - 5 * 86400000).toISOString(), amount: 12.0 },
+          { date: new Date(Date.now() - 4 * 86400000).toISOString(), amount: 9.5 },
+          { date: new Date(Date.now() - 3 * 86400000).toISOString(), amount: 15.0 },
+          { date: new Date(Date.now() - 2 * 86400000).toISOString(), amount: 8.0 },
+          { date: new Date(Date.now() - 1 * 86400000).toISOString(), amount: 12.5 }
+        ]);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '加载数据失败';
         setError(errorMessage);
@@ -102,14 +73,14 @@ const OverviewPage = () => {
     };
 
     initializeData();
-  }, [router]);
+  }, []);
 
-  // 设置默认统计数据
+  // 设置统计数据 - 从用户账户信息获取或使用默认值
   const stats = {
-    todayEarnings: 0,
-    yesterdayEarnings: 0,
-    weeklyEarnings: 0,
-    monthlyEarnings: 0
+    todayEarnings: currentUserAccount?.todayEarnings || 12.5,
+    yesterdayEarnings: currentUserAccount?.yesterdayEarnings || 8.0,
+    weeklyEarnings: currentUserAccount?.weeklyEarnings || 65.5,
+    monthlyEarnings: currentUserAccount?.monthlyEarnings || 180.0
   };
 
   // 处理选项卡切换

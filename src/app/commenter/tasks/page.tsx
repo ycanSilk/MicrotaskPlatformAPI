@@ -518,7 +518,7 @@ export default function CommenterTasksPage() {
       const token = localStorage.getItem('commenter_auth_token');
       if (!token) {
         alert('请先登录');
-        router.push('/auth/login/commenterlogin');
+        router.push('/commenter/auth/login');
         return;
       }
       

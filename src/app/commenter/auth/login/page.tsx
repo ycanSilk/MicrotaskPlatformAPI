@@ -165,10 +165,13 @@ export default function CommenterLoginPage() {
 
   // 初始化验证码
   useEffect(() => {
-    const initialCaptcha = generateCaptcha();
-    setCaptchaCode(initialCaptcha);
-    // 不自动填充验证码，让用户自己输入
-    setFormData(prev => ({ ...prev, captcha: '' }));
+    // 确保在客户端环境中运行
+    if (typeof window !== 'undefined') {
+      const initialCaptcha = generateCaptcha();
+      setCaptchaCode(initialCaptcha);
+      // 不自动填充验证码，让用户自己输入
+      setFormData(prev => ({ ...prev, captcha: '' }));
+    }
   }, []);
 
   // 自动填充测试账号（仅填充用户名和密码，不填充验证码）

@@ -278,9 +278,12 @@ export default function AdminLoginPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 初始化验证码 - 组件挂载时执行
+  // 初始化验证码 - 组件挂载时执行，确保只在客户端生成
   useEffect(() => {
-    refreshCaptcha();
+    // 只在客户端生成验证码，避免SSR和客户端渲染不匹配
+    if (typeof window !== 'undefined') {
+      refreshCaptcha();
+    }
     
     // 清理函数 - 确保组件卸载时中止所有请求
     return () => {

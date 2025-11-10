@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/hooks/useUser';
-import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import EarningsOverview from './components/EarningsOverview';
 import EarningsDetails from './components/EarningsDetails';
 
@@ -72,9 +69,6 @@ export interface Stats {
 
 export default function CommenterEarningsPage() {
   const router = useRouter();
-  const { user: hookUser, isLoading: userIsLoading, isLoggedIn: hookIsLoggedIn } = useUser();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentUserAccount, setCurrentUserAccount] = useState<CommenterAccount | null>(null);
@@ -89,51 +83,82 @@ export default function CommenterEarningsPage() {
   });
   const [activeTab, setActiveTab] = useState<'overview' | 'details'>('overview');
 
-  // 初始化数据
+  // 初始化数据 - 使用静态数据
   useEffect(() => {
-    const initializeData = async () => {
+    const initializeData = () => {
       try {
         setIsLoading(true);
         setError(null);
 
-      
-        if (!hookUser) {
-          setError('请先登录');
-          setIsLoading(false);
-          return;
-        }
-        setUser(hookUser);
-        setIsLoggedIn(true);
+        // 设置默认用户账户信息（静态数据）
+        setCurrentUserAccount({
+          userId: 'mock-user-id',
+          availableBalance: 150.5,
+          frozenBalance: 50,
+          totalEarnings: 200.5,
+          todayEarnings: 12.5,
+          yesterdayEarnings: 8.0,
+          weeklyEarnings: 65.5,
+          monthlyEarnings: 180.0,
+          completedTasks: 25
+        });
         
-        const financeAdapter = FinanceModelAdapter.getInstance();
-        const userId = hookUser?.id || 'mock-user-id';
+        // 设置统计数据
+        setStats({
+          todayEarnings: 12.5,
+          yesterdayEarnings: 8.0,
+          weeklyEarnings: 65.5,
+          monthlyEarnings: 180.0
+        });
         
-        // 获取用户账户信息
-        const accountInfo = await financeAdapter.getUserAccount(userId);
-        if (accountInfo) {
-          setCurrentUserAccount(accountInfo);
-          setStats({
-            todayEarnings: accountInfo.todayEarnings || 0,
-            yesterdayEarnings: accountInfo.yesterdayEarnings || 0,
-            weeklyEarnings: accountInfo.weeklyEarnings || 0,
-            monthlyEarnings: accountInfo.monthlyEarnings || 0
-          });
-          if (accountInfo.dailyEarnings) {
-            setDailyEarnings(accountInfo.dailyEarnings);
+        // 设置每日收益数据
+        setDailyEarnings([
+          { date: new Date(Date.now() - 7 * 86400000).toISOString(), amount: 5.5 },
+          { date: new Date(Date.now() - 6 * 86400000).toISOString(), amount: 8.0 },
+          { date: new Date(Date.now() - 5 * 86400000).toISOString(), amount: 12.0 },
+          { date: new Date(Date.now() - 4 * 86400000).toISOString(), amount: 9.5 },
+          { date: new Date(Date.now() - 3 * 86400000).toISOString(), amount: 15.0 },
+          { date: new Date(Date.now() - 2 * 86400000).toISOString(), amount: 8.0 },
+          { date: new Date(Date.now() - 1 * 86400000).toISOString(), amount: 12.5 }
+        ]);
+
+        // 设置默认收益记录
+        setCurrentEarnings([
+          {
+            id: '1',
+            userId: 'mock-user-id',
+            taskId: 'task-1',
+            taskName: '评论任务',
+            amount: 12.5,
+            type: 'task',
+            description: '完成评论任务',
+            createdAt: new Date(Date.now() - 86400000).toISOString()
+          },
+          {
+            id: '2',
+            userId: 'mock-user-id',
+            taskId: 'task-2',
+            taskName: '点赞任务',
+            amount: 8.0,
+            type: 'task',
+            description: '完成点赞任务',
+            createdAt: new Date(Date.now() - 172800000).toISOString()
           }
-        }
+        ]);
 
-        // 获取用户收益记录
-        const userEarnings = await financeAdapter.getUserEarningsRecords(userId);
-        if (userEarnings && userEarnings.length > 0) {
-          setCurrentEarnings(userEarnings);
-        }
-
-        // 获取用户提现记录
-        const userWithdrawals = await financeAdapter.getUserWithdrawalRecords(userId);
-        if (userWithdrawals && userWithdrawals.length > 0) {
-          setCurrentWithdrawals(userWithdrawals);
-        }
+        // 设置默认提现记录
+        setCurrentWithdrawals([
+          {
+            id: '1',
+            userId: 'mock-user-id',
+            amount: 100.0,
+            fee: 0.5,
+            method: '微信',
+            status: 'approved',
+            requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+            processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
+          }
+        ]);
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载数据失败');
         console.error('初始化数据错误:', err);

@@ -168,7 +168,7 @@ export default function ResetPasswordPage() {
       
       // 5秒后跳转到登录页面
       setTimeout(() => {
-        router.push('/auth/login/commenterlogin');
+        router.push('/commenter/auth/login');
       }, 5000);
     } catch (error) {
       // 提供错误信息
@@ -296,7 +296,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-gray-600">
                 记得密码了？{' '}
                 <button 
-                  onClick={() => router.push('/auth/login/commenterlogin')}
+                  onClick={() => router.push('/commenter/auth/login')}
                   className="text-blue-500 hover:underline"
                 >
                   返回登录

@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import SuccessModal from '../../../../components/button/authButton/SuccessModal';
-import { saveAuthData } from '../../../api/publisher/auth/token/tokenManager';
 
 export default function PublisherLoginPage() {
   const [formData, setFormData] = useState({
@@ -13,9 +11,7 @@ export default function PublisherLoginPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [loginSuccessMessage, setLoginSuccessMessage] = useState('');
-  const [captchaCode, setCaptchaCode] = useState(generateCaptcha());
+  const [captchaCode, setCaptchaCode] = useState('');
   const router = useRouter();
   
   // 生成随机验证码
@@ -34,18 +30,37 @@ export default function PublisherLoginPage() {
     setFormData(prev => ({ ...prev, captcha: '' }));
   };
 
+  // 只在客户端生成验证码，避免SSR和客户端渲染不匹配
+  useEffect(() => {
+    setCaptchaCode(generateCaptcha());
+  }, []);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     
-    // 前端验证码非空校验
+    // 增强表单校验
+    // 用户名校验
+    if (!formData.username || formData.username.trim() === '') {
+      setErrorMessage('请输入用户名');
+      return;
+    }
+    
+    // 密码校验
+    if (!formData.password || formData.password.trim() === '') {
+      setErrorMessage('请输入密码');
+      return;
+    }
+    
+    // 验证码非空校验
     if (!formData.captcha || formData.captcha.trim() === '') {
       setErrorMessage('请输入验证码');
       return;
     }
     
-    // 验证码校验（忽略大小写）
-    if (formData.captcha.toUpperCase() !== captchaCode) {
+    // 验证码一致性校验（忽略大小写）
+    if (formData.captcha.toUpperCase() !== captchaCode.toUpperCase()) {
       setErrorMessage('验证码错误');
       refreshCaptcha(); // 验证码错误时刷新
       return;
@@ -54,33 +69,54 @@ export default function PublisherLoginPage() {
     setIsLoading(true);
     
     try {
-      // 调用后端登录接口
+      // 调用后端API进行身份验证
       const response = await fetch('/api/publisher/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
+          username: formData.username.trim(),
+          password: formData.password.trim()
         }),
-        credentials: 'include' // 确保包含cookies
+        credentials: 'include' // 确保携带cookie
       });
-
-      const data = await response.json();
       
-      if (data.success && data.data) {
-        // 保存认证数据（不包含token，只保存用户信息）
-        saveAuthData({ userInfo: data.data.userInfo });
-        
-        // 设置成功消息并显示模态框
-        setLoginSuccessMessage(`登录成功！欢迎 ${data.data.userInfo.username}`);
-        setShowSuccessModal(true);
+      // 解析响应数据
+      const result = await response.json();
+      
+      if (response.ok) {
+        // 请求成功（状态码200）
+        if (result.success) {
+          router.push('/publisher/dashboard');
+        } else {
+          setErrorMessage(result.message || '登录失败，请检查输入信息');
+          refreshCaptcha();
+        }
       } else {
-        setErrorMessage(data?.message || '登录失败，请检查用户名和密码');
+        let errorMsg = '';    
+        switch (response.status) {
+          case 400:
+            errorMsg = result.message || '请求参数错误，请检查输入';
+            break;
+          case 401:
+            errorMsg = result.message || '用户名或密码错误';
+            break;
+          default:
+            errorMsg = result.message || `登录失败，状态码: ${response.status}`;
+        }
+        
+        setErrorMessage(errorMsg);
+        // 错误时刷新验证码
+        refreshCaptcha();
       }
+      
     } catch (error) {
-      setErrorMessage('登录过程中发生错误，请稍后重试');
+      // 网络错误或其他异常
+      console.error('登录请求错误:', error);
+      setErrorMessage('网络连接失败，请检查网络设置后重试');
+      // 错误时刷新验证码
+      refreshCaptcha();
     } finally {
       setIsLoading(false);
     }
@@ -207,15 +243,7 @@ export default function PublisherLoginPage() {
           </div>
         </div>
         
-        {/* 登录成功提示框 */}
-        <SuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          title="登录成功"
-          message={loginSuccessMessage}
-          buttonText="确认"
-          redirectUrl="/publisher/dashboard"
-        />
+        {/* 登录成功后将直接跳转 */}
       </div>
     </div>
   );

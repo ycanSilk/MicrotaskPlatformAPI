@@ -59,7 +59,7 @@ export default function HomePage() {
             </div>
             <div className="flex space-x-2">
               <a href="/publisher/auth/login" className="flex-1 py-3 px-4 bg-blue-500 text-white rounded-lg text-center text-sm font-medium hover:bg-blue-600 transition-colors">
-                登录
+                登录派单员账号
               </a>
               <a href="/publisher/auth/register" className="flex-1 py-3 px-4 bg-blue-100 text-blue-700 rounded-lg text-center text-sm font-medium hover:bg-blue-200 transition-colors">
                 注册
@@ -94,7 +94,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="flex space-x-2">
-              <a href="/commenter/auth/login/" className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-center text-sm font-medium hover:bg-green-600 transition-colors">
+              <a href="/commenter/auth/login" className="flex-1 py-3 px-4 bg-green-500 text-white rounded-lg text-center text-sm font-medium hover:bg-green-600 transition-colors">
                 登录
               </a>
               <a href="/commenter/auth/register/" className="flex-1 py-3 px-4 bg-green-100 text-green-700 rounded-lg text-center text-sm font-medium hover:bg-green-200 transition-colors">
@@ -160,7 +160,7 @@ export default function HomePage() {
                 <span className="mr-2">✓</span>收益实时统计
               </div>
             </div>
-            <a href="/auth/login/commenterlogin" className="block w-full py-3 px-4 bg-purple-500 text-white rounded-lg text-center text-sm font-medium hover:bg-purple-600 transition-colors">
+            <a href="/commenter/auth/login" className="block w-full py-3 px-4 bg-purple-500 text-white rounded-lg text-center text-sm font-medium hover:bg-purple-600 transition-colors">
               立即登录 →
             </a>
           </div>

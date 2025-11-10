@@ -1,12 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import WithdrawalPage from '../components/WithdrawalPage';
-import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
-import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
-
-// 创建FinanceModelAdapter实例
-const financeAdapter = FinanceModelAdapter.getInstance();
 
 // 定义类型接口
 export interface WithdrawalRequest {
@@ -57,48 +52,34 @@ const WithdrawPage = () => {
   const [withdrawalSuccess, setWithdrawalSuccess] = useState<boolean>(false);
   const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
 
-  // 初始化数据
+  // 初始化数据 - 使用静态数据
   React.useEffect(() => {
-    const initializeData = async () => {
+    const initializeData = () => {
       try {
         setIsLoading(true);
         setError(null);
 
+        // 设置默认账户数据
+        setCurrentUserAccount({
+          userId: 'mock-user-id',
+          availableBalance: 150.5,
+          frozenBalance: 50,
+          totalEarnings: 200.5
+        });
 
-
-        // 获取用户账户信息
-        const userAccount = await financeAdapter.getUserAccount(currentUserAccount?.userId || 'mock-user-id');
-        if (userAccount) {
-          setCurrentUserAccount(userAccount);
-        } else {
-          // 设置默认账户数据
-          setCurrentUserAccount({
-            userId: currentUserAccount?.userId || 'mock-user-id',
-            availableBalance: 150.5,
-            frozenBalance: 50,
-            totalEarnings: 200.5
-          });
-        }
-
-        // 获取提现记录
-        const records = await financeAdapter.getUserWithdrawalRecords(currentUserAccount?.userId || 'mock-user-id');
-        if (records && records.length > 0) {
-          setWithdrawalRecords(records);
-        } else {
-          // 设置默认提现记录
-          setWithdrawalRecords([
-            {
-              id: '1',
-              userId: currentUserAccount?.userId || 'mock-user-id',
-              amount: 100.0,
-              fee: 0.5,
-              method: '微信',
-              status: 'approved',
-              requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-              processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
-            }
-          ]);
-        }
+        // 设置默认提现记录
+        setWithdrawalRecords([
+          {
+            id: '1',
+            userId: 'mock-user-id',
+            amount: 100.0,
+            fee: 0.5,
+            method: '微信',
+            status: 'approved',
+            requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+            processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
+          }
+        ]);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '加载数据失败';
         setError(errorMessage);
@@ -106,10 +87,9 @@ const WithdrawPage = () => {
         setIsLoading(false);
       }
     }
-  
 
     initializeData();
-  }, [router]);
+  }, []);
 
   // 处理选项卡切换
   const setActiveTab = (tab: 'overview' | 'details' | 'withdraw') => {
@@ -126,42 +106,43 @@ const WithdrawPage = () => {
     }
   };
 
-  // 处理提现请求
-  const handleWithdrawal = async () => {
+  // 处理提现请求 - 使用模拟实现
+  const handleWithdrawal = async (): Promise<void> => {
     try {
       setIsLoading(true);
       setError(null);
 
-
-      // 这里应该从表单状态或组件状态中获取amount, method, accountInfo
-      // 由于这是模拟环境，我使用一些默认值
-      const amount = 50; // 默认提现金额
-      const method = 'wechat'; // 默认提现方式
-      const accountInfo = 'default-account-info'; // 默认账户信息
-
-      // 创建提现请求
-      const withdrawalRequest = {
-        userId: currentUserAccount?.userId || 'mock-user-id',
-        amount,
-        method,
-        accountInfo,
-        status: 'pending' as const,
-        createdAt: new Date().toISOString()
-      };
-
-      // 提交提现请求
-
-      const result = await financeAdapter.submitWithdrawal(withdrawalRequest);
-      if (result.success) {
-        // 显示成功消息或处理结果
-        alert('提现请求已提交，请等待审核');
-        router.push('/commenter/earnings/details');
-      } else {
-        setError(result.message || '提现请求提交失败');
+      // 使用表单状态中的值
+      const amount = parseFloat(withdrawalAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setError('请输入有效的提现金额');
+        return;
       }
+
+      // 模拟异步操作
+      return new Promise<void>((resolve) => {
+        // 模拟成功处理
+        setTimeout(() => {
+          // 显示成功消息
+          setWithdrawalSuccess(true);
+          setWithdrawalError(null);
+          
+          // 模拟成功提交
+          alert('提现请求已提交，请等待审核');
+          
+          // 延迟后跳转到详情页
+          setTimeout(() => {
+            router.push('/commenter/earnings/details');
+          }, 1000);
+          
+          resolve();
+        }, 500);
+      });
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '提现请求处理失败';
       setError(errorMessage);
+      return Promise.resolve();
     } finally {
       setIsLoading(false);
     }

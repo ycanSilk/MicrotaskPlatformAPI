@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AlertModal from '../../../components/ui/AlertModal';
-import transactionData from '../../../data/financialRecords/transactionRecords.json';
 import { WalletOutlined, CreditCardOutlined, DollarOutlined, ShoppingOutlined, CoffeeOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 // 定义类型接口
@@ -57,92 +56,96 @@ export default function PublisherFinancePage() {
     }
   };
 
-  // 从token中获取用户信息
-  const getUserInfoFromToken = () => {
-    try {
-      const token = localStorage.getItem('publisher_auth_token');
-      console.log('尝试从localStorage获取token:', token ? '已获取到token' : '未获取到token');
-      
-      if (!token) {
-        console.log('getUserInfoFromToken: 未找到token');
-        return null;
-      }
-      
-      const decodedToken = JSON.parse(atob(token));
-      console.log('getUserInfoFromToken: 解析token成功', decodedToken);
-      
-      // 验证token是否过期
-      if (decodedToken.exp && decodedToken.exp < Date.now()) {
-        console.log('getUserInfoFromToken: token已过期');
-        localStorage.removeItem('publisher_auth_token');
-        return null;
-      }
-      
-      return decodedToken;
-    } catch (error) {
-      console.error('解析token失败:', error);
-      return null;
-    }
+  // 模拟用户信息
+  const getMockUserInfo = () => {
+    return {
+      userId: 'pub003',
+      username: '测试发布者',
+      exp: Date.now() + 86400000 // 模拟token有效期
+    };
   };
 
-  // 检查是否已登录
+  // 模拟登录状态检查
   useEffect(() => {
-    const userInfo = getUserInfoFromToken();
-    if (!userInfo && process.env.NODE_ENV !== 'development') {
-      // 在非开发环境下，如果没有登录信息，提示用户登录
-      showAlert('提示', '请先登录', '💡');
-    } else if (userInfo && process.env.NODE_ENV === 'development') {
-      console.log(`当前登录用户: ${userInfo.username || '未知用户'} (ID: ${userInfo.userId || '未知ID'})`);
-    }
+    const userInfo = getMockUserInfo();
+    console.log(`当前模拟用户: ${userInfo.username} (ID: ${userInfo.userId})`);
   }, []);
 
-  // 获取财务数据
-  const fetchFinanceData = async () => {
+  // 获取财务数据 - 使用静态数据
+  const fetchFinanceData = () => {
     try {
       setLoading(true);
-      console.log('开始获取财务数据');
+      console.log('开始获取财务数据（静态数据）');
       
-      // 从token中获取用户信息
-      const userInfo = getUserInfoFromToken();
-      console.log('fetchFinanceData: 获取用户信息结果', userInfo);
-      
-      // 如果没有用户信息，提示登录
-      if (!userInfo) {
-        console.log('fetchFinanceData: 没有用户信息，提示登录');
-        showAlert('提示', '请先登录', '💡');
-        return;
-      }
-      
-      // 模拟数据：从本地JSON文件获取交易记录数据
-      console.log('fetchFinanceData: 从本地JSON文件获取交易记录数据');
-      
-      // 处理余额数据（这里使用模拟数据）
+      // 设置模拟余额数据
       const newBalance: BalanceData = {
         balance: 1298 // 模拟余额数据
       };
       
-      console.log('fetchFinanceData: 使用模拟余额数据:', newBalance);
+      console.log('使用模拟余额数据:', newBalance);
       setBalance(newBalance);
       
-      // 处理交易记录 - 从本地JSON文件获取
-      // 过滤出当前用户的交易记录
-      const currentUserId = userInfo.userId || 'pub003'; // 默认使用pub003作为演示
-      const transactionsList = transactionData.transactions
-        .filter((trans: any) => trans.userId === currentUserId)
-        .map((trans: any) => ({
-          ...trans,
-          // 转换数据结构以匹配前端展示需求
-          id: trans.transactionId,
-          type: trans.transactionType,
-          time: trans.orderTime,
-          method: trans.paymentMethod || (trans.transactionType === 'recharge' ? '账户充值' : '账户支出')
-        }));
+      // 设置静态交易记录数据
+      const mockTransactions = [
+        {
+          id: 'txn001',
+          userId: 'pub003',
+          type: 'recharge',
+          amount: 500,
+          time: new Date(Date.now() - 1 * 86400000).toISOString(),
+          method: '支付宝',
+          balanceAfter: 1798,
+          status: 'success'
+        },
+        {
+          id: 'txn002',
+          userId: 'pub003',
+          type: 'expense',
+          expenseType: 'task_publish',
+          amount: -200,
+          time: new Date(Date.now() - 2 * 86400000).toISOString(),
+          method: '账户支出',
+          balanceAfter: 1298,
+          status: 'success'
+        },
+        {
+          id: 'txn003',
+          userId: 'pub003',
+          type: 'recharge',
+          amount: 1000,
+          time: new Date(Date.now() - 5 * 86400000).toISOString(),
+          method: '支付宝',
+          balanceAfter: 1498,
+          status: 'success'
+        },
+        {
+          id: 'txn004',
+          userId: 'pub003',
+          type: 'expense',
+          expenseType: 'task_publish',
+          amount: -150,
+          time: new Date(Date.now() - 7 * 86400000).toISOString(),
+          method: '账户支出',
+          balanceAfter: 498,
+          status: 'success'
+        },
+        {
+          id: 'txn005',
+          userId: 'pub003',
+          type: 'recharge',
+          amount: 648,
+          time: new Date(Date.now() - 10 * 86400000).toISOString(),
+          method: 'USDT (TRC20)',
+          balanceAfter: 648,
+          status: 'success'
+        }
+      ];
       
-      setTransactions(transactionsList);
+      setTransactions(mockTransactions);
       
       // 按月份分组交易记录
       const monthlyData: Record<string, any[]> = {};
-      transactionsList.forEach((transaction: any) => {
+      mockTransactions.forEach((transaction) => {
         if (transaction.time) {
           const date = new Date(transaction.time);
           const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
@@ -165,20 +168,16 @@ export default function PublisherFinancePage() {
       
       setMonthlyTransactions(sortedMonthlyData);
       
-      // 显示当前登录用户信息
-      console.log(`当前登录用户: ${userInfo.username || '未知用户'} (ID: ${userInfo.userId || '未知ID'})`);
-      
     } catch (error) {
       console.error('获取财务数据失败:', error);
-      showAlert('网络错误', '获取数据失败，请稍后重试', '❌');
+      showAlert('错误', '加载数据失败', '❌');
     } finally {
-      console.log('fetchFinanceData: 请求完成，设置loading为false');
       setLoading(false);
     }
   };
 
-  // 处理充值
-  const handleRecharge = async () => {
+  // 处理充值 - 模拟实现
+  const handleRecharge = () => {
     console.log('开始处理充值请求', { rechargeAmount, selectedPaymentMethod });
     
     if (!rechargeAmount || parseFloat(rechargeAmount) <= 0) {
@@ -188,66 +187,71 @@ export default function PublisherFinancePage() {
     }
 
     try {
-      // 从token中获取用户信息
-      const userInfo = getUserInfoFromToken();
-      console.log('handleRecharge: 用户信息', userInfo);
+      const amount = parseFloat(rechargeAmount);
       
-      if (!userInfo) {
-        console.log('handleRecharge: 未登录');
-        showAlert('提示', '请先登录', '💡');
-        return;
-      }
-
-      // 从localStorage获取token
-      const token = localStorage.getItem('publisher_auth_token');
-      console.log('handleRecharge: 获取到token', token ? '是' : '否');
-      
-      if (!token) {
-        console.log('handleRecharge: 未获取到token');
-        showAlert('提示', '请先登录', '💡');
-        return;
-      }
-
-      console.log('handleRecharge: 准备发送充值请求', { amount: parseFloat(rechargeAmount), paymentMethod: selectedPaymentMethod });
-      const response = await fetch('/api/publisher/finance', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          amount: parseFloat(rechargeAmount),
-          paymentMethod: selectedPaymentMethod
-        })
-      });
-
-      console.log('handleRecharge: 充值请求完成，状态码:', response.status);
-      const data = await response.json();
-      console.log('handleRecharge: 充值响应数据', data);
-      
-      if (data.success) {
-        console.log('handleRecharge: 充值成功');
-        // 充值成功后只显示提示，不立即刷新数据
-        // 用户点击确认后再刷新数据并重置状态
-        showAlert('充值成功', data.message, '✅', () => {
+      // 模拟充值处理延迟
+      setTimeout(() => {
+        // 模拟充值成功
+        showAlert('充值成功', `成功充值 ${amount} 元`, '✅', () => {
           // 用户点击确认后的回调函数
           setRechargeSuccess(true);
-          fetchFinanceData();
+          // 更新余额和交易记录
+          const newBalance = {
+            balance: balance.balance + amount
+          };
+          setBalance(newBalance);
+          
+          // 添加新的充值记录
+          const newTransaction = {
+            id: `txn${Date.now()}`,
+            userId: 'pub003',
+            type: 'recharge',
+            amount: amount,
+            time: new Date().toISOString(),
+            method: selectedPaymentMethod === 'alipay' ? '支付宝' : 'USDT (TRC20)',
+            balanceAfter: newBalance.balance,
+            status: 'success'
+          };
+          
+          const updatedTransactions = [newTransaction, ...transactions];
+          setTransactions(updatedTransactions);
+          
+          // 重新计算月度交易数据
+          const monthlyData: Record<string, any[]> = {};
+          updatedTransactions.forEach((transaction) => {
+            if (transaction.time) {
+              const date = new Date(transaction.time);
+              const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+              if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = [];
+              }
+              monthlyData[monthKey].push(transaction);
+            }
+          });
+          
+          // 按月份降序排列
+          const sortedMonthlyData: Record<string, any[]> = {};
+          Object.keys(monthlyData).sort((a, b) => {
+            const [yearA, monthA] = a.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
+            const [yearB, monthB] = b.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
+            return (yearB * 12 + monthB) - (yearA * 12 + monthA);
+          }).forEach(key => {
+            sortedMonthlyData[key] = monthlyData[key];
+          });
+          
+          setMonthlyTransactions(sortedMonthlyData);
           setRechargeAmount('');
         });
-      } else {
-        console.log('handleRecharge: 充值失败', data.message);
-        showAlert('充值失败', data.message, '❌');
-      }
+      }, 1000);
     } catch (error) {
       console.error('充值失败:', error);
-      showAlert('网络错误', '充值失败，请稍后重试', '❌');
+      showAlert('错误', '充值失败，请稍后重试', '❌');
     }
   };
 
 
 
-  // 初始加载数据
+  // 初始加载数据 - 使用静态数据
   useEffect(() => {
     fetchFinanceData();
   }, []);

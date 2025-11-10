@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { financeModelAdapter } from '@/data/commenteruser/finance_model_adapter';
-import { WithdrawalRecord } from '@/data/commenteruser/finance_model_adapter';
 
 // 调试日志函数
 const debugLog = (stage: string, message: string, data?: any) => {
@@ -19,7 +17,14 @@ interface CommenterUserInfo {
   avatar?: string;
 }
 
-interface WithdrawalApplication extends WithdrawalRecord {
+interface WithdrawalApplication {
+  id: string;
+  userId: string;
+  amount: number;
+  method: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  processedAt?: string;
   userInfo: CommenterUserInfo;
 }
 
@@ -29,37 +34,75 @@ export default function WithdrawalReviewPage() {
   const [message, setMessage] = useState('');
   const router = useRouter();
 
+  // 模拟数据生成函数
+  const generateMockWithdrawalApplications = (): WithdrawalApplication[] => {
+    const mockData: WithdrawalApplication[] = [
+      {
+        id: 'WD20240801001',
+        userId: 'com001',
+        amount: 100.50,
+        method: 'wechat',
+        status: 'pending',
+        requestedAt: '2024-08-01T10:30:00Z',
+        userInfo: {
+          userId: 'com001',
+          nickname: '张三',
+          avatar: '👨'
+        }
+      },
+      {
+        id: 'WD20240801002',
+        userId: 'com002',
+        amount: 50.00,
+        method: 'alipay',
+        status: 'approved',
+        requestedAt: '2024-08-01T09:15:00Z',
+        processedAt: '2024-08-01T09:30:00Z',
+        userInfo: {
+          userId: 'com002',
+          nickname: '李四',
+          avatar: '👨'
+        }
+      },
+      {
+        id: 'WD20240731001',
+        userId: 'com003',
+        amount: 200.00,
+        method: 'bank',
+        status: 'rejected',
+        requestedAt: '2024-07-31T16:45:00Z',
+        processedAt: '2024-07-31T17:00:00Z',
+        userInfo: {
+          userId: 'com003',
+          nickname: '王五',
+          avatar: '👩'
+        }
+      },
+      {
+        id: 'WD20240731002',
+        userId: 'com004',
+        amount: 75.25,
+        method: 'wechat',
+        status: 'pending',
+        requestedAt: '2024-07-31T14:20:00Z',
+        userInfo: {
+          userId: 'com004',
+          nickname: '赵六',
+          avatar: '🧑'
+        }
+      }
+    ];
+    return mockData;
+  };
+
   // 获取所有提现申请
   const fetchAllWithdrawalApplications = async () => {
     setLoading(true);
     debugLog('数据加载', '开始获取所有提现申请');
     
     try {
-      // 在实际系统中，这里应该调用后端API获取数据
-      // 由于当前是模拟环境，我们直接从适配器获取所有提现记录
-      const allWithdrawals = await financeModelAdapter.getUserWithdrawalRecords('');
-      
-      // 为每个提现记录添加用户信息
-      const applicationsWithUserInfo: WithdrawalApplication[] = allWithdrawals.map(withdrawal => {
-        // 在实际系统中，这里应该从用户表获取用户信息
-        // 由于当前是模拟环境，我们构建一些简单的用户信息
-        const userInfo: CommenterUserInfo = {
-          userId: withdrawal.userId,
-          nickname: withdrawal.userId === 'com001' ? '张三' : 
-                   withdrawal.userId === 'com002' ? '李四' : 
-                   withdrawal.userId === 'com003' ? '王五' : 
-                   withdrawal.userId === 'com004' ? '赵六' : '未知用户',
-          avatar: withdrawal.userId === 'com001' ? '👨' : 
-                  withdrawal.userId === 'com002' ? '👨' : 
-                  withdrawal.userId === 'com003' ? '👩' : 
-                  withdrawal.userId === 'com004' ? '🧑' : '👤'
-        };
-        
-        return {
-          ...withdrawal,
-          userInfo
-        };
-      });
+      // 使用模拟数据代替适配器调用
+      const applicationsWithUserInfo = generateMockWithdrawalApplications();
       
       // 按申请时间降序排序
       applicationsWithUserInfo.sort((a, b) => 
@@ -82,10 +125,11 @@ export default function WithdrawalReviewPage() {
     debugLog('审核处理', `开始审核提现申请 ${withdrawalId}`, { isApproved });
     
     try {
-      // 调用适配器审核提现申请
-      const result = isApproved 
-        ? await financeModelAdapter.approveWithdrawal(withdrawalId) 
-        : await financeModelAdapter.rejectWithdrawal(withdrawalId);
+      // 模拟审核操作，直接在前端更新状态
+      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟网络延迟
+      
+      // 模拟操作成功
+      const result = true;
       
       if (result) {
         debugLog('审核处理', `提现申请 ${withdrawalId} 审核${isApproved ? '通过' : '拒绝'}成功`);

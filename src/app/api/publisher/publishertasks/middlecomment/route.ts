@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { getTokenFromCookie, isValidToken } from '../../auth/token/tokenUtils';
-import { createReadStream, existsSync, mkdirSync, statSync, writeFile } from 'fs';
+import { existsSync, mkdirSync, statSync, writeFile } from 'fs';
 import path, { join } from 'path';
 import { mkdir, stat } from 'fs/promises';
 
@@ -57,8 +57,25 @@ const saveImageFile = async (file: any, index: string, imageName?: string): Prom
     const filePath = join(uploadDir, finalFilename);
     
     try {
-      // 读取文件数据
-      const buffer = Buffer.from(await file.arrayBuffer());
+      // 安全读取文件数据，确保文件对象有效
+      if (!file || typeof file.arrayBuffer !== 'function') {
+        throw new Error('无效的文件对象');
+      }
+      
+      // 使用try-catch包装arrayBuffer操作
+      let arrayBuffer;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (streamError) {
+        console.error('读取文件流失败:', streamError);
+        // 尝试使用替代方法处理
+        if (file.size === 0) {
+          throw new Error('空文件');
+        }
+        throw streamError;
+      }
+      
+      const buffer = Buffer.from(arrayBuffer);
       
       // 写入文件 - 使用Promise包装fs.writeFile
       await new Promise((resolve, reject) => {
@@ -172,11 +189,17 @@ export async function POST(request: Request) {
         const hasImage = formData.get(`hasImage${i}`) === 'true';
         const imageField = formData.get(`commentImages${i}`);
         
+        // 安全检查图片文件
         if (hasImage && savedImagePaths[`commentImages${i}`]) {
           commentImagePath = savedImagePaths[`commentImages${i}`];
-        } else if (imageField && imageField instanceof File && imageField.size > 0) {
-          // 如果之前没有处理过这个图片，进行处理
-          commentImagePath = await saveImageFile(imageField, String(i));
+        } else if (hasImage && imageField && imageField instanceof File && imageField.size > 0) {
+          try {
+            // 如果之前没有处理过这个图片，进行处理
+            commentImagePath = await saveImageFile(imageField, String(i));
+          } catch (imageError) {
+            console.error(`处理评论 ${i} 的图片失败:`, imageError);
+            commentImagePath = null;
+          }
         }
       }
         

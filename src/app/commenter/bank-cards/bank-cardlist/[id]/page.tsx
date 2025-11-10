@@ -57,7 +57,7 @@ export default function BankCardDetail() {
         if (!currentUser) {
           setError('用户未登录，请重新登录');
           setTimeout(() => {
-            router.push('/auth/login/commenterlogin');
+            router.push('/commenter/auth/login');
           }, 1500);
           return;
         }

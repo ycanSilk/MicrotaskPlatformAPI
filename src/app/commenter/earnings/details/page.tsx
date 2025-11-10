@@ -1,42 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import EarningsDetails from '../components/EarningsDetails';
-// 本地实现Commenter认证信息获取
-const CommenterAuthStorage = {
-  getAuth: () => {
-    try {
-      // 首先尝试直接从localStorage获取认证信息
-      const authData = localStorage.getItem('commenter_auth');
-      if (authData) {
-        return JSON.parse(authData);
-      }
-      
-      // 兼容旧的存储方式
-      const userJson = localStorage.getItem('commenter_user');
-      const token = localStorage.getItem('commenter_token');
-      if (userJson && token) {
-        const user = JSON.parse(userJson);
-        return { user, token };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取认证信息失败:', error);
-      return null;
-    }
-  },
-  // 添加getCurrentUser方法获取当前用户
-  getCurrentUser: () => {
-    const auth = CommenterAuthStorage.getAuth();
-    return auth?.user || null;
-  }
-};
-import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';
-import type { User } from '@/types';
 import { useRouter } from 'next/navigation';
-
-// 创建FinanceModelAdapter实例
-const financeAdapter = FinanceModelAdapter.getInstance();
 
 // 定义类型接口
 export interface EarningRecord {
@@ -75,72 +40,79 @@ const DetailsPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 初始化数据
+  // 初始化数据 - 使用静态数据
   React.useEffect(() => {
-    const initializeData = async () => {
+    const initializeData = () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // 获取当前用户
-        const commenterUser = CommenterAuthStorage.getCurrentUser();
-        if (!commenterUser) {
-          router.push('/auth/login/commenterlogin');
-          return;
-        }
+        // 设置默认收益记录（静态数据）
+        setEarnings([
+          {
+            id: '1',
+            userId: 'mock-user-id',
+            taskId: 'task-1',
+            taskName: '评论任务',
+            amount: 12.5,
+            type: 'task',
+            description: '完成评论任务',
+            createdAt: new Date(Date.now() - 86400000).toISOString()
+          },
+          {
+            id: '2',
+            userId: 'mock-user-id',
+            taskId: 'task-2',
+            taskName: '点赞任务',
+            amount: 8.0,
+            type: 'task',
+            description: '完成点赞任务',
+            createdAt: new Date(Date.now() - 172800000).toISOString()
+          },
+          {
+            id: '3',
+            userId: 'mock-user-id',
+            taskId: 'task-3',
+            taskName: '转发任务',
+            amount: 15.0,
+            type: 'task',
+            description: '完成转发任务',
+            createdAt: new Date(Date.now() - 259200000).toISOString()
+          },
+          {
+            id: '4',
+            userId: 'mock-user-id',
+            taskId: 'task-4',
+            taskName: '关注任务',
+            amount: 6.0,
+            type: 'task',
+            description: '完成关注任务',
+            createdAt: new Date(Date.now() - 345600000).toISOString()
+          }
+        ]);
 
-        // 获取收益记录
-        const earningRecords = await financeAdapter.getUserEarningsRecords(commenterUser.id);
-        if (earningRecords) {
-          setEarnings(earningRecords);
-        }
-
-        // 获取提现记录
-        const withdrawalRecords = await financeAdapter.getUserWithdrawalRecords(commenterUser.id);
-        if (withdrawalRecords) {
-          setWithdrawals(withdrawalRecords);
-        }
-
-        // 如果没有数据，设置默认模拟数据
-        if (!earningRecords || earningRecords.length === 0) {
-          setEarnings([
-            {
-              id: '1',
-              userId: commenterUser.id,
-              taskId: 'task-1',
-              taskName: '评论任务',
-              amount: 12.5,
-              type: 'task',
-              description: '完成评论任务',
-              createdAt: new Date(Date.now() - 86400000).toISOString()
-            },
-            {
-              id: '2',
-              userId: commenterUser.id,
-              taskId: 'task-2',
-              taskName: '点赞任务',
-              amount: 8.0,
-              type: 'task',
-              description: '完成点赞任务',
-              createdAt: new Date(Date.now() - 172800000).toISOString()
-            }
-          ]);
-        }
-
-        if (!withdrawalRecords || withdrawalRecords.length === 0) {
-          setWithdrawals([
-            {
-              id: '1',
-              userId: commenterUser.id,
-              amount: 100.0,
-              fee: 0.5,
-              method: '微信',
-              status: 'approved',
-              requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-              processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
-            }
-          ]);
-        }
+        // 设置默认提现记录（静态数据）
+        setWithdrawals([
+          {
+            id: '1',
+            userId: 'mock-user-id',
+            amount: 100.0,
+            fee: 0.5,
+            method: '微信',
+            status: 'approved',
+            requestedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+            processedAt: new Date(Date.now() - 2 * 86400000).toISOString()
+          },
+          {
+            id: '2',
+            userId: 'mock-user-id',
+            amount: 50.0,
+            fee: 0.3,
+            method: '支付宝',
+            status: 'pending',
+            requestedAt: new Date(Date.now() - 1 * 86400000).toISOString()
+          }
+        ]);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : '加载数据失败';
         setError(errorMessage);
@@ -150,7 +122,7 @@ const DetailsPage = () => {
     };
 
     initializeData();
-  }, [router]);
+  }, []);
 
   // 处理选项卡切换
   const setActiveTab = (tab: 'overview' | 'details' | 'withdraw') => {
@@ -195,17 +167,25 @@ const DetailsPage = () => {
   // 计算总收益
   const totalEarnings = earnings.reduce((sum, record) => sum + record.amount, 0);
 
-  // 准备stats数据
+  // 准备stats数据 - 使用静态数据
   const stats = {
-    todayEarnings: 0,
-    yesterdayEarnings: 0,
-    weeklyEarnings: 0,
-    monthlyEarnings: 0
+    todayEarnings: 12.5,
+    yesterdayEarnings: 8.0,
+    weeklyEarnings: 65.5,
+    monthlyEarnings: 180.0
   };
   
+  // 设置默认用户账户信息（静态数据）
+  const defaultAccount = {
+    userId: 'mock-user-id',
+    availableBalance: 150.5,
+    frozenBalance: 50,
+    totalEarnings: totalEarnings
+  };
+
   return (
     <EarningsDetails
-      currentUserAccount={null}
+      currentUserAccount={defaultAccount}
       earnings={earnings}
       stats={stats}
     />

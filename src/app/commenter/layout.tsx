@@ -122,7 +122,7 @@ export default function CommenterLayout({
 
   const handleLogout = () => {
     commonLogout();
-    router.push('/auth/login/commenterlogin');
+    router.push('/commenter/auth/login');
   };
 
   // 获取当前页面标题
