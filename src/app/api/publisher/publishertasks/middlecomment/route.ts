@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       requestBody.videoUrl = formData.get('videoUrl');
       requestBody.quantity = formData.get('quantity');
       requestBody.deadline = formData.get('deadline');
-      requestBody.mentions = JSON.parse(formData.get('mentions') || '[]');
+      requestBody.mentions = JSON.parse(String(formData.get('mentions') || '[]'));
     } else {
       // 处理JSON数据
       requestBody = await request.json();
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     for (let i = 1; i <= quantity; i++) {
       // 提取评论数据
       let commentText = '';
-      let commentImagePath = '';
+      let commentImagePath: string | null = null;
       
       if (formData) {
         // 从FormData获取数据
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
         commentDetail[`unitPrice${i}`] = Number(requestBody.taskPrice) || 0;
         commentDetail[`quantity${i}`] = 1;
         commentDetail[`commentText${i}`] = cleanContent;
-        commentDetail[`commentImages${i}`] = commentImagePath;
+        commentDetail[`commentImages${i}`] = commentImagePath || '';
         
         // 仅在最后一条评论设置mentionUser
         if (i === quantity && mentionUser) {

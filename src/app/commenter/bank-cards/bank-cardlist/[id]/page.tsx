@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+// 移除不存在的导入，使用文件中已有的getCurrentUser函数
 import { CreditCardOutlined } from '@ant-design/icons';
 // 直接从localStorage获取用户信息的辅助函数
 const getCurrentUser = () => {
@@ -143,7 +144,7 @@ export default function BankCardDetail() {
     if (confirmUnbind && bankCard) {
       try {
         // 获取当前登录用户信息
-        const currentUser = CommenterAuthStorage.getCurrentUser();
+        const currentUser = getCurrentUser();
         if (!currentUser) {
           setError('用户未登录，请重新登录');
           return;
@@ -200,7 +201,7 @@ export default function BankCardDetail() {
     if (confirmSetDefault) {
       try {
         // 获取当前登录用户信息
-        const currentUser = CommenterAuthStorage.getCurrentUser();
+        const currentUser = getCurrentUser();
         if (!currentUser) {
           setError('用户未登录，请重新登录');
           return;

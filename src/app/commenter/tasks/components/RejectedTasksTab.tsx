@@ -5,33 +5,68 @@ import { MessageOutlined } from '@ant-design/icons';
 // 定义任务接口
 export interface Task {
   id: string;
-  parentId?: string;
-  title?: string;
-  price?: number;
-  unitPrice?: number;
+  mainTaskId: string;
+  mainTaskTitle: string;
+  mainTaskPlatform: string;
+  workerId: string;
+  workerName: string | null;
+  agentId: string | null;
+  agentName: string | null;
+  commentGroup: string;
+  commentType: string;
+  unitPrice: number;
+  userReward: number;
+  agentReward: number;
   status: string;
+  acceptTime: string;
+  expireTime: string;
+  submitTime: string | null;
+  completeTime: string | null;
+  settleTime: string | null;
+  submittedImages: string | null;
+  submittedLinkUrl: string | null;
+  submittedComment: string | null;
+  verificationNotes: string | null;
+  rejectReason: string | null;
+  cancelReason: string | null;
+  cancelTime: string | null;
+  releaseCount: number;
+  settled: boolean;
+  verifierId: string | null;
+  verifierName: string | null;
+  createTime: string;
+  updateTime: string;
+  taskDescription: string | null;
+  taskRequirements: string | null;
+  taskDeadline: string | null;
+  remainingMinutes: number | null;
+  isExpired: boolean | null;
+  isAutoVerified: boolean | null;
+  canSubmit: boolean | null;
+  canCancel: boolean | null;
+  canVerify: boolean | null;
+  verifyResult: string | null;
+  verifyTime: string | null;
+  verifyComment: string | null;
+  settlementStatus: string | null;
+  settlementTime: string | null;
+  settlementRemark: string | null;
+  workerRating: number | null;
+  workerComment: string | null;
+  publisherRating: number | null;
+  publisherComment: string | null;
+  firstGroupComment: string | null;
+  secondGroupComment: string | null;
+  firstGroupImages: string | null;
+  secondGroupImages: string | null;
+  
+  // 前端需要的额外字段
   statusText?: string;
   statusColor?: string;
-  description?: string;
-  deadline?: string;
-  progress?: number;
-  submitTime?: string;
-  completedTime?: string;
-  reviewNote?: string;
-  requirements: string;
-  publishTime: string;
-  videoUrl?: string;
-  mention?: string;
   screenshotUrl?: string;
-  recommendedComment?: string;
-  commentContent?: string;
+  submitScreenshotUrl?: string;
   subOrderNumber?: string;
   orderNumber?: string;
-  taskType?: string;
-  requiringVideoUrl?: string;
-  submitdvideoUrl?: string;
-  submitScreenshotUrl?: string;
-  requiringCommentUrl?: string;
 }
 
 interface RejectedTasksTabProps {
@@ -88,71 +123,69 @@ const RejectedTasksTab: React.FC<RejectedTasksTabProps> = ({
           
           {/* 价格和任务信息区域 */}
           <div className="mb-2">
-            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || task.price || 0).toFixed(2)}</div>
+            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || 0).toFixed(2)}</div>
             <div className="space-y-2">
               <div>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 mr-2">
                   {task.statusText || '已驳回'}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                  {task.commentType || '评论'}
+                  {getTaskTypeName(task.commentType)}
                 </span>
               </div>
               <div className="text-xs text-gray-500 flex items-center justify-between">
-                <span>平台: {task.mainTaskPlatform || '-'}</span>
-                <span>接受时间: {task.acceptTime || '-'}</span>
+                <span>平台: -</span>
+                <span>接受时间: -</span>
               </div>
               <div className="text-xs text-gray-500 flex items-center justify-between mt-1">
-                <span>评论类型: {task.commentType || '-'}</span>
+                <span>评论类型: {getTaskTypeName(task.commentType)}</span>
                 <span>提交时间: {task.submitTime || '-'}</span>
               </div>
             </div>
           </div>
 
           <div className="text-sm mb-2 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-            要求：{task.requirements || '无特殊要求'}
+            要求：{task.taskRequirements || '无特殊要求'}
           </div>
           
           {/* 驳回原因 */}
-          {(task.rejectReason || task.verifyComment) && (
-            <div className="mb-4 border border-red-200 rounded-lg p-3 bg-red-50">
-              <div className="text-sm text-red-700 block mb-2">驳回原因：</div>
-              <div className="text-sm bg-white p-2 rounded border border-red-200 text-gray-800">
-                {task.rejectReason || task.verifyComment || '无具体原因'}
-              </div>
+          {/* <div className="mb-4 border border-red-200 rounded-lg p-3 bg-red-50">
+            <div className="text-sm text-red-700 block mb-2">驳回原因：</div>
+            <div className="text-sm bg-white p-2 rounded border border-red-200 text-gray-800">
+              任务已被驳回，请重新提交
+            </div>
             <div className="text-xs text-red-500 mt-1 pl-2">
-              请根据驳回原因修改任务内容后重新提交
+              请修改任务内容后重新提交
             </div>
-            </div>
-          )}
+          </div> */}
           
           {/* 截图显示区域 */}
           <div className="mb-4 border border-gray-200 rounded-lg p-3 bg-white">
             <div className="text-sm text-gray-700 mb-2">已上传截图：</div>
             <div className="grid grid-cols-2 gap-2">
-              {task.submittedImages && task.submittedImages.split(',').map((url, index) => (
+              {(task.submitScreenshotUrl || task.screenshotUrl) && (
                 <a
-                  key={index}
-                  href={url}
+                  href={task.submitScreenshotUrl || task.screenshotUrl || ''}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block relative overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-all group"
                   onClick={(e) => {
                     e.preventDefault();
-                    handleViewImage(url);
+                    const url = task.submitScreenshotUrl || task.screenshotUrl;
+                    url && handleViewImage(url);
                   }}
                 >
                   <img
-                    src={url}
-                    alt={`任务截图 ${index + 1}`}
+                    src={task.submitScreenshotUrl || task.screenshotUrl}
+                    alt="任务截图"
                     className="w-full h-24 object-cover transition-transform group-hover:scale-105"
                   />
                   <span className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all">
                     <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity">查看大图</span>
                   </span>
                 </a>
-              ))}
-              {!task.submittedImages && (
+              )}
+              {!(task.submitScreenshotUrl || task.screenshotUrl) && (
                 <div className="w-full h-24 flex items-center justify-center text-gray-400 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
                   <span className="text-sm ml-1">未上传截图</span>
                 </div>
@@ -162,7 +195,7 @@ const RejectedTasksTab: React.FC<RejectedTasksTabProps> = ({
           
           {/* 任务操作区 */}
           <div className="flex justify-end mt-4 gap-2">
-            {task.canCancel && (
+            {/* {task.canCancel && (
               <button 
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1.5 px-4 rounded text-sm font-medium transition-colors"
                 onClick={() => {
@@ -178,7 +211,7 @@ const RejectedTasksTab: React.FC<RejectedTasksTabProps> = ({
               >
                 放弃任务
               </button>
-            )}
+            )} */}
             <button 
               className="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-4 rounded text-sm font-medium transition-colors"
               onClick={() => {

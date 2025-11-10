@@ -10,7 +10,7 @@ interface UserTypeCardProps {
   icon: string;
   description: string;
   route: string;
-  count?: string | number;
+  count?: string | number | null;
   colorClass: string;
   textColorClass: string;
 }

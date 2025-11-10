@@ -11,6 +11,4 @@ export * from './error';
 
 // 导出个人资料相关类型
 export * from './profile';
-
-// 导出Token相关类型
-export * from './token';
+// Token相关类型已在auth.ts中定义，不再重复导出

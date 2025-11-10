@@ -54,7 +54,7 @@ const mockUsers: SystemUser[] = [
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('id');
+  const userId = searchParams?.get('id');
   
   // 表单状态
   const [formData, setFormData] = useState({

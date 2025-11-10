@@ -24,6 +24,11 @@ const CommenterAuthStorage = {
       console.error('获取认证信息失败:', error);
       return null;
     }
+  },
+  // 添加getCurrentUser方法获取当前用户
+  getCurrentUser: () => {
+    const auth = CommenterAuthStorage.getAuth();
+    return auth?.user || null;
   }
 };
 import { FinanceModelAdapter } from '@/data/commenteruser/finance_model_adapter';

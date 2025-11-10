@@ -1,5 +1,23 @@
-import { CommenterAuthStorage } from '@/auth/commenter/auth';
 import boundUserInvitations from './bound_user_invitations.json';
+
+// 本地实现Commenter认证信息获取
+const CommenterAuthStorage = {
+  getCurrentUser: () => {
+    try {
+      if (typeof window === 'undefined') return null;
+      
+      const userInfoStr = localStorage.getItem('commenter_user_info');
+      if (userInfoStr) {
+        return JSON.parse(userInfoStr);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取评论者用户信息失败:', error);
+      return null;
+    }
+  }
+};
 
 // 定义类型接口
 export interface DailyEarning {

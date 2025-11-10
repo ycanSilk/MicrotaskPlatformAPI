@@ -61,12 +61,11 @@ export async function POST(request: Request) {
       const allTokens = getAllModuleTokens('GET_MISSION_HALL_TASKS');
       // 确保allTokens是对象类型
       if (typeof allTokens === 'object' && allTokens !== null) {
-        for (const moduleType in allTokens) {
-          if (Object.prototype.hasOwnProperty.call(allTokens, moduleType)) {
-            if (allTokens[moduleType]?.token && isValidToken(allTokens[moduleType].token)) {
-              token = allTokens[moduleType].token;
-              break;
-            }
+        // 使用Object.entries保持类型安全
+        for (const [moduleType, tokenInfo] of Object.entries(allTokens)) {
+          if (tokenInfo?.token && isValidToken(tokenInfo.token)) {
+            token = tokenInfo.token;
+            break;
           }
         }
       }

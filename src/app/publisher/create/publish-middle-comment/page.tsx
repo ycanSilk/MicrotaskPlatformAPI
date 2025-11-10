@@ -824,7 +824,6 @@ export default function PublishTaskPage() {
                 min="1"
                 value={formData.quantity.toString()}
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                min="0"
                 max="10"
                 className="w-full text-2xl font-bold text-gray-900 text-center py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />

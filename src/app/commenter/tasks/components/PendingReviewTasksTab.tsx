@@ -119,7 +119,7 @@ const PendingReviewTasksTab: React.FC<PendingReviewTasksTabProps> = ({
           
           {/* 价格和任务信息区域 - 显示单价、任务状态和发布时间 */}
           <div className="mb-2">
-            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || task.price || 0).toFixed(2)}</div>
+            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || 0).toFixed(2)}</div>
             <div className="text-xs text-gray-500 flex items-center justify-between">
               <span>平台: {task.mainTaskPlatform || '-'}</span>
               <span>接受时间: {task.acceptTime || '-'}</span>
@@ -142,9 +142,9 @@ const PendingReviewTasksTab: React.FC<PendingReviewTasksTabProps> = ({
           {task.submittedLinkUrl && (
             <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
               <span className="text-sm text-blue-700 mr-2">已提交的链接：</span>
-              <button 
+              <button
                 className="mt-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-                onClick={() => window.open(task.submittedLinkUrl, '_blank')}
+                onClick={() => task.submittedLinkUrl && window.open(task.submittedLinkUrl, '_blank')}
               >
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />

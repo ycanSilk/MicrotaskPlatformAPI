@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { formatLog } from '../../token/tokenUtils';
 // 导入配置文件
 const config = require('../../apiconfig/config.json');
 
 // 主函数：处理POST请求
 export async function POST(request: Request) {
+  // 定义操作类型
+  const operation = 'BIND_ALIPAY';
+  
   // 从Cookie获取token
   const cookieStore = cookies();
   const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];

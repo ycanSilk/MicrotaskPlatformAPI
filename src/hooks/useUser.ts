@@ -87,9 +87,9 @@ const commonLogin = async (credentials: any) => {
         user: {
           id: `commenter-${Date.now()}`,
           username,
-          role: 'commenter',
+          role: 'commenter' as const, // 断言为UserRole类型的字面量
           balance: 0,
-          status: 'active',
+          status: 'active' as const, // 断言为User中定义的status类型
           createdAt: new Date().toISOString()
         }
       };
@@ -100,9 +100,9 @@ const commonLogin = async (credentials: any) => {
         user: {
           id: `publisher-${Date.now()}`,
           username,
-          role: 'publisher',
+          role: 'publisher' as const, // 断言为UserRole类型的字面量
           balance: 1000,
-          status: 'active',
+          status: 'active' as const, // 断言为User中定义的status类型
           createdAt: new Date().toISOString()
         }
       };
@@ -212,7 +212,7 @@ export function useUser(): UseUserReturn {
   const refreshUser = () => {
     const currentUser = getCurrentLoggedInUser();
     if (currentUser) {
-      setUser(currentUser.user);
+      setUser(currentUser);
       setIsLoggedIn(true);
     } else {
       setUser(null);
@@ -225,16 +225,20 @@ export function useUser(): UseUserReturn {
     setUser(updatedUser);
     
     // 更新存储的用户信息
-    if (updatedUser.role) {
-      const authStorage = getAuthStorageByRole(updatedUser.role);
-      if (authStorage) {
-        const currentSession = authStorage.getAuth();
-        if (currentSession) {
-          const updatedSession = {
-            ...currentSession,
-            user: updatedUser
-          };
-          authStorage.saveAuth(updatedSession);
+    if (typeof window !== 'undefined' && updatedUser.role) {
+      if (updatedUser.role === 'commenter') {
+        try {
+          // 更新评论者用户信息
+          localStorage.setItem('commenter_user_info', JSON.stringify(updatedUser));
+        } catch (error) {
+          console.error('更新评论者用户信息失败:', error);
+        }
+      } else if (updatedUser.role === 'publisher') {
+        try {
+          // 更新发布者用户信息
+          localStorage.setItem('publisher_user_info', JSON.stringify(updatedUser));
+        } catch (error) {
+          console.error('更新发布者用户信息失败:', error);
         }
       }
     }

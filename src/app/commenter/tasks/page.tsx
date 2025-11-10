@@ -105,7 +105,7 @@ export default function CommenterTasksPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [uploadStatus, setUploadStatus] = useState<Record<string, string>>({});
+  const [uploadStatus, setUploadStatus] = useState<Record<string, 'compressing' | 'uploading' | 'success' | 'error'>>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // 用于放大查看的图片URL
   const [commentContent, setCommentContent] = useState<Record<string, string>>({}); // 存储每个任务的评论内容
   const [tempScreenshotFiles, setTempScreenshotFiles] = useState<Record<string, File>>({}); // 临时存储截图文件
@@ -755,21 +755,39 @@ export default function CommenterTasksPage() {
         )}
         
         {activeTab === 'sub_pending_review' && (
-          <PendingReviewTasksTab 
+          <PendingReviewTasksTab
             tasks={tasks.filter(task => task.status === 'sub_pending_review')}
+            handleViewDetails={(taskId) => console.log('View details for:', taskId)}
             handleViewImage={handleViewImage}
+            getTaskTypeName={(taskType) => taskType || '评论'}
+            isLoading={isLoading}
+            fetchUserTasks={fetchUserTasks}
+            setModalMessage={setModalMessage}
+            setShowModal={setShowModal}
           />
         )}
         
         {activeTab === 'sub_completed' && (
-          <CompletedTasksTab 
+          <CompletedTasksTab
             tasks={tasks.filter(task => task.status === 'sub_completed')}
+            handleViewImage={handleViewImage}
+            getTaskTypeName={(taskType) => taskType || '评论'}
+            isLoading={isLoading}
+            fetchUserTasks={fetchUserTasks}
+            setModalMessage={setModalMessage}
+            setShowModal={setShowModal}
           />
         )}
         
         {activeTab === 'sub_rejected' && (
-          <RejectedTasksTab 
+          <RejectedTasksTab
             tasks={tasks.filter(task => task.status === 'sub_rejected')}
+            handleViewImage={handleViewImage}
+            getTaskTypeName={(taskType) => taskType || '评论'}
+            isLoading={isLoading}
+            fetchUserTasks={fetchUserTasks}
+            setModalMessage={setModalMessage}
+            setShowModal={setShowModal}
           />
         )}
       </div>

@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-
-import Link from 'next/link';
+import React from 'react';
+import { usePathname } from 'next/navigation';
 import { AdminBottomNavigation } from './components/AdminBottomNavigation';
 
 export default function AdminLayout({
@@ -11,52 +9,20 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    // 确保在客户端环境中执行
-    if (typeof window === 'undefined') {
-      setIsLoading(false);
-      return;
-    }
+  // 模拟用户数据用于显示
+  const user = {
+    id: 'dev-admin-123',
+    username: '管理员账号',
+    role: 'admin',
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
 
-    const initializeAuth = async () => {
-      try {
-        // 注意：admin认证模块已被移除
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Development environment detected, using mock admin data');
-          // 开发环境使用模拟数据
-          const mockAdminUser = {
-            id: 'dev-admin-123',
-            username: '管理员账号',
-            role: 'admin',
-            status: 'active',
-            createdAt: new Date().toISOString()
-          };
-          setUser(mockAdminUser);
-          setIsLoading(false);
-        } else {
-          // 生产环境重定向到评论员登录
-          console.log('Admin module removed, redirecting to commenter login');
-          router.push('/auth/login/commenterlogin');
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Admin Layout Error:', error);
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
-  }, [router]);
-
-  const handleLogout = async () => {
-   
-      router.push('/auth/login/commenterlogin');
-    
+  const handleLogout = () => {
+    // 移除了实际的登出逻辑
+    console.log('Logout clicked');
   };
 
   // 获取当前页面标题
@@ -73,16 +39,7 @@ export default function AdminLayout({
     return pathname?.includes(path) ?? false;
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl mb-2">🔄</div>
-          <div>加载中...</div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -1,5 +1,12 @@
-import { CommenterUser } from '@/types';
-
+// 定义评论用户接口
+interface CommenterUser {
+  id: string;
+  username: string;
+  email?: string;
+  phone?: string;
+  // 其他可能的用户属性
+}
+  
 // 定义登录响应接口
 export interface LoginApiResponse {
   code: number;
@@ -40,7 +47,19 @@ export interface TokenStorage {
 // 定义认证信息接口
 export interface AuthInfo {
   token: string;
-  user: CommenterUser;
+  user: {
+    id: string;
+    username: string;
+    email: string | null;
+    phone: string;
+    role: 'commenter';
+    balance: number;
+    status: 'active';
+    createdAt: string;
+    invitationCode: string;
+    avatar: string;
+    lastLoginTime: string;
+  };
   expiresAt: number;
 }
 
@@ -239,17 +258,15 @@ export class CommenterTokenManager {
       user: {
         id: userInfo.id,
         username: userInfo.username,
-        email: userInfo.email,
+        email: userInfo.email || null,
         phone: userInfo.phone,
-        role: 'commenter' as const,
-        // 可能需要从其他地方获取这些字段的默认值
+        role: 'commenter',
         balance: 0,
-        status: 'active' as const,
+        status: 'active',
         createdAt: userInfo.createTime,
         invitationCode: userInfo.invitationCode,
-        // 添加其他必要的用户属性
         avatar: '',
-        lastLoginTime: new Date().toISOString(),
+        lastLoginTime: new Date().toISOString()
       },
       expiresAt: tokenStorage.expiresAt
     };

@@ -384,12 +384,12 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
         <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-1">
             <h4 className="text-sm font-medium text-blue-700"><EditOutlined className="inline-block mr-1" /> 推荐评论</h4>
-            <button 
-              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-500 transition-colors"
-              onClick={() => handleCopyComment(task.id, task.firstGroupComment || task.secondGroupComment || task.submittedComment)}
-            >
-              <CopyOutlined className="inline-block mr-1" /> 复制评论
-            </button>
+            <button
+                className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-500 transition-colors"
+                onClick={() => handleCopyComment && handleCopyComment(task.id, (task.firstGroupComment || task.secondGroupComment || task.submittedComment || undefined))}
+              >
+                <CopyOutlined className="inline-block mr-1" /> 复制评论
+              </button>
           </div>
           <p className="text-sm text-black bg-white p-3 rounded border border-blue-100 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
             {task.firstGroupComment}
@@ -404,7 +404,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
                 src={task.submittedImages} 
                 alt="已提交的截图" 
                 className="mt-1 max-w-full h-auto rounded"
-                onClick={() => handleViewImage(task.submittedImages)}
+                onClick={() => task.submittedImages && handleViewImage(task.submittedImages)}
               />
             </div>
           )}
@@ -427,8 +427,8 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
         />
         {reviewLinks[task.id] || task.submittedLinkUrl ? (
           <button
-            className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-            onClick={() => window.open(reviewLinks[task.id] || task.submittedLinkUrl, '_blank')}
+              className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+              onClick={() => { const url = reviewLinks[task.id] || task.submittedLinkUrl; url && window.open(url, '_blank'); }}
           >
             打开视频
           </button>
@@ -461,7 +461,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
                     className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors z-10"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemoveImage(task.id);
+                      handleRemoveImage && handleRemoveImage(task.id);
                     }}
                   >
                     X

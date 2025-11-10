@@ -4,6 +4,46 @@ import { Button, Input, AlertModal } from '@/components/ui';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+// 本地实现Publisher认证信息获取，替代已移除的PublisherAuthStorage
+const PublisherAuthStorage = {
+  getAuth: () => {
+    try {
+      if (typeof window === 'undefined') return null;
+      
+      // 尝试从localStorage获取publisher认证信息
+      const authToken = localStorage.getItem('publisher_auth_token');
+      const userInfo = localStorage.getItem('publisher_user_info');
+      
+      if (authToken && userInfo) {
+        return {
+          token: authToken,
+          user: JSON.parse(userInfo)
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取认证信息失败:', error);
+      return null;
+    }
+  },
+  getCurrentUser: () => {
+    try {
+      if (typeof window === 'undefined') return null;
+      
+      const userInfoStr = localStorage.getItem('publisher_user_info');
+      if (userInfoStr) {
+        return JSON.parse(userInfoStr);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('获取当前用户信息失败:', error);
+      return null;
+    }
+  }
+};
+
 export default function PublishSearchKeywordTaskPage() {
   const router = useRouter();
   const searchParams = useSearchParams();

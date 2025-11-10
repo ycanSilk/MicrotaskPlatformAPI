@@ -6,16 +6,40 @@ import { AccountRentalInfo } from '@/app/accountrental/types';
     // 价格处理 - 使用pricePerDay作为价格
     const price = leaseInfo.pricePerDay || 0;
     
-    // 创建基本对象，只包含新接口所需的字段
+    // 创建对象，为所有必填字段提供默认值
     const baseObject: AccountRentalInfo = {
       id: String(leaseInfo.id) || `lease-${Date.now()}`,
-      rentalDescription: leaseInfo.description || '抖音账号出租',
+      platform: '抖音',
+      accountTitle: leaseInfo.title || '抖音账号出租',
+      followersRange: '1000-5000',
+      engagementRate: '3-5%',
+      contentCategory: '生活',
+      region: '全国',
+      accountAge: '1-2年',
+      accountScore: 4.5,
+      orderPrice: price,
       price: price,
+      rentalDuration: leaseInfo.minLeaseDays || 30,
+      minimumRentalHours: 24,
+      deliveryTime: 2,
+      maxConcurrentUsers: 1,
+      responseTime: 1,
+      includedFeatures: ['账号登录', '内容发布'],
+      description: leaseInfo.description || '抖音账号出租',
+      rentalDescription: leaseInfo.description || '抖音账号出租',
+      advantages: ['账号活跃', '粉丝真实'],
+      restrictions: ['禁止违法内容'],
+      isVerified: false,
+      rating: 4.5,
+      rentalCount: 0,
+      availableCount: 1,
       publishTime: leaseInfo.createTime || new Date().toISOString(),
+      status: 'ACTIVE',
+      images: leaseInfo.images || [],
+      publisherName: '系统用户',
       orderNumber: `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`,
       orderStatus: '待确认',
-      rentalDays: leaseInfo.minLeaseDays || 30,
-      images: leaseInfo.images || []
+      rentalDays: leaseInfo.minLeaseDays || 30
     };
     
     return baseObject;

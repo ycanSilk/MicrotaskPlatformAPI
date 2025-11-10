@@ -82,7 +82,7 @@ const mockUsers: SystemUser[] = [
 export default function ChangeSystemUserPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('id');
+  const userId = searchParams?.get('id');
   
   // 可选择的角色列表
   const availableRoles = ['超级管理员', '运营专员', '财务专员', '审计员'];
@@ -133,10 +133,10 @@ export default function ChangeSystemUserPage() {
     if (!formData) return;
     
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       [name]: value
-    }));
+    });
     
     // 清除相关字段的错误信息
     if (errors[name as keyof FormErrors]) {
@@ -152,30 +152,28 @@ export default function ChangeSystemUserPage() {
   const handleStatusChange = (status: 'active' | 'inactive') => {
     if (!formData) return;
     
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       status
-    }));
+    });
   };
   
   // 处理权限变化
   const handlePermissionChange = (permission: string) => {
     if (!formData) return;
     
-    setFormData(prev => {
-      const permissions = prev.permissions || [];
-      if (permissions.includes(permission)) {
-        return {
-          ...prev,
-          permissions: permissions.filter(p => p !== permission)
-        };
-      } else {
-        return {
-          ...prev,
-          permissions: [...permissions, permission]
-        };
-      }
-    });
+    const permissions = formData.permissions || [];
+    if (permissions.includes(permission)) {
+      setFormData({
+        ...formData,
+        permissions: permissions.filter(p => p !== permission)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        permissions: [...permissions, permission]
+      });
+    }
   };
   
   // 表单验证

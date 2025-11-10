@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     });
     
     // 记录请求头信息
-    const headers = {};
-    request.headers.forEach((value, key) => {
+    const headers: Record<string, string> = {};
+  request.headers.forEach((value, key) => {
       // 不记录敏感头信息
       if (!['authorization', 'cookie'].includes(key.toLowerCase())) {
         headers[key] = value;
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     enhancedLog(operation, LogLevel.INFO, `认证成功，继续处理请求`, { tokenPreview: safeLogToken(token) });
     
     // 2. 解析请求体
-    let requestData;
+    let requestData: any;
     try {
       // 记录原始请求信息
       enhancedLog(operation, LogLevel.DEBUG, '开始解析前端请求体');
@@ -90,7 +90,8 @@ export async function POST(request: Request) {
       // 检查关键字段是否存在并验证数据类型
       enhancedLog(operation, LogLevel.DEBUG, '===== 请求体关键字段验证 =====');
       const requiredFields = ['title', 'description', 'platform', 'taskType', 'totalQuantity', 'unitPrice', 'deadline', 'requirements', 'commentDetail'];
-      const fieldValidation = {};
+// 验证必要字段
+      const fieldValidation: Record<string, any> = {};
       requiredFields.forEach(field => {
         const value = requestData[field];
         fieldValidation[field] = {
@@ -217,19 +218,20 @@ export async function POST(request: Request) {
       });
     
     // 记录响应头信息
-    const responseHeaders = {};
+    const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
       responseHeaders[key] = value;
     });
     enhancedLog(operation, LogLevel.DEBUG, 'API响应头', responseHeaders);
     
     // 6. 处理API响应
-    let responseData;
+    let responseData: any;
+    let responseText: string = '';
     try {
       enhancedLog(operation, LogLevel.DEBUG, '开始解析外部API响应');
       
       // 先获取响应内容的文本形式，然后再解析JSON
-      const responseText = await response.text();
+      responseText = await response.text();
       enhancedLog(operation, LogLevel.DEBUG, `原始响应文本内容长度: ${responseText.length}字符`);
       
       // 尝试解析JSON
@@ -248,7 +250,7 @@ export async function POST(request: Request) {
       // 详细检查响应中的关键字段
       enhancedLog(operation, LogLevel.DEBUG, '===== 响应关键字段检查 =====');
       const responseKeys = ['success', 'code', 'message', 'data'];
-      const keyCheckResult = {};
+      const keyCheckResult: Record<string, any> = {};
       responseKeys.forEach(key => {
         const value = responseData[key];
         keyCheckResult[key] = {

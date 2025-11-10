@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/hooks/useUser';
-// Admin auth storage removed
 import { financeModelAdapter } from '@/data/commenteruser/finance_model_adapter';
 import { WithdrawalRecord } from '@/data/commenteruser/finance_model_adapter';
 
@@ -30,7 +28,6 @@ export default function WithdrawalReviewPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const router = useRouter();
-  const { user, isLoggedIn } = useUser();
 
   // 获取所有提现申请
   const fetchAllWithdrawalApplications = async () => {
@@ -112,30 +109,7 @@ export default function WithdrawalReviewPage() {
     fetchAllWithdrawalApplications();
   }, []);
 
-  // 检查是否为管理员且已登录
-  const isAdminLoggedIn = () => {
-    try {
-      const adminUser = AdminAuthStorage.getCurrentUser();
-      return !!adminUser;
-    } catch (error) {
-      return false;
-    }
-  };
 
-  // 未登录状态显示
-  if (!isAdminLoggedIn()) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen">
-        <h2 className="text-xl font-bold mb-4">请先以管理员身份登录</h2>
-        <button 
-          onClick={() => router.push('/auth/login/adminlogin')}
-          className="bg-blue-500 text-white px-6 py-2 rounded font-medium"
-        >
-          前往登录
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">

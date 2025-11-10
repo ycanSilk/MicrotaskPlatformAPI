@@ -129,7 +129,7 @@ export default function BankCardsPage() {
       } catch (jsonError) {
         console.error('JSON解析错误:', jsonError);
         console.error('原始响应文本:', responseText);
-        throw new Error(`JSON解析错误: ${jsonError.message}`);
+        throw new Error(`JSON解析错误: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`);
       }
       
       // 处理API返回的错误，即使HTTP状态码是200
@@ -270,7 +270,7 @@ export default function BankCardsPage() {
           throw new Error('响应体为空');
         }
       } catch (jsonError) {
-        throw new Error(`JSON解析错误: ${jsonError.message}`);
+        throw new Error(`JSON解析错误: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`);
       }
       
       // 检查响应状态和API返回结果

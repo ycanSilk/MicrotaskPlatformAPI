@@ -118,7 +118,7 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
           
           {/* 价格和任务信息区域 - 显示单价、任务状态和发布时间 */}
           <div className="mb-2">
-            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || task.price || 0).toFixed(2)}</div>
+            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || 0).toFixed(2)}</div>
             <div className="space-y-2">
               <div>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 mr-2">
@@ -138,9 +138,9 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
                 完成时间：{task.completeTime || '未知时间'}
               </div>
               {/* 完成时间 */}
-              {task.completedTime && (
+              {task.completeTime && (
               <div className="text-sm text-black block  mt-2">
-                  完成时间：{task.completedTime}
+                  完成时间：{task.completeTime}
               </div>
               )}
             </div>
@@ -153,19 +153,19 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
           
 
           
-          {/* 打开视频按钮 */}
-          {task.submitVideoUrl && (
+          {/* 打开视频/链接按钮 */}
+          {task.submittedLinkUrl && (
             <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
-              <span className="text-sm text-blue-700 mr-2">任务视频点击进入：</span>
-              <button 
+              <span className="text-sm text-blue-700 mr-2">任务链接点击进入：</span>
+              <button
                 className="bg-blue-600 mt-1 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
-                onClick={() => window.open(task.submitdvideoUrl, '_blank')}
+                onClick={() => task.submittedLinkUrl && window.open(task.submittedLinkUrl, '_blank')}
               >
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                打开视频
+                打开链接
               </button>
             </div>
           )}
@@ -175,12 +175,12 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
             <div className='text-sm text-blue-500 pl-2 py-2'>完成任务截图上传：</div>
             <div 
               className={`w-[130px] h-[130px] relative cursor-pointer overflow-hidden rounded-lg border border-gray-300 bg-gray-50 transition-colors hover:border-blue-400 ${task.screenshotUrl ? 'hover:shadow-md' : ''} flex items-center justify-center`}
-              onClick={() => task.submitScreenshotUrl && handleViewImage(task.submitScreenshotUrl)}
+              onClick={() => task.screenshotUrl && handleViewImage(task.screenshotUrl)}
             >
-              {task.submitScreenshotUrl ? (
+              {task.screenshotUrl ? (
                 <>
                   <img 
-                    src={task.submitScreenshotUrl} 
+                    src={task.screenshotUrl} 
                     alt="任务截图" 
                     className="w-full h-full object-contain"
                   />
@@ -203,11 +203,11 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
           </div>
           
           {/* 审核意见区域 - 如果有审核意见，显示橙色背景的审核意见卡片 */}
-          {task.reviewNote && (
+          {task.verificationNotes && (
             <div className="mb-4 bg-orange-50 p-3 rounded-lg border border-orange-100">
               <h4 className="text-sm font-medium text-orange-700 mb-1"><MessageOutlined className="inline-block mr-1" /> 审核意见</h4>
               <p className="text-sm text-gray-700 bg-white p-3 rounded border border-orange-100 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
-                {task.verifyComment || task.verificationNotes || '暂无审核意见'}
+                {task.verificationNotes || task.verifyComment || '暂无审核意见'}
               </p>
             </div>
           )}
