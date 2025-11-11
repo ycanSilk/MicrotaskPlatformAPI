@@ -134,9 +134,6 @@ const CompletedTasksTab: React.FC<CompletedTasksTabProps> = ({
               <div className="text-sm text-black block">
                 接受时间：{task.acceptTime}
               </div>
-              <div className="text-sm text-black block">
-                完成时间：{task.completeTime || '未知时间'}
-              </div>
               {/* 完成时间 */}
               {task.completeTime && (
               <div className="text-sm text-black block  mt-2">

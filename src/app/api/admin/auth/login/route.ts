@@ -103,7 +103,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
     // 解析外部API响应（只解析一次）
     const result: ExternalApiResponse = await response.json();
-    console.log('外部API响应:', result);
+    
     // 检查响应状态
     if (!response.ok) {
       console.error(`登录API错误: ${response.status}`);
@@ -168,7 +168,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 关键日志
     console.log(`管理员 ${requestData.username} 登录成功`);
     console.log(`Token已通过HttpOnly Cookie保存`);
-    
+    console.log('外部API响应:', result);
+    console.log('token Bearer:', token);
     return successResponse;
   } catch (error) {
     console.error('登录过程中发生错误:', error);

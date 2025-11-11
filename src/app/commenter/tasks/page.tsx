@@ -9,7 +9,14 @@ import CompletedTasksTab from './components/CompletedTasksTab';
 import RejectedTasksTab from './components/RejectedTasksTab';
 
 // 定义前端任务状态类型
-type TaskStatus = 'ACCEPTED' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect' | 'sub_rejected';
+type TaskStatus = 'ACCEPTED' | 'COMPLETED' | 'SUBMITTED' | 'sub_rejected';
+
+// 任务状态映射
+const TASK_STATUS_MAP = {
+  ACCEPTED: '进行中',
+  SUBMITTED: '待审核',
+  COMPLETED: '已完成'
+};
 
 // 定义任务接口 - 根据响应数据示例重新定义
 interface Task {
@@ -211,7 +218,41 @@ export default function CommenterTasksPage() {
     
     // 使用replaceState避免创建新的历史记录
     window.history.replaceState(null, '', `?${newParams.toString()}`);
+    
+    // 清除错误消息
+    setErrorMessage(null);
   };
+
+  // 统计各状态任务数量
+  const getTaskCounts = () => {
+    const counts = {
+      COMPLETED: 0,
+      SUBMITTED: 0,
+      ACCEPTED: 0,
+      TOTAL: 0
+    };
+    
+    tasks.forEach(task => {
+      counts.TOTAL += 1;
+      switch (task.status) {
+        case 'COMPLETED':
+          counts.COMPLETED += 1;
+          break;
+        case 'SUBMITTED':
+          counts.SUBMITTED += 1;
+          break;
+        case 'ACCEPTED':
+          counts.ACCEPTED += 1;
+          break;
+        default:
+          break;
+      }
+    });
+    
+    return counts;
+  };
+  
+  const taskCounts = getTaskCounts();
 
 
 
@@ -618,14 +659,14 @@ export default function CommenterTasksPage() {
             </button>
           </div>
         );
-      case 'sub_pending_review':
-        // 为pending和sub_pending_review状态显示相同的按钮
+      case 'SUBMITTED':
+        // 为pending和SUBMITTED状态显示相同的按钮
         return (
           <button className="w-full bg-gray-300 text-gray-600 py-3 rounded-lg font-medium cursor-not-allowed" disabled>
             等待审核
           </button>
         );
-      case 'sub_completed':
+      case 'COMPLETED':
         return (
           <button 
             className="w-full bg-green-100 text-green-600 py-3 rounded-lg font-medium hover:bg-green-200 transition-colors"
@@ -682,29 +723,29 @@ export default function CommenterTasksPage() {
         >
           <div className="flex flex-col items-center">
             <div className={activeTab === 'ACCEPTED' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-blue-500'}>
-              2
+              {taskCounts.ACCEPTED}
             </div>
             <span className="text-xs">进行中</span>
           </div>
         </button>
         <button 
-          onClick={() => handleTabChange('sub_pending_review')}
-          className={getTabButtonStyle('sub_pending_review')}
+          onClick={() => handleTabChange('SUBMITTED')}
+          className={getTabButtonStyle('SUBMITTED')}
         >
           <div className="flex flex-col items-center">
-            <div className={activeTab === 'sub_pending_review' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-orange-500'}>
-             3
+            <div className={activeTab === 'SUBMITTED' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-orange-500'}>
+              {taskCounts.SUBMITTED}
             </div>
             <span className="text-xs">待审核</span>
           </div>
         </button>
         <button 
-          onClick={() => handleTabChange('sub_completed')}
-          className={getTabButtonStyle('sub_completed')}
+          onClick={() => handleTabChange('COMPLETED')}
+          className={getTabButtonStyle('COMPLETED')}
         >
           <div className="flex flex-col items-center">
-            <div className={activeTab === 'sub_completed' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-green-500'}>
-              1
+            <div className={activeTab === 'COMPLETED' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-green-500'}>
+              {taskCounts.COMPLETED}
             </div>
             <span className="text-xs">已完成</span>
           </div>
@@ -715,7 +756,7 @@ export default function CommenterTasksPage() {
         >
           <div className="flex flex-col items-center">
             <div className={activeTab === 'sub_rejected' ? 'text-lg font-bold text-white' : 'text-lg font-bold text-red-500'}>
-              4
+              {tasks.filter(task => task.status === 'sub_rejected').length}
             </div>
             <span className="text-xs">异常订单</span>
           </div>
@@ -738,6 +779,10 @@ export default function CommenterTasksPage() {
             {console.log('所有任务:', tasks)}
             {console.log('进行中任务数量:', tasks.filter(task => task.status === 'ACCEPTED').length)}
             {console.log('任务状态值:', tasks.map(task => task.status))}
+            {console.log('待审核任务数量:', tasks.filter(task => task.status === 'SUBMITTED').length)}
+            {console.log('任务状态值:', tasks.map(task => task.status))}
+            {console.log('已完成任务数量:', tasks.filter(task => task.status === 'COMPLETED').length)}
+            {console.log('任务状态值:', tasks.map(task => task.status))}
             <ProgressTasksTab 
               tasks={tasks.filter(task => task.status === 'ACCEPTED')}
               handleViewImage={handleViewImage}
@@ -754,41 +799,68 @@ export default function CommenterTasksPage() {
           </>
         )}
         
-        {activeTab === 'sub_pending_review' && (
-          <PendingReviewTasksTab
-            tasks={tasks.filter(task => task.status === 'sub_pending_review')}
-            handleViewDetails={(taskId) => console.log('View details for:', taskId)}
-            handleViewImage={handleViewImage}
-            getTaskTypeName={(taskType) => taskType || '评论'}
-            isLoading={isLoading}
-            fetchUserTasks={fetchUserTasks}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
-          />
+        {activeTab === 'SUBMITTED' && (
+          <>            
+            {tasks.filter(task => task.status === 'SUBMITTED').length > 0 ? (
+              <PendingReviewTasksTab
+                tasks={tasks.filter(task => task.status === 'SUBMITTED')}
+                handleViewDetails={(taskId) => console.log('View details for:', taskId)}
+                handleViewImage={handleViewImage}
+                getTaskTypeName={(taskType) => taskType || '评论'}
+                isLoading={isLoading}
+                fetchUserTasks={fetchUserTasks}
+                setModalMessage={setModalMessage}
+                setShowModal={setShowModal}
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="text-gray-400 mb-2">📋</div>
+                <p className="text-gray-500">暂无任务订单</p>
+              </div>
+            )}
+          </>
         )}
         
-        {activeTab === 'sub_completed' && (
-          <CompletedTasksTab
-            tasks={tasks.filter(task => task.status === 'sub_completed')}
-            handleViewImage={handleViewImage}
-            getTaskTypeName={(taskType) => taskType || '评论'}
-            isLoading={isLoading}
-            fetchUserTasks={fetchUserTasks}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
-          />
+        {activeTab === 'COMPLETED' && (
+          <>            
+            {tasks.filter(task => task.status === 'COMPLETED').length > 0 ? (
+              <CompletedTasksTab
+                tasks={tasks.filter(task => task.status === 'COMPLETED')}
+                handleViewImage={handleViewImage}
+                getTaskTypeName={(taskType) => taskType || '评论'}
+                isLoading={isLoading}
+                fetchUserTasks={fetchUserTasks}
+                setModalMessage={setModalMessage}
+                setShowModal={setShowModal}
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="text-gray-400 mb-2">📋</div>
+                <p className="text-gray-500">暂无任务订单</p>
+              </div>
+            )}
+          </>
         )}
         
         {activeTab === 'sub_rejected' && (
-          <RejectedTasksTab
-            tasks={tasks.filter(task => task.status === 'sub_rejected')}
-            handleViewImage={handleViewImage}
-            getTaskTypeName={(taskType) => taskType || '评论'}
-            isLoading={isLoading}
-            fetchUserTasks={fetchUserTasks}
-            setModalMessage={setModalMessage}
-            setShowModal={setShowModal}
-          />
+          <>            
+            {tasks.filter(task => task.status === 'sub_rejected').length > 0 ? (
+              <RejectedTasksTab
+                tasks={tasks.filter(task => task.status === 'sub_rejected')}
+                handleViewImage={handleViewImage}
+                getTaskTypeName={(taskType) => taskType || '评论'}
+                isLoading={isLoading}
+                fetchUserTasks={fetchUserTasks}
+                setModalMessage={setModalMessage}
+                setShowModal={setShowModal}
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <div className="text-gray-400 mb-2">📋</div>
+                <p className="text-gray-500">暂无任务订单</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 

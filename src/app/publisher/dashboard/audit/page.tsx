@@ -83,14 +83,17 @@ interface PendingOrder {
   secondGroupImages: string;
 }
 
-export default function AuditTabPage() {
+interface AuditTabPageProps {
+  pendingOrders: PendingOrder[];
+  paginationData: PaginationData | null;
+  loading: boolean;
+}
+
+export default function AuditTabPage({ pendingOrders, paginationData, loading }: AuditTabPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('time');
-  const [loading, setLoading] = useState(true);
-  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
-  const [paginationData, setPaginationData] = useState<PaginationData | null>(null);
   // 显示复制成功提示
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
@@ -105,79 +108,7 @@ export default function AuditTabPage() {
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState('');
 
-  // 获取待审核订单数据
-  const fetchPendingOrders = async () => {
-    try {
-      setLoading(true);
-
-      // 构建请求参数
-      const requestData = {
-        page: 0,
-        size: 10,
-        sortField: 'createTime',
-        sortOrder: 'DESC',
-        platform: 'DOUYIN',
-        taskType: 'COMMENT',
-        keyword: searchTerm
-      };
-      
-      // 记录API调用开始
-      console.log('开始调用待审核订单API:', {
-        endpoint: '/api/publisher/publishertasks/pendingverifylist',
-        method: 'POST',
-        requestData: requestData
-      });
-      
-      const startTime = performance.now();
-      
-      const response = await fetch('/api/publisher/publishertasks/pendingverifylist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
-      });
-      
-      const endTime = performance.now();
-      
-      // 记录响应状态
-      console.log('API调用响应状态:', {
-        status: response.status,
-        statusText: response.statusText,
-        responseTime: `${(endTime - startTime).toFixed(2)}ms`
-      });
-      
-      const data: ApiResponse<PaginationData> = await response.json();
-      
-      // 记录API响应数据
-      console.log('API响应数据:', {
-        success: data.success,
-        code: data.code,
-        message: data.message,
-        totalCount: data.data?.total,
-        taskCount: data.data?.list.length
-      });
-      
-      // 更新状态
-      setPendingOrders(data.data?.list || []);
-      setPaginationData(data.data || {
-        list: [],
-        total: 0,
-        page: 1,
-        size: 10,
-        pages: 0
-      });
-    } catch (error) {
-      console.error('获取待审核订单失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 组件挂载时获取数据
-  useEffect(() => {
-    fetchPendingOrders();
-  }, []);
+  // 搜索和过滤功能将直接作用于传入的数据
 
   // 处理搜索函数已在其他位置定义
 
@@ -198,7 +129,6 @@ export default function AuditTabPage() {
     if (!currentOrder) return;
     
     try {
-      setLoading(true);
       
       // 构建请求参数
       const requestData = {
@@ -237,16 +167,13 @@ export default function AuditTabPage() {
         showCopySuccess('订单已审核通过');
         setShowApproveModal(false);
         
-        // 重新获取订单列表
-        fetchPendingOrders();
+        // 重新获取订单列表将由父组件处理，这里只需要显示成功提示
       } else {
         throw new Error(data.message || '审核失败');
       }
     } catch (error) {
       console.error('审核通过失败:', error);
       showCopySuccess('审核失败，请重试');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -275,8 +202,7 @@ export default function AuditTabPage() {
       showCopySuccess('订单已驳回');
       setShowRejectModal(false);
       
-      // 重新获取订单列表
-      fetchPendingOrders();
+      // 重新获取订单列表将由父组件处理，这里只需要显示成功提示
     } catch (error) {
       console.error('驳回失败:', error);
       showCopySuccess('驳回失败，请重试');
@@ -371,8 +297,9 @@ export default function AuditTabPage() {
   
   // 处理搜索
   const handleSearch = () => {
-    // 实际应用中，这里可以重新调用API进行搜索
-    // 目前仍然使用前端过滤
+    // 由于我们直接使用传入的数据，搜索将在前端过滤中体现
+    // 不需要额外的API调用
+    console.log('执行前端搜索，搜索词:', searchTerm);
   };
 
   return (

@@ -103,68 +103,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* API测试平台入口 */}
-          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all border border-indigo-100">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-indigo-500 rounded-xl flex items-center justify-center mb-3 md:mb-4">
-              <span className="text-white text-lg md:text-xl">🛠️</span>
-            </div>
-            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-1 md:mb-2">API测试平台</h3>
-            <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3">API Testing Platform</p>
-            <p className="text-xs text-gray-500 mb-3 md:mb-4 leading-relaxed">
-              <span className="block">测试API接口连接，</span>
-              <span className="block">查看响应数据，</span>
-              <span className="block">验证系统状态</span>
-            </p>
-            <div className="space-y-1 mb-4 md:mb-6">
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>用户相关API测试
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>系统相关API测试
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>实时响应数据查看
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>接口状态监控
-              </div>
-            </div>
-            <a href="/apitest/" className="block w-full py-3 px-4 bg-indigo-500 text-white rounded-lg text-center text-sm font-medium hover:bg-indigo-600 transition-colors">
-              进入API测试平台 →
-            </a>
-          </div>
-
-          {/* 邀请好友 */}
-          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all border border-purple-100">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500 rounded-xl flex items-center justify-center mb-3 md:mb-4">
-              <span className="text-white text-lg md:text-xl">🎁</span>
-            </div>
-            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-1 md:mb-2">邀请好友</h3>
-            <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3">Invite Friends</p>
-            <p className="text-xs text-gray-500 mb-3 md:mb-4 leading-relaxed">
-              <span className="block">邀请好友注册使用，</span>
-              <span className="block">获得佣金抽成，</span>
-              <span className="block">持续被动收益</span>
-            </p>
-            <div className="space-y-1 mb-4 md:mb-6">
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>好友注册奖励
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>佣金抽成分润
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>邀请链接管理
-              </div>
-              <div className="flex items-center text-xs text-green-600">
-                <span className="mr-2">✓</span>收益实时统计
-              </div>
-            </div>
-            <a href="/commenter/auth/login" className="block w-full py-3 px-4 bg-purple-500 text-white rounded-lg text-center text-sm font-medium hover:bg-purple-600 transition-colors">
-              立即登录 →
-            </a>
-          </div>
-
           {/* 管理员 */}
           <div className="bg-white rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all border border-red-100">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-xl flex items-center justify-center mb-3 md:mb-4">

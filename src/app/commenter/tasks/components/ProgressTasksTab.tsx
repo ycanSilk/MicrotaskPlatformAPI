@@ -72,7 +72,7 @@ export interface Task {
   screenshotUrl?: string;
 }
 
-export type TaskStatus = 'sub_progress' | 'sub_completed' | 'sub_pending_review' | 'waiting_collect' | 'sub_rejected';
+export type TaskStatus = 'sub_progress' | 'sub_completed' | 'SUBMITTED' | 'waiting_collect' | 'sub_rejected';
 
 interface ProgressTasksTabProps {
   tasks: Task[];

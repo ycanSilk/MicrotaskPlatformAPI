@@ -22,14 +22,22 @@ interface TaskStatsData {
   invitedUsersCount: number;
 }
 
+// 定义订单统计数据类型
+interface OrderStatsData {
+  acceptedCount: number;
+  submittedCount: number;
+  completedCount: number;
+}
+
 // 组件Props接口
 interface OverviewTabPageProps {
   taskStats: TaskStatsData | null;
   loading: boolean;
   error: string | null;
+  orderStats: OrderStatsData;
 }
 
-export default function OverviewTabPage({ taskStats, loading, error }: OverviewTabPageProps) {
+export default function OverviewTabPage({ taskStats, loading, error, orderStats }: OverviewTabPageProps) {
   
   // 格式化金额显示
   const formatCurrency = (amount: number) => {
@@ -100,20 +108,20 @@ export default function OverviewTabPage({ taskStats, loading, error }: OverviewT
             {/* 子订单统计卡片 - 4列网格布局 */}
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-blue-50 p-2 rounded-md flex flex-col items-center justify-center text-center border border-blue-300">
-                <div className="text-xl text-blue-600 mb-1">{taskStats.acceptedCount}</div>
+                <div className="text-xl text-blue-600 mb-1">{orderStats.acceptedCount}</div>
                 <div className="text-xs text-blue-600">进行中</div>
               </div>
               <div className="bg-green-50 p-2 rounded-md flex flex-col items-center justify-center text-center border border-green-300">
-                <div className="text-xl text-green-600 mb-1">{taskStats.completedCount}</div>
+                <div className="text-xl text-green-600 mb-1">{orderStats.completedCount}</div>
                 <div className="text-xs text-green-600">已完成</div>
               </div>
               <div className="bg-orange-50 p-2 rounded-md flex flex-col items-center justify-center text-center border border-orange-300">
-                <div className="text-xl text-orange-600 mb-1">{taskStats.submittedCount}</div>
+                <div className="text-xl text-orange-600 mb-1">{orderStats.submittedCount}</div>
                 <div className="text-xs text-orange-600">待审核</div>
               </div>
               <div className="bg-yellow-50 p-2 rounded-md flex flex-col items-center justify-center text-center border border-yellow-300">
                 <div className="text-xl text-yellow-600 mb-1">{taskStats.publishedCount - taskStats.acceptedCount}</div>
-                <div className="text-xs text-yellow-600">待领取</div>
+                <div className="text-xs text-yellow-600">已发布</div>
               </div>
             </div>
           </div>

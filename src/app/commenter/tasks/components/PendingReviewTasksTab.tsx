@@ -92,7 +92,7 @@ const PendingReviewTasksTab: React.FC<PendingReviewTasksTabProps> = ({
     <div className="mt-6">
       {tasks.map((task) => (
         <div key={task.id || 'unknown'} className="rounded-lg p-4 mb-4 shadow-sm transition-all hover:shadow-md bg-white">
-          <div className="flex justify-between items-start mb-2">
+          <div className="flex justify-between items-start">
             <h3 className="text-sm text-black inline-block flex items-center">
               任务标题：{task.mainTaskTitle || '未命名任务'}
               <button 
@@ -118,29 +118,28 @@ const PendingReviewTasksTab: React.FC<PendingReviewTasksTabProps> = ({
           </div>
           
           {/* 价格和任务信息区域 - 显示单价、任务状态和发布时间 */}
-          <div className="mb-2">
-            <div className="text-sm text-black mb-1 inline-block">订单单价：¥{(task.unitPrice || 0).toFixed(2)}</div>
-            <div className="text-xs text-gray-500 flex items-center justify-between">
+          <div className="">
+            <div className="text-sm text-black inline-block">订单单价：¥{(task.unitPrice || 0).toFixed(2)}</div>
+            <div className="text-sm">
               <span>平台: {task.mainTaskPlatform || '-'}</span>
+            </div>
+            <div className="text-sm">
+              <span>任务类型: {getTaskTypeName(task.commentType) || '-'}</span>
+            </div>
+            <div className="text-sm">
               <span>接受时间: {task.acceptTime || '-'}</span>
             </div>
-            <div className="text-xs text-gray-500 flex items-center justify-between mt-1">
-              <span>评论类型: {task.commentType || '-'}</span>
+            <div className="text-sm">
               <span>提交时间: {task.submitTime || '-'}</span>
             </div>
           </div>
-          
-          <div className="text-sm text-black mb-2 overflow-hidden text-ellipsis whitespace-normal max-h-[72px] line-clamp-3">
+          <div className="text-sm">
               要求：{task.taskRequirements || task.taskDescription || '无特殊要求'}
-            </div>
-          
-
-          
-
-          
+          </div>
+  
           {/* 提交的链接显示 */}
           {task.submittedLinkUrl && (
-            <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
+            <div className="mb-4 mt-2 border border-blue-200 rounded-lg p-3 bg-blue-50">
               <span className="text-sm text-blue-700 mr-2">已提交的链接：</span>
               <button
                 className="mt-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"

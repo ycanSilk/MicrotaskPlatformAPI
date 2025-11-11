@@ -1,6 +1,6 @@
 {
   "baseUrl": "http://localhost:8083/api",
-  "timeout": 10000,
+  "timeout": 5000,
   "headers": {
     "accept": "*/*",
     "Content-Type": "application/json"
@@ -29,6 +29,9 @@
       "updaterole": "/sys/role/{roleId}",
       "deleterole": "/sys/role/{roleId}",
       "getallroles": "/sys/role/all"
+    },
+    "wallet": {
+      "recharge": "/wallet/admin/recharge"
     }
   },
   "mockMode": false,

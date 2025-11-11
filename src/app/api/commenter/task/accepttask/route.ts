@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
     // 解析响应数据
     const data = await response.json();
     // 只输出一次简要的响应信息
+    console.log(`接取任务成功: taskId=${taskId}`);
+    console.log(`接取任务的详细信息: `, data);
     console.log(`外部API响应: status=${response.status}, message=${data?.message || '无消息'}`);
 
     // 返回API响应

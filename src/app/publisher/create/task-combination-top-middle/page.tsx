@@ -4,46 +4,6 @@ import { Button, Input, AlertModal } from '@/components/ui';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// 本地实现Publisher认证信息获取，替代已移除的PublisherAuthStorage
-const PublisherAuthStorage = {
-  getAuth: () => {
-    try {
-      if (typeof window === 'undefined') return null;
-      
-      // 尝试从localStorage获取publisher认证信息
-      const authToken = localStorage.getItem('publisher_auth_token');
-      const userInfo = localStorage.getItem('publisher_user_info');
-      
-      if (authToken && userInfo) {
-        return {
-          token: authToken,
-          user: JSON.parse(userInfo)
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取认证信息失败:', error);
-      return null;
-    }
-  },
-  getCurrentUser: () => {
-    try {
-      if (typeof window === 'undefined') return null;
-      
-      const userInfoStr = localStorage.getItem('publisher_user_info');
-      if (userInfoStr) {
-        return JSON.parse(userInfoStr);
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取当前用户信息失败:', error);
-      return null;
-    }
-  }
-};
-
 export default function PublishTaskPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -89,7 +49,7 @@ export default function PublishTaskPage() {
         image: null as File | null
       }
     ],
-    deadline: '24'
+    deadline: '1'
   });
 
   const [isPublishing, setIsPublishing] = useState(false);
@@ -167,7 +127,7 @@ export default function PublishTaskPage() {
     });
   };
   
-  // 处理添加@用户标记 - 只用于中评
+  // 处理添加@用户标记
   const handleAddMention = () => {
     const trimmedMention = mentionInput.trim();
     
@@ -211,11 +171,11 @@ export default function PublishTaskPage() {
     }
   };
   
-  // 移除@用户标记 - 只用于中评
+  // 移除@用户标记
   const removeMention = (mention: string) => {
     setMentions(mentions.filter(m => m !== mention));
     
-    // 从中评评论中移除该@标记
+    // 从所有中评评论中移除该@标记
     setFormData(prevData => ({
       ...prevData,
       middleComments: prevData.middleComments.map(comment => ({
@@ -395,125 +355,240 @@ export default function PublishTaskPage() {
 
     // 显示加载状态
     setIsPublishing(true);
-    console.log('开始发布任务...');
-    console.log('表单数据:', formData);
-    console.log('任务ID:', taskId);
 
     try {
-      // 使用PublisherAuthStorage获取认证token和用户信息
-      const auth = PublisherAuthStorage.getAuth();
-      const token = auth?.token;
-      const userInfo = PublisherAuthStorage.getCurrentUser();
+      // 构建评论详情数据
+      const commentDetail: Record<string, string | number> = {};
       
-      console.log('[任务发布] 认证信息:', { token: token ? '存在' : '不存在', userInfo });
+      // 添加commentType字段 - 设置为组合任务
+      commentDetail.commentType = 'COMBINATION';
       
-      if (!token || !userInfo) {
-        console.log('[任务发布] 认证失败: 用户未登录或会话已过期');
-        showAlert('认证失败', '用户未登录，请重新登录', '❌');
-        // 使用setTimeout延迟跳转，确保用户看到提示
-        setTimeout(() => {
-          router.push('/publisher/login' as any);
-        }, 1500);
-        return;
-      }
-
-      // 计算总费用 - 基于评论任务类型：3元(1条上评) + 中评数量×2元
-      const totalCost = 3 + formData.middleQuantity * 2;
+      const quantity = parseInt(formData.middleQuantity.toString(), 10);
       
-      // 余额校验 - 获取当前用户的可用余额
-      console.log('[任务发布] 开始余额校验，总费用:', totalCost);
-      const balanceResponse = await fetch('/api/publisher/finance', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        cache: 'no-store'
-      });
+      // 创建FormData用于上传图片和其他数据
+      const formDataToSend = new FormData();
       
-      const balanceData = await balanceResponse.json();
-      console.log('[任务发布] 余额校验结果:', balanceData);
+      console.log('===== 开始构建FormData =====');
       
-      if (!balanceData.success || !balanceData.data) {
-        console.log('[任务发布] 获取余额失败');
-        showAlert('系统错误', '获取账户余额失败，请稍后重试', '❌');
-        return;
-      }
+      // 添加基本任务信息
+      formDataToSend.append('taskTitle', taskTitle || '组合任务');
+      formDataToSend.append('taskPrice', taskPrice.toString());
+      formDataToSend.append('videoUrl', formData.videoUrl);
+      formDataToSend.append('quantity', quantity.toString());
+      formDataToSend.append('deadline', formData.deadline); // 使用表单中选择的截止时间
+      formDataToSend.append('mentions', JSON.stringify(mentions || []));
+      formDataToSend.append('taskId', taskId || '');
       
-      // 获取可用余额
-      const availableBalance = balanceData.data.balance?.available || 0;
-      console.log('[任务发布] 当前可用余额:', availableBalance);
+      // 明确指定上传路径参数 - 使用相对路径格式
+      formDataToSend.append('uploadPath', 'public/uploads');
+      console.log('已指定上传路径参数: public/uploads');
       
-      // 比较余额和总费用
-      if (availableBalance < totalCost) {
-        console.log('[任务发布] 余额不足，可用余额:', availableBalance, '总费用:', totalCost);
-        showAlert(
-          '余额不足', 
-          `您的账户可用余额为 ¥${availableBalance.toFixed(2)}，完成此任务需要 ¥${totalCost.toFixed(2)}，请先充值再发布任务。`, 
-          '⚠️'
-        );
-        return;
-      }
+      // 添加上评评论数据
+      console.log('处理上评评论数据...');
+      formDataToSend.append('linkUrl1', formData.videoUrl || '');
+      formDataToSend.append('unitPrice1', taskPrice.toString());
+      formDataToSend.append('quantity1', '1');
       
-      console.log('[任务发布] 余额充足，继续发布流程');
-
-      // 构建API请求体 - 合并上评和中评评论
-      const requirements = `【上评评论】\n${formData.topComment.content}\n\n【中评评论】\n${formData.middleComments.map(comment => comment.content).join('\n\n')}`;
-      const requestBody = {
-        taskId: taskId || '',
-        taskTitle,
-        taskPrice: taskPrice,
-        requirements: requirements,
-        videoUrl: formData.videoUrl,
-        quantity: formData.middleQuantity,
-        deadline: formData.deadline,
-        mentions: mentions,
-        needImageComment: true // 由于我们总是允许图片上传，设为true
-      };
-
-      console.log('API请求体:', requestBody);
+      // 移除上评评论中的@用户标记
+      const cleanTopContent = (formData.topComment.content || '').replace(/ @\S+/g, '').trim();
+      formDataToSend.append('commentText1', cleanTopContent);
+      console.log(`  添加上评评论内容: ${cleanTopContent.substring(0, 50)}${cleanTopContent.length > 50 ? '...' : ''}`);
       
-      // 调用API发布任务
-      const response = await fetch('/api/publisher/comment-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      console.log('API响应状态:', response.status);
-
-      const result = await response.json();
-      console.log('API响应结果:', result);
-      
-      if (result.success) {
-        // 修改为用户点击确认后才跳转
-        showAlert(
-          '发布成功', 
-          `任务发布成功！订单号：${result.order?.orderNumber || ''}`, 
-          '✅',
-          '确定',
-          () => {
-            // 在用户点击确认按钮后跳转
-            router.push('/publisher/dashboard');
-          }
-        );
+      // 处理上评评论图片上传
+      if (formData.topComment.image) {
+        const fieldName = 'commentImages1';
+        console.log(`  添加上评图片到FormData - 字段名: ${fieldName}`, {
+          name: formData.topComment.image.name,
+          type: formData.topComment.image.type,
+          size: formData.topComment.image.size
+        });
+        
+        try {
+          formDataToSend.append(fieldName, formData.topComment.image, formData.topComment.image.name);
+          console.log(`  上评图片成功添加到FormData`);
+          formDataToSend.append('hasImage1', 'true');
+          formDataToSend.append('imagePath1', `uploads/${formData.topComment.image.name}`);
+        } catch (e) {
+          console.error(`  上评图片添加到FormData失败:`, e);
+        }
       } else {
-        // 发布失败，显示错误提示
-        if (result.errorType === 'InsufficientBalance') {
-          // 特定处理余额不足的情况
-          showAlert('账户余额不足', '您的账户余额不足以支付任务费用，请先充值后再尝试发布任务。', '⚠️', '前往充值', () => {
-            router.push('/publisher/finance');
+        formDataToSend.append('commentImages1', '');
+        formDataToSend.append('hasImage1', 'false');
+        console.log(`  上评评论无图片`);
+      }
+      
+      // 为每个中评评论添加数据
+      for (let i = 2; i <= quantity + 1; i++) {
+        const commentIndex = (i - 2) % formData.middleComments.length;
+        const comment = formData.middleComments[commentIndex] || {};
+        
+        console.log(`\n处理中评评论${i-1}的数据...`);
+        
+        // 添加评论字段到FormData
+        formDataToSend.append(`linkUrl${i}`, formData.videoUrl || '');
+        formDataToSend.append(`unitPrice${i}`, taskPrice.toString());
+        formDataToSend.append(`quantity${i}`, '1');
+        
+        // 移除评论内容中的@用户标记
+        const cleanContent = (comment.content || '').replace(/ @\S+/g, '').trim();
+        formDataToSend.append(`commentText${i}`, cleanContent);
+        console.log(`  添加评论内容: ${cleanContent.substring(0, 50)}${cleanContent.length > 50 ? '...' : ''}`);
+        
+        // 处理图片上传
+        if (comment.image) {
+          const fieldName = `commentImages${i}`;
+          console.log(`  添加图片${i}到FormData - 字段名: ${fieldName}`, {
+            name: comment.image.name,
+            type: comment.image.type,
+            size: comment.image.size
           });
+          
+          try {
+            formDataToSend.append(fieldName, comment.image, comment.image.name);
+            console.log(`  图片${i}成功添加到FormData`);
+            formDataToSend.append(`hasImage${i}`, 'true');
+            formDataToSend.append(`imagePath${i}`, `uploads/${comment.image.name}`);
+          } catch (e) {
+            console.error(`  图片${i}添加到FormData失败:`, e);
+          }
         } else {
-          showAlert('发布失败', `任务发布失败: ${result.message || '未知错误'}`, '❌');
+          formDataToSend.append(`commentImages${i}`, '');
+          formDataToSend.append(`hasImage${i}`, 'false');
+          console.log(`  评论${i}无图片`);
+        }
+        
+        // 仅在最后一条评论设置mentionUser
+        if (i === quantity + 1 && mentions.length > 0) {
+          formDataToSend.append(`mentionUser${i}`, mentions[0]);
+        } else {
+          formDataToSend.append(`mentionUser${i}`, '');
+        }
+      }
+      
+      // 调用API端点，使用FormData进行多部分表单上传
+      // 添加超时控制和重试机制
+      const MAX_RETRIES = 2;
+      let retries = 0;
+      let response;
+      
+      while (retries <= MAX_RETRIES) {
+        try {
+          // 使用Promise.race添加超时控制
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('请求超时')), 30000); // 30秒超时
+          });
+          
+          console.log('===== 准备发送API请求 =====');
+          
+          // 统计图片数量
+          let imageCount = 0;
+          if (formData.topComment.image) imageCount++;
+          for (let j = 0; j < formData.middleComments.length; j++) {
+            if (formData.middleComments[j].image) imageCount++;
+          }
+          console.log(`  请求包含图片数量: ${imageCount}`);
+          
+          response = await Promise.race([
+            fetch('/api/publisher/publishertasks/topmiddlecommnet', {
+              method: 'POST',
+              body: formDataToSend,
+              credentials: 'include',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-File-Upload-Count': imageCount.toString()
+              }
+            }),
+            timeoutPromise
+          ]);
+          
+          console.log(`===== API请求完成 =====`);
+          console.log(`  状态码: ${response.status}`);
+          
+          // 如果响应状态码不是服务器错误，可以继续处理
+          if (!response.status.toString().startsWith('5')) {
+            break;
+          }
+          
+          // 服务器错误，尝试重试
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+          }
+        } catch (error) {
+          retries++;
+          if (retries > MAX_RETRIES) {
+            throw error;
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        }
+      }
+      
+      if (!response) {
+        throw new Error('所有上传重试均失败');
+      }
+      
+      // 始终尝试解析响应体
+      let result;
+      try {
+        result = await response.json();
+        console.log('响应数据:', result);
+      } catch (e) {
+        console.error('解析响应失败:', e);
+        result = {
+          success: false,
+          message: '服务器返回无效响应'
+        };
+      }
+      
+      // 根据状态码和响应结果进行处理
+      if (response.status === 200) {
+        if (result.success) {
+          // 修改为用户点击确认后才跳转
+          showAlert(
+            '发布成功', 
+            `任务发布成功！订单号：${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`, 
+            '✅',
+            '确定',
+            () => {
+              // 在用户点击确认按钮后跳转
+              router.push('/publisher/dashboard');
+            }
+          );
+          
+          console.log('===== 任务发布成功信息 =====');
+          console.log('响应数据:', result);
+        } else {
+          // 200状态码但success为false的情况
+          if (result.errorType === 'InsufficientBalance') {
+            // 特定处理余额不足的情况
+            showAlert('账户余额不足', '您的账户余额不足以支付任务费用，请先充值后再尝试发布任务。', '⚠️', '前往充值', () => {
+              router.push('/publisher/finance');
+            });
+          } else {
+            // 提取并显示返回结果中的message字段内容作为错误提示信息
+            showAlert('发布失败', result.message || '任务发布失败', '❌');
+          }
+        }
+      } else {
+        // 当API调用返回非200状态码时
+        if (response.status === 500) {
+          // 特别处理500错误，显示更详细的错误信息
+          const errorMessage = result.message || '服务器内部错误，请稍后重试';
+          showAlert('发布失败', errorMessage, '❌');
+        } else {
+          // 其他非200错误
+          showAlert('发布失败', result.message || `服务器错误 (${response.status})`, '❌');
         }
       }
     } catch (error) {
-      console.error('发布任务时发生错误:', error);
-      showAlert('网络错误', '发布任务时发生错误，请稍后重试', '⚠️');
+      // 分析错误类型给出更具体的提示
+      if (error instanceof Error && error.message.includes('时间格式转换失败')) {
+        showAlert('时间格式错误', '任务截止时间转换失败，请检查后重试', '⚠️');
+      } else if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        showAlert('网络错误', '无法连接到服务器，请检查网络连接后重试', '⚠️');
+      } else {
+        showAlert('网络错误', '发布任务时发生错误，请稍后重试', '⚠️');
+      }
     } finally {
       setIsPublishing(false);
     }
