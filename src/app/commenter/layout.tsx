@@ -185,7 +185,6 @@ export default function CommenterLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 顶部余额栏 */}
       <TopNavigationBar user={user} />
 
       {/* 页面标题和返回按钮 */}

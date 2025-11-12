@@ -11,6 +11,7 @@ interface CustomerServiceButtonProps {
   modalTitle?: string;
   userId?: string;
   chatUrl?: string;
+  size?: number;
 }
 
 export const CustomerServiceButton: React.FC<CustomerServiceButtonProps> = ({
@@ -18,7 +19,8 @@ export const CustomerServiceButton: React.FC<CustomerServiceButtonProps> = ({
   buttonText = '客服',
   modalTitle = '联系客服',
   userId = 'admin',
-  chatUrl = 'http://localhost:8081/chatIndex?kefu_id=admin'
+  chatUrl = 'http://localhost:8081/chatIndex?kefu_id=admin',
+  size = 32
 }) => {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -41,10 +43,9 @@ export const CustomerServiceButton: React.FC<CustomerServiceButtonProps> = ({
       {/* 客服按钮 */}
       <button 
         onClick={openChatModal} 
-        className={`text-sm transition-colors ${className}`}
-        aria-label={buttonText}
+        className={`flex items-center justify-center transition-colors ${className}`}
       >
-        <CustomerServiceOutlined />
+        <CustomerServiceOutlined style={{ fontSize: `${size}px` }} />
       </button>
       
       {/* 客服聊天模态框 */}
@@ -52,7 +53,6 @@ export const CustomerServiceButton: React.FC<CustomerServiceButtonProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-full max-h-[80vh] flex flex-col">
             <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-semibold">{modalTitle}</h3>
               <button 
                 onClick={closeChatModal} 
                 className="text-gray-500 hover:text-gray-700"

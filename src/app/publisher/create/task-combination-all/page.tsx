@@ -127,9 +127,9 @@ export default function TaskCombinationAllPage() {
     // 模拟AI优化评论的逻辑
     const optimizedComments = {
       ...formData.comments,
-      topComment: formData.comments.topComment + ' [AI优化]',
-      middleComment: formData.comments.middleComment + ' [AI优化]',
-      bottomComment: formData.comments.bottomComment + ' [AI优化]'
+      topComment: formData.comments.topComment + ' ',
+      middleComment: formData.comments.middleComment + ' ',
+      bottomComment: formData.comments.bottomComment + ' '
     };
     
     setFormData(prevData => ({

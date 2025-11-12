@@ -23,6 +23,18 @@
       "addbankcard": "/bank-cards/",
       "setdefaultbankcard": "/bank-cards/{cardId}/default",
       "getdefaultbankcard": "/bank-cards/default"
+    },
+    "rental": {
+      "publishrental": "/rental/lease/publish",
+      "rentalmarket": "/rental/lease/market",
+      "requestrentalmarket": "/rental/rent/market",
+      "publishrequestrental": "/rental/rent/publish",
+      "mypublishrentalinfolist": "/rental/lease/my",
+      "myrequestrentalinfolist": "/rental/rent/my",
+      "creatleaseorder": "/rental/orders/create",
+      "myrenterorder": "/rental/orders/my/renter",
+      "mylessororder": "/rental/orders/my/lessor",
+      "getleasestats": "/api/rental/stats"
     }
   },
   "mockMode": false,

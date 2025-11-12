@@ -29,6 +29,7 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user = null })
   const [showUserName, setShowUserName] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [pageTitle, setPageTitle] = useState('发布者中心');
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // 定义路由到标题的映射关系
   const routeTitleMap: Record<string, string> = {
@@ -450,7 +451,7 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user = null })
             <LeftOutlined size={20} className="text-white" />
           </button>
         )}
-        <h1 className="text-md text-white ml-1">
+        <h1 className="text-xl text-white ml-1">
           {pageTitle}
         </h1>
       </div>
@@ -460,47 +461,51 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user = null })
             buttonText="联系客服" 
             modalTitle="在线客服" 
             userId={user?.id || 'guest'} 
-            className="text-white mr-1 font-bold text-lg mr-2"
+            className="text-white font-bold mr-2 flex items-center gap-1 px-3 py-1 rounded"
           />
         )}
         
-        {isClient && user && (user.username || user.name) && (
-            <div className="relative mr-2 user-avatar-container">
-              <button
-                onClick={handleUserAvatarClick}
-                className="w-[20px] h-[20px] cursor-pointer flex items-center justify-center text-white transition-all duration-300 ease"
-                aria-label="用户信息"
+        {/* 用户头像和下拉菜单 */}
+        <div className="relative ml-3">
+          <button 
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
+            aria-label="用户菜单"
+          >
+            <img 
+              src="/images/0e92a4599d02a7.jpg" 
+              alt="用户头像" 
+              className="w-full h-full rounded-full object-cover"
+            />
+          </button>
+          
+          {/* 下拉菜单 */}
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-10 transform transition-all duration-200 origin-top-right animate-fade-in-down">
+              {/* 个人中心按钮 */}
+              <button 
+                onClick={() => {
+                  router.push('/commenter/profile/settings');
+                  setShowDropdown(false);
+                }}
+                className="w-full text-left px-4 py-3 border-b border-gray-100 text-gray-800 font-medium text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
               >
-                <div className="">
-                  <img 
-                    src="/images/0e92a4599d02a7.jpg" 
-                    alt="用户头像" 
-                    className="w-[20px] h-[20px] rounded-full object-cover"
-                  />
-                </div>
+                个人中心
               </button>
-              {showUserName && (
-                <div
-                  className="absolute top-[36px] right-0 bg-white border border-[#e8e8e8] rounded-md shadow-lg z-50 w-[150px] overflow-hidden"
-                >
-                  {/* 个人中心按钮 */}
-                  <button
-                    onClick={handleProfileClick}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-b border-gray-100"
-                  >
-                    个人中心
-                  </button>
-                  {/* 退出登录按钮 */}
-                  <button
-                    onClick={handleLogoutClick}
-                    className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    退出登录
-                  </button>
-                </div>
-              )}
+              
+              {/* 退出登录按钮 */}
+              <button 
+                onClick={() => {
+                  handleLogout();
+                  setShowDropdown(false);
+                }}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 text-sm"
+              >
+                退出登录
+              </button>
             </div>
           )}
+        </div>
       </div>
     </div>
   );

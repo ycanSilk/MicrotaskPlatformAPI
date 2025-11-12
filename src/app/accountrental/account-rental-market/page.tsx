@@ -1,6 +1,40 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+
+// 定义与后端API返回数据结构匹配的接口
+export interface RentalAccountInfo {
+  id: string;
+  userId: string;
+  accountType: number;
+  accountLevel: string;
+  platform: number;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minLeaseDays: number;
+  maxLeaseDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
+  createTime: string;
+  images?: string[];
+}
+
+export interface RentalMarketResponse {
+  code: number;
+  message: string;
+  data: {
+    list: RentalAccountInfo[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  };
+  success: boolean;
+  timestamp: number;
+}
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,11 +45,10 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { CopyOutlined, EyeOutlined, CloseOutlined } from '@ant-design/icons';
 import AccountCard from '../components/AccountCard';
 import AccountRentalLayout from '../layout';
-import { AccountRentalInfo } from '../types';
 
 export default function AccountRentalMarketPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
   const router = useRouter();
-  const [accounts, setAccounts] = useState<AccountRentalInfo[]>([]);
+  const [accounts, setAccounts] = useState<RentalAccountInfo[]>([]);
   
   // 处理返回逻辑
   const handleBack = () => {
@@ -30,36 +63,75 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
   };
   
   const [loading, setLoading] = useState(true);
-  const [displayedAccounts, setDisplayedAccounts] = useState<AccountRentalInfo[]>([]);
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  // 为DisplayedAccounts添加类型定义
+  const [displayedAccounts, setDisplayedAccounts] = useState<RentalAccountInfo[]>([]);
 
-  // 静态账号租赁数据
+  // 从后端API获取账号租赁市场数据
   useEffect(() => {
-    setLoading(true);
-    
-    // 模拟延迟
-    setTimeout(() => {
-      const mockAccounts: AccountRentalInfo[] = [
-    
-      ];
+    const fetchRentalMarketData = async () => {
+      setLoading(true);
       
-      setAccounts(mockAccounts);
-      setLoading(false);
-    }, 500);
+      try {
+        // 构建请求参数
+        const requestParams = {
+          page: 1,
+          size: 50, // 获取足够多的数据用于前端分页
+          sortField: "createTime",
+          sortOrder: "DESC"
+        };
+        
+        // 调用后端API
+        const response = await fetch('/api/public/rental/rentalmarket', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestParams)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API请求失败: ${response.status}`);
+        }
+        
+        const result: RentalMarketResponse = await response.json();
+        
+        // 检查API响应是否成功
+        if (result.success && result.data && result.data.list) {
+          // 添加默认图片以确保UI渲染正常
+          const accountsWithImages = result.data.list.map(account => ({
+            ...account,
+            images: account.images && account.images.length > 0 
+              ? account.images 
+              : ['images/1758380776810_96.jpg'] // 默认图片路径
+          }));
+          
+          setAccounts(accountsWithImages);
+        } else {
+          console.error('API返回数据格式错误:', result);
+        }
+      } catch (error) {
+        console.error('获取账号租赁市场数据失败:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRentalMarketData();
   }, []);
 
   // 使用useMemo优化排序操作，避免不必要的重复计算
   const filteredAccounts = useMemo(() => {
     let result = [...accounts];
 
-    // 按发布时间降序排序
+    // 按创建时间降序排序
     result.sort((a, b) => {
-      return new Date(b.publishTime || '').getTime() - new Date(a.publishTime || '').getTime();
+      return new Date(b.createTime || '').getTime() - new Date(a.createTime || '').getTime();
     });
 
     return result;
@@ -255,13 +327,13 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
                         )}
                         
 
-                        <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{account.rentalDescription}</h3>
+                        <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{account.description}</h3>
                         <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
-                          <div>发布时间: {formatPublishTime(account.publishTime)}</div>
-                          <div>出租天数: {account.rentalDays}天</div>
+                          <div>发布时间: {formatPublishTime(account.createTime)}</div>
+                          <div>租期范围: {account.minLeaseDays}-{account.maxLeaseDays}天</div>
                         </div>
                         <div className="flex justify-between items-center">
-                          <div className="text-xl font-bold text-red-600">¥{account.price}</div>
+                          <div className="text-xl font-bold text-red-600">¥{account.pricePerDay}/天</div>
                           <Button className="bg-blue-500 hover:bg-blue-600 text-white">查看详情</Button>
                         </div>
                       </div>

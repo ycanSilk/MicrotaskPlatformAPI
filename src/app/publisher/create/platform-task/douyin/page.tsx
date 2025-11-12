@@ -36,7 +36,7 @@ const TASK_TYPES = [
   {
     id: 'task_combination_middle_bottom',
     title: '中下评评论',
-    price: 6.0,
+    price: 12,
     description: '组合评论 - 1条中评评论 + 2条下评评论（支持@功能）',
     requirements: '真人评论，评论内容真实有效。下评完成后需提交链接作为结算条件。',
     estimatedTime: '8分钟',

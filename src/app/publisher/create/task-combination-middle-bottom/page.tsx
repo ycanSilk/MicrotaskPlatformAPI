@@ -189,7 +189,7 @@ export default function PublishTaskPage() {
       ...prevData,
       middleComment: {
         ...prevData.middleComment,
-        content: prevData.middleComment.content + ' [AI优化]'
+        content: prevData.middleComment.content + ' '
       }
     }));
     showAlert('优化成功', '中评评论内容已通过AI优化！', '✨');
@@ -203,7 +203,7 @@ export default function PublishTaskPage() {
       ...prevData,
       bottomComments: prevData.bottomComments.map(comment => ({
         ...comment,
-        content: comment.content + ' [AI优化]'
+        content: comment.content + ' '
       }))
     }));
     showAlert('优化成功', '下评评论内容已通过AI优化！', '✨');
@@ -594,7 +594,7 @@ export default function PublishTaskPage() {
   };
 
   // 价格计算：2元(1条中评) + 下评数量×2元
-  const totalCost = (2 + formData.bottomQuantity * 2).toFixed(2);
+  const totalCost = (6 + formData.bottomQuantity * 3).toFixed(2);
 
   // 如果没有找到任务类型，返回错误页面
   if (!taskId) {

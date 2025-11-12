@@ -111,7 +111,7 @@ export default function PublishTaskPage() {
       ...prevData,
       comments: prevData.comments.map(comment => ({
         ...comment,
-        content: comment.content + ' [AI优化]'
+        content: comment.content + ' '
       }))
     }));
     showAlert('优化成功', '评论内容已通过AI优化！', '✨');

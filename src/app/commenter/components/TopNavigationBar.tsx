@@ -197,7 +197,7 @@ export default function TopNavigationBar({ user }: TopNavigationBarProps) {
           </button>
         )}
         <div className="flex items-center space-x-1">
-          {isClient && <span className="text-lg font-medium">{pageTitle}</span>}
+          {isClient && <span className="text-xl font-medium">{pageTitle}</span>}
         </div>
       </div>
       <div className="flex items-center space-x-3" ref={dropdownRef}>
@@ -209,7 +209,7 @@ export default function TopNavigationBar({ user }: TopNavigationBarProps) {
         />
         
         {/* 用户头像和下拉菜单 */}
-        <div className="relative">
+        <div className="relative ml-3">
           <button 
             onClick={() => setShowDropdown(!showDropdown)}
             className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors duration-200"

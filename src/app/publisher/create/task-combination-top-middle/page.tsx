@@ -193,7 +193,7 @@ export default function PublishTaskPage() {
       ...prevData,
       topComment: {
         ...prevData.topComment,
-        content: prevData.topComment.content + ' [AI优化]'
+        content: prevData.topComment.content + ' '
       }
     }));
     showAlert('优化成功', '上评评论内容已通过AI优化！', '✨');
@@ -207,7 +207,7 @@ export default function PublishTaskPage() {
       ...prevData,
       middleComments: prevData.middleComments.map(comment => ({
         ...comment,
-        content: comment.content + ' [AI优化]'
+        content: comment.content + ' '
       }))
     }));
     showAlert('优化成功', '中评评论内容已通过AI优化！', '✨');

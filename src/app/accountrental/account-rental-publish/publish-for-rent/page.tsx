@@ -1,8 +1,31 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Textarea, NumberInput, Label, AlertModal } from '@/components/ui';
 import { CheckCircleOutlined, CloseCircleOutlined, CloseOutlined } from '@ant-design/icons';
+
+// 定义后端API返回的账号租赁数据结构
+export interface RentalPublishData {
+  id: string;
+  userId: string;
+  platform: string;
+  accountType: string;
+  expectedPricePerDay: number;
+  budgetDeposit: number;
+  expectedLeaseDays: number;
+  description: string;
+  status: string;
+  createTime: string;
+}
+
+// 定义后端API返回的整体响应结构
+export interface RentalPublishResponse {
+  code: number;
+  message: string;
+  data: RentalPublishData | null;
+  success: boolean;
+  timestamp: number;
+}
 
 // 定义抖音账号租赁表单类型
 interface DouyinAccountRentalForm {
@@ -68,6 +91,11 @@ export default function DouyinAccountRentalPage() {
     qq: '',
     email: ''
   });
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  
+  // API调用逻辑已移至按钮点击事件中
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
@@ -242,27 +270,78 @@ export default function DouyinAccountRentalPage() {
       return;
     }
     
+    setIsLoading(true);
+    setApiError(null); // 清除之前的错误
+    
     try {
-      // 模拟表单提交
-      console.log('提交的表单数据:', formData);
+      // 构建后端API所需的请求参数
+      const requestData = {
+        platform: 'douyin', // 固定为抖音平台
+        accountType: formData.accountRequirements.canPostVideos ? 'content_creator' : 'basic',
+        expectedPricePerDay: formData.price,
+        budgetDeposit: Math.round(formData.price * 2), // 保证金设为价格的2倍
+        expectedLeaseDays: formData.rentalDuration,
+        minLeaseDays: 1, // 最小租赁天数设为1
+        maxLeaseDays: 30, // 最大租赁天数设为30
+        description: formData.accountTitle,
+        status: 'active',
+        // 添加登录方式和账号要求信息到描述中
+        additionalInfo: {
+          loginMethods: formData.loginMethods,
+          accountRequirements: formData.accountRequirements,
+          region: formData.region,
+          accountAge: formData.accountAge,
+          contact: {
+            phone: formData.phone,
+            qq: formData.qq,
+            email: formData.email
+          },
+          // 添加账号图片信息（文件名或占位符）
+          imagesCount: formData.accountImages.length,
+          hasVideo: !!formData.accountVideo
+        }
+      };
       
-      // 模拟API请求延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('提交的API请求数据:', requestData);
       
-      showAlert('发布成功', '抖音账号租赁信息已成功发布', true);
-      // 发布成功后跳转到账号租赁市场页面
-      setTimeout(() => {
-        router.push('/accountrental/account-rental-market');
-      }, 2000);
-    } catch (err) {
-        showAlert('发布失败', err instanceof Error ? err.message : '发布失败，请稍后重试', false);
+      // 调用后端API提交数据
+      const response = await fetch('/api/public/rental/publishrental', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
+      
+      const result: RentalPublishResponse = await response.json();
+      
+      if (result.success) {
+        showAlert('发布成功', '抖音账号租赁信息已成功发布', true);
+        // 发布成功后跳转到账号租赁市场页面
+        setTimeout(() => {
+          router.push('/accountrental/account-rental-market');
+        }, 2000);
+      } else {
+        showAlert('发布失败', result.message || '发布失败，请稍后重试', false);
+      }
+    } catch (err) {
+      console.error('发布错误:', err);
+      showAlert('发布失败', err instanceof Error ? err.message : '发布失败，请稍后重试', false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
     // 计算总价
     const calculateTotalPrice = () => {
       return (formData.price * formData.rentalDuration).toFixed(2);
     };
+
+    // 不再需要加载状态渲染
 
     return (
     <div className="min-h-screen bg-gray-50">
@@ -273,7 +352,7 @@ export default function DouyinAccountRentalPage() {
         </div>
       </div>
 
-      {/* 表单区域 */}
+        {/* 表单区域 */}
       <div className="px-4 py-2">
         {/* 表单内容 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden py-5 px-3">
@@ -555,8 +634,16 @@ export default function DouyinAccountRentalPage() {
               onClick={handleSubmit}
               variant="primary"
               className="bg-blue-500 hover:bg-blue-600 px-4 py-2"
+              disabled={isLoading}
             >
-             发布出租{calculateTotalPrice()}元）
+              {isLoading ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  发布中...
+                </>
+              ) : (
+                `发布出租${calculateTotalPrice()}元）`
+              )}
             </Button>
           </div>
         </div>

@@ -27,6 +27,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
   const [isClient, setIsClient] = useState(false);
   const [pageTitle, setPageTitle] = useState('账户租赁');
   const headerRef = useRef<HTMLDivElement>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // 定义路由到标题的映射关系
   const routeTitleMap: Record<string, string> = {
@@ -210,6 +211,13 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
     setShowUserName(!showUserName);
   };
 
+  // 处理退出登录
+  const handleLogout = () => {
+    // 清除用户登录状态（实际项目中可能需要调用API或清除本地存储）
+    // 重定向到登录页面
+    router.push('/');
+  };
+
   return (
     <div ref={headerRef} className="bg-blue-500 border-b border-[#9bcfffff] px-4 py-3 flex items-center justify-between h-[60px] box-border">
       <div className="flex items-center flex-1">
@@ -222,7 +230,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
             <LeftOutlined size={20} className="text-white" />
           </button>
         )}
-        <h1 className="text-md text-white ml-1">
+        <h1 className="text-xl text-white ml-1">
           {pageTitle}
         </h1>
       </div>
@@ -232,44 +240,54 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
             buttonText="联系客服" 
             modalTitle="在线客服" 
             userId={user?.id || 'guest'} 
-            className="text-white mr-1 font-bold text-lg mr-2"
+            className="text-white mr-1 font-bold text-lg"
           />
         )}
         
-        {isClient && user && user.username && (
-            <div className="relative mr-2">
-              <button
-                onClick={handleUserAvatarClick}
-                onMouseEnter={() => setShowUserName(true)}
-                onMouseLeave={() => {
-                  setTimeout(() => setShowUserName(false), 300);
+        {/* 用户头像和下拉菜单 */}
+        <div className="relative ml-3 mr-3">
+          <button 
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
+            aria-label="用户菜单"
+          >
+            <img 
+              src="/images/0e92a4599d02a7.jpg" 
+              alt="用户头像" 
+              className="w-full h-full rounded-full object-cover"
+            />
+          </button>
+          
+          {/* 下拉菜单 */}
+          {showDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-10 transform transition-all duration-200 origin-top-right animate-fade-in-down">
+              {/* 个人中心按钮 */}
+              <button 
+                onClick={() => {
+                  router.push('/commenter/profile/settings');
+                  setShowDropdown(false);
                 }}
-                className="w-[20px] h-[20px] cursor-pointer flex items-center justify-center text-white transition-all duration-300 ease"
-                aria-label="用户信息"
+                className="w-full text-left px-4 py-3 border-b border-gray-100 text-gray-800 font-medium text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
               >
-                {/* 图片头像显示 */}
-                <div className="">
-                  <img 
-                    src="/images/0e92a4599d02a7.jpg" 
-                    alt="用户头像" 
-                    className="w-[20px] h-[20px] rounded-full object-cover"
-                  />
-                </div>
+                个人中心
               </button>
-              {showUserName && (
-                <div
-                  className="absolute top-[44px] right-0 bg-white border border-[#e8e8e8] rounded-md p-2 shadow-lg z-50 min-w-[120px] text-center"
-                >
-                  <span className="text-sm">
-                    {user.username}
-                  </span>
-                </div>
-              )}
+              
+              {/* 退出登录按钮 */}
+              <button 
+                onClick={() => {
+                  handleLogout();
+                  setShowDropdown(false);
+                }}
+                className="w-full text-left px-4 py-3 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 text-sm"
+              >
+                退出登录
+              </button>
             </div>
           )}
+        </div>
         <button
           onClick={handleDashboardClick}
-          className="text-sm cursor-pointer text-white transition-all duration-300 ease"
+          className="text-sm cursor-pointer text-xl text-white transition-all duration-300 ease"
         >
           退出
         </button>
