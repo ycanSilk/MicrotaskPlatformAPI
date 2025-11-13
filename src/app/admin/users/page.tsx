@@ -225,10 +225,10 @@ export default function AdminControlPanel() {
           route="/admin/settings/announcements"
         />
         <FeatureCard
-          title="权限管理"
+          title="角色管理"
           icon="🔑"
           description="管理系统角色和权限"
-          route="/admin/settings/permissions"
+          route="/admin/roleManagement"
         />
         <FeatureCard
           title="日志管理"

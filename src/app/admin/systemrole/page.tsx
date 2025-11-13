@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import PermissionModal, { SystemRole, Permission, PermissionTreeNode } from './components/PermissionModal';
+import PermissionModal, { SystemRole, Permission, PermissionTreeNode } from '../roleManagement/components/PermissionModal';
 
 // 角色卡片组件属性
 interface RoleCardProps {

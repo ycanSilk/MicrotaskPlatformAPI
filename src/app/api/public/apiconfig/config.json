@@ -35,6 +35,9 @@
       "myrenterorder": "/rental/orders/my/renter",
       "mylessororder": "/rental/orders/my/lessor",
       "getleasestats": "/api/rental/stats"
+    },
+    "user": {
+      "getinbuserlist": "/ind/user/list"
     }
   },
   "mockMode": false,

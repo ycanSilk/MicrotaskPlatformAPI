@@ -19,16 +19,7 @@
       "createuser": "/sys/user"
     },
     "role": {
-      "rolelist": "/sys/role/list",
-      "createrole": "/sys/role",
-      "roleassignmenus": "/sys/role/{roleId}/assign-menus",
-      "getrolemenus": "/sys/role/{roleId}/menus",
-      "enablerole": "/sys/role/{roleId}/enable",
-      "disablerole": "/sys/role/{roleId}/disable",
-      "getroledetails": "/sys/role/{roleId}",
-      "updaterole": "/sys/role/{roleId}",
-      "deleterole": "/sys/role/{roleId}",
-      "getallroles": "/sys/role/all"
+      "getrolelist": "/sys/role/list"
     },
     "wallet": {
       "recharge": "/wallet/admin/recharge"
