@@ -199,7 +199,7 @@ export default function RoleManagementPage() {
                   >
                       {role.status === 'ENABLED' ? '禁用角色' : '启用角色'}
                   </button>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-2 py-2" onClick={() => router.push(`/admin/roleManagement/permissiondetailsmenus/${role.id}`)}>编辑权限</button>
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-2 py-2" onClick={() => router.push(`/admin/roleManagement/permissiondetails/${role.id}`)}>编辑权限</button>
               </div>
             </div>
           ))

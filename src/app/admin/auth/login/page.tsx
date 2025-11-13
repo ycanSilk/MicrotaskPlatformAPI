@@ -2,21 +2,15 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
-/**
- * 登录请求接口定义
- * 用于规范登录表单提交的数据结构
- */
-interface LoginRequest {
+// 登录请求接口
+export interface LoginRequest {
   username: string;
   password: string;
   captcha: string;
 }
 
-/**
- * 登录响应接口定义
- * 用于解析后端返回的登录结果
- */
-interface LoginResponse {
+// 登录响应接口
+export interface LoginResponse {
   success: boolean;
   message: string;
   data?: {
@@ -28,118 +22,39 @@ interface LoginResponse {
   };
 }
 
-/**
- * 提示框状态类型
- * 定义不同状态的提示框样式和行为
- */
+// 提示框类型
 type ToastType = 'success' | 'error' | 'loading' | 'info';
 
-/**
- * 提示框组件属性接口
- */
-interface ToastProps {
-  type: ToastType;
-  message: string;
-  onClose: () => void;
-  show: boolean;
-}
-
-/**
- * 状态提示框组件
- * 根据不同类型显示相应的状态提示
- * @param {ToastProps} props - 提示框组件属性
- */
-const Toast: React.FC<ToastProps> = ({ type, message, onClose, show }) => {
+// 提示框组件
+const Toast: React.FC<{ type: ToastType; message: string; onClose: () => void; show: boolean }> = ({ type, message, onClose, show }) => {
   if (!show) return null;
 
-  // 根据类型获取样式类和图标 - 性能优化：内联函数避免不必要的重渲染
-  const getTypeStyles = useCallback(() => {
-    switch (type) {
-      case 'success':
-        return {
-          bgClass: 'bg-green-50 border-green-200',
-          textClass: 'text-green-800',
-          icon: '✓',
-          iconClass: 'bg-green-100 text-green-600'
-        };
-      case 'error':
-        return {
-          bgClass: 'bg-red-50 border-red-200',
-          textClass: 'text-red-800',
-          icon: '✗',
-          iconClass: 'bg-red-100 text-red-600'
-        };
-      case 'loading':
-        return {
-          bgClass: 'bg-blue-50 border-blue-200',
-          textClass: 'text-blue-800',
-          icon: '⟳',
-          iconClass: 'bg-blue-100 text-blue-600 animate-spin'
-        };
-      case 'info':
-      default:
-        return {
-          bgClass: 'bg-gray-50 border-gray-200',
-          textClass: 'text-gray-800',
-          icon: 'ℹ',
-          iconClass: 'bg-gray-100 text-gray-600'
-        };
-    }
-  }, [type]);
-
-  const styles = getTypeStyles();
+  // 使用单一样式
+  const styles = {
+    bg: 'bg-blue-50 border-blue-200',
+    text: 'text-blue-800',
+    icon: type === 'loading' ? <svg className="w-4 h-4 text-current" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> : type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ',
+    iconBg: 'bg-blue-100 text-blue-600'
+  };
 
   // 自动关闭提示框（除了加载中状态）
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (type !== 'loading' && show) {
-      timer = setTimeout(() => {
-        onClose();
-      }, 3000);
+      timer = setTimeout(() => onClose(), 3000);
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+    return () => timer && clearTimeout(timer);
   }, [type, show, onClose]);
 
   return (
     <div className="fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out animate-slideInRight">
-      <div 
-        className={`flex items-center ${styles.bgClass} border rounded-lg shadow-lg p-4 max-w-md`}
-        onClick={onClose}
-      >
-        {/* 点击外部区域关闭提示框 - 确保良好的用户体验 */}
-        <div 
-          className="fixed inset-0 z-40"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-        
-        {/* 图标区域 - 提高可访问性和视觉识别 */}
-        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${styles.iconClass} flex items-center justify-center mr-3 z-50`}>
-          {type === 'loading' ? (
-            // 加载中状态使用SVG旋转动画 - 兼容所有现代浏览器
-            <svg className="w-4 h-4 text-current animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <span className="font-bold text-sm">{styles.icon}</span>
-          )}
+      <div className={`flex items-center ${styles.bg} border rounded-lg shadow-lg p-4 max-w-md`} onClick={onClose}>
+        <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden="true" />
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${styles.iconBg} flex items-center justify-center mr-3 z-50`}>
+          {typeof styles.icon === 'string' ? <span className="font-bold text-sm">{styles.icon}</span> : styles.icon}
         </div>
-        
-        {/* 消息内容 */}
-        <div className={`flex-grow ${styles.textClass} z-50`}>
-          <p className="font-medium">{message}</p>
-        </div>
-        
-        {/* 关闭按钮 - 增强可访问性 */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 focus:outline-none z-50"
-          aria-label="关闭提示框"
-        >
+        <div className={`flex-grow ${styles.text} z-50`}><p className="font-medium">{message}</p></div>
+        <button type="button" onClick={onClose} className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 focus:outline-none z-50" aria-label="关闭提示框">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -149,223 +64,126 @@ const Toast: React.FC<ToastProps> = ({ type, message, onClose, show }) => {
   );
 };
 
-/**
- * 生成随机验证码的函数
- * @param {number} length - 验证码长度，默认为4
- * @returns {string} 随机生成的验证码字符串
- */
+// 生成随机验证码
 const generateCaptcha = (length: number = 4): string => {
-  // 数字和大小写字母的组合 - 确保验证码的复杂性和可读性平衡
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars[Math.floor(Math.random() * chars.length)];
   }
   return result;
 };
 
-/**
- * 绘制验证码到Canvas
- * @param {HTMLCanvasElement} canvas - Canvas元素
- * @param {string} text - 要绘制的验证码文本
- */
+// 绘制验证码到Canvas
 const drawCaptcha = (canvas: HTMLCanvasElement, text: string): void => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // 设置画布尺寸和样式 - 优化性能，避免不必要的重绘
   canvas.width = 120;
   canvas.height = 40;
   
-  // 清空画布
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // 绘制渐变背景 - 增强视觉效果
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-  gradient.addColorStop(0, '#f3f4f6');
-  gradient.addColorStop(1, '#e5e7eb');
-  ctx.fillStyle = gradient;
+  // 绘制白色背景
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // 添加噪点 - 防机器识别措施
-  for (let i = 0; i < 100; i++) {
-    ctx.fillStyle = `rgba(${Math.random() * 100}, ${Math.random() * 100}, ${Math.random() * 100}, ${Math.random() * 0.5})`;
-    ctx.beginPath();
-    ctx.arc(
-      Math.random() * canvas.width,
-      Math.random() * canvas.height,
-      Math.random() * 1.5,
-      0,
-      2 * Math.PI
-    );
-    ctx.fill();
-  }
-  
-  // 添加干扰线 - 增强安全性
-  for (let i = 0; i < 4; i++) {
-    ctx.strokeStyle = `rgba(${Math.random() * 100 + 50}, ${Math.random() * 100 + 50}, ${Math.random() * 100 + 50}, ${0.3 + Math.random() * 0.4})`;
-    ctx.lineWidth = 1 + Math.random() * 2;
-    ctx.beginPath();
-    ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-    ctx.bezierCurveTo(
-      Math.random() * canvas.width,
-      Math.random() * canvas.height,
-      Math.random() * canvas.width,
-      Math.random() * canvas.height,
-      Math.random() * canvas.width,
-      Math.random() * canvas.height
-    );
-    ctx.stroke();
-  }
-  
-  // 绘制验证码文字 - 随机旋转增加安全性
+  // 绘制验证码文字
   const textWidth = canvas.width / text.length;
-  ctx.font = 'bold 24px Arial, sans-serif'; // 使用通用字体确保跨浏览器兼容性
+  ctx.font = 'bold 24px Arial, sans-serif';
   
-  // 逐个字符绘制
   for (let i = 0; i < text.length; i++) {
-    // 随机颜色
     ctx.fillStyle = `rgb(${Math.floor(Math.random() * 80)}, ${Math.floor(Math.random() * 80)}, ${Math.floor(Math.random() * 80)})`;
-    
-    // 随机旋转角度 - 提高安全性但保持可读性
-    const rotate = (Math.random() - 0.5) * 0.4; // -20deg 到 20deg
-    
-    // 设置文字位置和旋转
+    const rotate = (Math.random() - 0.5) * 0.4;
     const x = i * textWidth + textWidth / 3;
     const y = canvas.height / 2 + 8;
     
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(rotate);
-    
-    // 绘制文字（带阴影效果）- 增强可读性
-    ctx.shadowColor = 'rgba(0,0,0,0.1)';
-    ctx.shadowBlur = 2;
-    ctx.shadowOffsetX = 1;
-    ctx.shadowOffsetY = 1;
-    
     ctx.fillText(text[i], -10, 5);
     ctx.restore();
   }
 };
 
-/**
- * 管理员登录页面组件
- * 包含登录表单、验证码和状态提示功能
- */
+// 管理员登录页面组件
 export default function AdminLoginPage() {
-  // 表单数据状态管理
+  // 表单数据状态
   const [formData, setFormData] = useState({  
-    username: 'admin',  // 默认填充管理员测试用户名
-    password: 'admin123', // 默认填充管理员测试密码
+    username: '',
+    password: '',
     captcha: ''
   });
   
-  // UI状态管理
+  // UI状态
   const [loading, setLoading] = useState(false);
   const [captchaText, setCaptchaText] = useState('');
   const [countdown, setCountdown] = useState(60);
   
-  // 提示框状态管理
+  // 提示框状态
   const [toast, setToast] = useState({
     show: false,
     type: 'info' as ToastType,
     message: ''
   });
   
-  // 引用管理
+  // 引用
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 初始化验证码 - 组件挂载时执行，确保只在客户端生成
+  // 初始化验证码
   useEffect(() => {
-    // 只在客户端生成验证码，避免SSR和客户端渲染不匹配
     if (typeof window !== 'undefined') {
       refreshCaptcha();
     }
-    
-    // 清理函数 - 确保组件卸载时中止所有请求
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
+    return () => abortControllerRef.current?.abort();
   }, []);
 
-  // 验证码自动刷新倒计时 - 性能优化：使用useEffect避免不必要的计时器
+  // 验证码自动刷新倒计时
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
-      timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     } else {
       refreshCaptcha();
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+    return () => timer && clearTimeout(timer);
   }, [countdown]);
 
-  /**
-   * 显示提示框函数
-   * @param {ToastType} type - 提示框类型
-   * @param {string} message - 提示消息内容
-   */
+  // 显示提示框
   const showToast = useCallback((type: ToastType, message: string) => {
-    setToast({
-      show: true,
-      type,
-      message
-    });
+    setToast({ show: true, type, message });
   }, []);
 
-  /**
-   * 关闭提示框函数
-   */
+  // 关闭提示框
   const closeToast = useCallback(() => {
     setToast(prev => ({ ...prev, show: false }));
   }, []);
 
-  /**
-   * 刷新验证码函数
-   */
+  // 刷新验证码
   const refreshCaptcha = useCallback(() => {
     const newCaptcha = generateCaptcha();
     setCaptchaText(newCaptcha);
     setCountdown(60);
-    
-    // 绘制验证码到Canvas
     if (canvasRef.current) {
       drawCaptcha(canvasRef.current, newCaptcha);
     }
   }, []);
 
-  /**
-   * 处理登录按钮点击事件
-   * 单独的点击处理函数，提供更好的可维护性
-   */
+  // 处理登录按钮点击
   const handleLoginClick = useCallback(() => {
-    // 触发表单提交
-    if (formRef.current) {
-      formRef.current.dispatchEvent(
-        new Event('submit', { cancelable: true, bubbles: true })
-      );
-    }
+    formRef.current?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
   }, []);
 
-  /**
-   * 处理表单提交
-   * @param {React.FormEvent} e - 表单提交事件
-   */
+  // 处理表单提交
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     // 验证验证码
     if (!formData.captcha || formData.captcha.toUpperCase() !== captchaText.toUpperCase()) {
       showToast('error', '验证码错误，请重新输入');
-      refreshCaptcha(); // 验证失败后刷新验证码
+      refreshCaptcha();
       return;
     }
     
@@ -378,68 +196,52 @@ export default function AdminLoginPage() {
     setLoading(true);
     showToast('loading', '正在登录，请稍候...');
 
-    // 确保之前的请求被中止，防止竞态条件
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // 创建新的AbortController用于当前请求
-    abortControllerRef.current = new AbortController();
+    // 确保之前的请求被中止
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
-      // 构建登录请求数据
       const loginData: LoginRequest = {
         username: formData.username.trim(),
         password: formData.password,
         captcha: formData.captcha
       };
 
-      // 调用后端登录API - 添加请求超时和中止支持
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),
-        signal: abortControllerRef.current.signal
+        signal: controller.signal
       });
 
-      // 检查响应状态 - 增强错误处理
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      // 解析响应
       const result: LoginResponse = await response.json();
 
       if (result.success) {
         console.log('登录成功:', result);
         showToast('success', '登录成功，正在跳转...');
-        
-        // 登录成功后延迟跳转到管理员首页
-        setTimeout(() => {
-          window.location.href = '/admin/dashboard';
-        }, 1000);
+        setTimeout(() => window.location.href = '/admin/dashboard', 1000);
       } else {
-        // 处理登录失败
         console.error('登录失败:', result);
         showToast('error', result.message || '登录失败，请检查用户名和密码');
-        refreshCaptcha(); // 登录失败后刷新验证码
+        refreshCaptcha();
       }
     } catch (err) {
-      // 避免处理已中止的请求错误
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('登录请求错误:', err);
+        showToast('error', '登录请求失败，请稍后重试');
+        refreshCaptcha();
       }
-      console.error('登录请求错误:', err);
-      showToast('error', '登录请求失败，请稍后重试');
-      refreshCaptcha(); // 请求错误后刷新验证码
     } finally {
       setLoading(false);
     }
   }, [formData, captchaText, showToast, refreshCaptcha]);
 
-  // 性能优化：使用useCallback优化事件处理函数
+  // 处理输入变化
   const handleInputChange = useCallback((field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
@@ -601,60 +403,7 @@ export default function AdminLoginPage() {
         show={toast.show}
       />
 
-      {/* 全局CSS动画 - 确保所有现代浏览器支持 */}
-      <style jsx global>{`
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(100%);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        
-        .animate-slideInRight {
-          animation: slideInRight 0.3s ease-out;
-        }
-        
-        .animate-spin {
-          animation: spin 1s linear infinite;
-        }
-        
-        /* 增强无障碍性 - 高对比度模式支持 */
-        @media (prefers-contrast: high) {
-          .bg-blue-500 {
-            background-color: #0056b3 !important;
-          }
-          .border-gray-300 {
-            border: 2px solid #000 !important;
-          }
-        }
-        
-        /* 减少动画模式支持 - 提高可访问性 */
-        @media (prefers-reduced-motion: reduce) {
-          .animate-slideInRight,
-          .animate-spin,
-          .hover\:scale-102,
-          .active\:scale-98,
-          .hover\:scale-105,
-          .active\:scale-95 {
-            animation: none !important;
-            transform: none !important;
-            transition: none !important;
-          }
-        }
-      `}</style>
+
     </div>
   );
 }
