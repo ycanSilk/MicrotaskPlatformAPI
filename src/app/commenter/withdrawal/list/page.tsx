@@ -40,7 +40,7 @@ const WithdrawalListPage = () => {
           body: JSON.stringify({
             transactionType: 'WITHDRAW',
             page: 1,
-            size: 100
+            size: 10
           })
         });
 
@@ -89,9 +89,14 @@ const WithdrawalListPage = () => {
 
 
 
-  // 处理记录点击，跳转到详情页
+  // 处理记录点击，跳转到详情页并传递数据
   const handleRecordClick = (record: WithdrawalRecord) => {
-    router.push(`/commenter/withdrawal/detail/${record.orderNo}`);
+    console.log('【列表页】准备传递的数据:', record);
+    console.log('【列表页】路由push参数:', {
+      pathname: `/commenter/withdrawal/detail/${record.orderNo}`,
+      state: record
+    });
+    (router as any).push(`/commenter/withdrawal/detail/${record.orderNo}`, { state: record });
   };
 
   return (
@@ -114,7 +119,7 @@ const WithdrawalListPage = () => {
         <button
           className={`py-3 px-6 font-medium text-sm transition-colors ${activeTab === 'PENDING' 
             ? 'border-b-2 border-blue-600 text-blue-600' 
-            : 'text-gray-500 hover:text-gray-700'}`}
+            : ' hover:text-gray-700'}`}
           onClick={() => setActiveTab('PENDING')}
         >
           待审核
@@ -122,7 +127,7 @@ const WithdrawalListPage = () => {
         <button
           className={`py-3 px-6 font-medium text-sm transition-colors ${activeTab === 'SUCCESS' 
             ? 'border-b-2 border-blue-600 text-blue-600' 
-            : 'text-gray-500 hover:text-gray-700'}`}
+            : ' hover:text-gray-700'}`}
           onClick={() => setActiveTab('SUCCESS')}
         >
           已提现
@@ -132,11 +137,11 @@ const WithdrawalListPage = () => {
       {/* 提现记录列表 */}
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <p className="text-gray-500">加载中...</p>
+          <p className="">加载中...</p>
         </div>
       ) : filteredRecords.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg">
-          <p className="text-gray-500">暂无提现记录</p>
+          <p className="">暂无提现记录</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -149,23 +154,18 @@ const WithdrawalListPage = () => {
                 onClick={() => handleRecordClick(record)}
               >
                 <div className="">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">{record.channel === 'alipay' ? '支付宝 ' : '银行卡 '}{record.description}</span>
-                      <div className="flex items-center">
-                        <span className="text-lg font-medium mr-3">¥{record.amount.toFixed(2)}</span>
-                        <span className={`px-2 py-1 rounded text-xs ${statusInfo.color}`}>{statusInfo.text}</span>
-                      </div>
-                    </div>
-                  
-                  <div className="flex justify-between text-sm text-gray-500">
+                  <div className="flex justify-end mb-1">
+                    <span className={`px-2 py-1 rounded text-xs ${statusInfo.color}`}>{statusInfo.text}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap max-w-[200px]">{record.channel === 'ALIPAY' ? '支付宝 ' : '银行卡 '}{record.description}</span>
+                    <span className="text-lg font-medium">¥{record.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm ">
                     <span>申请时间: {record.createTime}</span>
                     <span>余额: {record.afterBalance.toFixed(2)}</span>
                   </div>
-                  
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">  
-                    <span>更新时间: {record.updateTime}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <div className="flex justify-between text-sm">
                     <span>订单号: {record.orderNo}</span>
                   </div>
                 </div>

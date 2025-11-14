@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   // 从Cookie获取token
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
   let token: string | undefined;
   

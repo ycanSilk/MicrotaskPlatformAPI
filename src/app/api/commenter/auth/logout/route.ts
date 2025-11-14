@@ -79,7 +79,7 @@ const getToken = async (request: Request): Promise<{ token: string; source: stri
   // 2. 如果Authorization头中没有token，从Cookie获取
   if (!token) {
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const cookieTokens = cookieStore.get('commenter_token');
       token = cookieTokens?.value || '';
       source = 'cookie';
@@ -289,7 +289,7 @@ export async function POST(request: Request) {
 
 // 清除认证相关的Cookie的工具函数
 async function clearAuthCookies(): Promise<void> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const authCookies = ['commenter_token', 'commenter_auth_data', 'commenter_user_info'];
   
   for (const cookieName of authCookies) {

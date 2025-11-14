@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     
     // 从Cookie获取token
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const cookieToken = cookieStore.get('publisher_token');
       token = cookieToken?.value || '';
       console.log(formatLog(operation, `从Cookie获取token: ${token ? '已获取到token' : '未获取到token'}`));

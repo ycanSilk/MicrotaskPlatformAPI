@@ -17,7 +17,7 @@ async function handleTasksListRequest(request: NextRequest) {
     // 2. 如果请求头中没有token，尝试从Cookie获取
     if (!token) {
       try {
-        const cookieStore = cookies();
+        const cookieStore = await cookies();
         const cookieToken = cookieStore.get('commenter_token');
         token = cookieToken?.value || '';
       } catch (cookieError) {

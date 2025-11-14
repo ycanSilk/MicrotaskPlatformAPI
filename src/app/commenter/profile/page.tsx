@@ -64,6 +64,13 @@ export default function commenterProfilePage() {
       path: '/commenter/balance'
     },
     {
+      id: 'balance',
+      title: '提现明细',
+      icon: <WalletOutlined className="text-xl" />,
+      color: 'bg-yellow-100',
+      path: '/commenter/withdrawal/list'
+    },
+    {
       id: 'order-management',
       title: '订单管理',
       icon: <OrderedListOutlined className="text-xl" />,
@@ -166,7 +173,6 @@ export default function commenterProfilePage() {
                 onClick={() => handleMenuItemClick(item.path)}
                 className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 style={{
-                  // 增大移动端触摸区域
                   minHeight: '60px',
                   touchAction: 'manipulation'
                 }}

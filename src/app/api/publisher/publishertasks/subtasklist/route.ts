@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // 获取token - 只从HttpOnly Cookie获取
     let token = '';
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const cookieToken = cookieStore.get('publisher_token');
       token = cookieToken?.value || '';
     } catch (cookieError) {

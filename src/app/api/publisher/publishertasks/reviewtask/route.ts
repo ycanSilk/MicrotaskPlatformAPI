@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     // 1. 身份验证
     const COOKIE_NAME = 'publisher_token';
-    const token = getTokenFromCookie(COOKIE_NAME, operation);
+    const token = await getTokenFromCookie(COOKIE_NAME, operation);
     
     if (!isValidToken(token)) {
       console.warn(formatLog(operation, '认证失败: token无效'));

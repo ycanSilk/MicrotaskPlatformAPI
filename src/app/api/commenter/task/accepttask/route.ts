@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     
     // 从Cookie获取token
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const cookieToken = cookieStore.get('commenter_token');
       token = cookieToken?.value || '';
     } catch (cookieError) {

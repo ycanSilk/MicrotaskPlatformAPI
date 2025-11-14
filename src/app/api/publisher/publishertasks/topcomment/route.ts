@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     // 使用公共token工具从Cookie获取publisher_token
     const COOKIE_NAME = 'publisher_token'; // 与publisher专用token管理器保持一致
     enhancedLog(operation, LogLevel.DEBUG, `准备从Cookie获取token: ${COOKIE_NAME}`);
-    const token = getTokenFromCookie(COOKIE_NAME, operation);
+    const token = await getTokenFromCookie(COOKIE_NAME, operation);
     enhancedLog(operation, LogLevel.DEBUG, `从Cookie获取到token，长度: ${token?.length || 0}字符`);
     
     // 验证token有效性

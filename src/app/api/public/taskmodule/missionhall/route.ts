@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     }
     // 从tokenUtils获取
     if (!token) {
-      const allTokens = getAllModuleTokens('GET_MISSION_HALL_TASKS');
+      const allTokens = await getAllModuleTokens('GET_MISSION_HALL_TASKS');
       // 确保allTokens是对象类型
       if (typeof allTokens === 'object' && allTokens !== null) {
         // 使用Object.entries保持类型安全
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     }
     // 从Cookie获取
     if (!token) {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
       if (cookieStore && typeof cookieStore.get === 'function') {
         for (const key of tokenKeys) {

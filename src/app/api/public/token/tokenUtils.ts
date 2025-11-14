@@ -18,14 +18,14 @@ export const formatLog = (operation: string, message: string): string => {
  * @param operation 操作名称，用于日志记录
  * @returns 获取到的token字符串，如果失败则返回空字符串
  */
-export const getTokenFromCookie = (
+export const getTokenFromCookie = async (
   cookieName: string = 'publisher_token',
   operation: string = 'UNKNOWN'
-): string => {
+): Promise<string> => {
   let token = '';
   
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cookieToken = cookieStore.get(cookieName);
     token = cookieToken?.value || '';
   } catch (cookieError) {
@@ -91,10 +91,10 @@ export const getTokenInfoFromManager = (
  * @param operation 操作名称，用于日志记录
  * @returns 获取到的token对象，包含token字符串和相关信息
  */
-export const getToken = (
+export const getToken = async (
   moduleType: ModuleType = ModuleType.PUBLIC,
   operation: string = 'UNKNOWN'
-): { token: string; isAuthenticated: boolean; moduleType: ModuleType; cookieName: string } => {
+): Promise<{ token: string; isAuthenticated: boolean; moduleType: ModuleType; cookieName: string }> => {
   try {
     // 获取Token管理器信息
     const managerInfo = getTokenInfoFromManager(moduleType, operation);
@@ -109,7 +109,7 @@ export const getToken = (
     }
     
     // 从Cookie获取实际token（HttpOnly Cookie机制）
-    const token = getTokenFromCookie(managerInfo.cookieName, operation);
+    const token = await getTokenFromCookie(managerInfo.cookieName, operation);
     
     return {
       token,
@@ -132,14 +132,14 @@ export const getToken = (
  * @param operation 操作名称，用于日志记录
  * @returns 所有模块的token信息对象
  */
-export const getAllModuleTokens = (
+export const getAllModuleTokens = async (
   operation: string = 'UNKNOWN'
-): Record<ModuleType, { token: string; isAuthenticated: boolean; cookieName: string }> => { 
+): Promise<Record<ModuleType, { token: string; isAuthenticated: boolean; cookieName: string }>> => { 
   return {
-    [ModuleType.COMMENTER]: getToken(ModuleType.COMMENTER, operation),
-    [ModuleType.PUBLISHER]: getToken(ModuleType.PUBLISHER, operation),
-    [ModuleType.ADMIN]: getToken(ModuleType.ADMIN, operation),
-    [ModuleType.PUBLIC]: getToken(ModuleType.PUBLIC, operation)
+    [ModuleType.COMMENTER]: await getToken(ModuleType.COMMENTER, operation),
+    [ModuleType.PUBLISHER]: await getToken(ModuleType.PUBLISHER, operation),
+    [ModuleType.ADMIN]: await getToken(ModuleType.ADMIN, operation),
+    [ModuleType.PUBLIC]: await getToken(ModuleType.PUBLIC, operation)
   };
 };
 

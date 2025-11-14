@@ -1,3 +1,4 @@
+'use client';
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { DownOutlined, RightOutlined } from '@ant-design/icons';

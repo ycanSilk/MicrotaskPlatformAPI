@@ -3,9 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCardOutlined, AlipayOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
-// 由于找不到@/components/ui下的组件，我们使用原生HTML元素和Tailwind CSS来实现UI
 
-// 定义与后端API返回数据结构完全一致的数据类型接口
 interface ApiBankCard {
   id: string;
   userId: string;
@@ -25,7 +23,26 @@ interface ApiResponse {
   timestamp: number;
 }
 
-// 前端展示用的银行卡接口
+interface ApiBalanceResponse {
+  code: number;
+  message: string;
+  data: WalletInfo[];
+  success: boolean;
+  timestamp: number;
+}
+
+interface WalletInfo {
+  userId: string;
+  totalBalance: number;
+  availableBalance: number;
+  frozenBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  status: string;
+  currency: string;
+  createTime: string;
+}
+
 interface BankCard {
   id: string;
   bankName: string;
@@ -63,6 +80,23 @@ const WithdrawalPage = () => {
     const fetchPaymentMethods = async () => {
       try {
         setLoading(true);
+
+        const responseBalance = await fetch('/api/public/walletmanagement/getwalletinfo', {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          // 设置超时处理
+          signal: AbortSignal.timeout(10000),
+          // 凭证设置，确保cookie可以被发送到API
+          credentials: 'include' as RequestCredentials
+        });
+        
+        // 检查余额响应状态
+        if (!responseBalance.ok) {
+          throw new Error(`获取余额失败，状态码: ${responseBalance.status}`);
+        }
         
         // 调用后端API获取银行卡列表
         const response = await fetch('/api/public/bank/getbankcardslist', {
@@ -77,18 +111,24 @@ const WithdrawalPage = () => {
           credentials: 'include' as RequestCredentials
         });
         
-        // 检查响应状态
+        // 检查银行卡列表响应状态
         if (!response.ok) {
           throw new Error(`请求失败，状态码: ${response.status}`);
         }
         
         // 解析响应数据
         const apiResponse: ApiResponse = await response.json();
+        const apiBalanceResponse: ApiBalanceResponse = await responseBalance.json();
         
         // 处理API返回的错误
         if (!apiResponse.success) {
           const errorMsg = apiResponse.message || '获取银行卡列表失败';
           throw new Error(errorMsg);
+        }
+        
+        // 检查余额API返回状态
+        if (apiBalanceResponse.success && apiBalanceResponse.data.length > 0) {
+          setAvailableBalance(apiBalanceResponse.data[0].availableBalance);
         }
         
         // 将API返回的数据转换为前端显示需要的格式

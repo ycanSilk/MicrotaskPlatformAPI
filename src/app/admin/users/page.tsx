@@ -66,17 +66,16 @@ export default function AdminControlPanel() {
       {/* 快速入口 */}
       <FeatureSection title="快速入口">
         <FeatureCard
-          title="数据总览"
+          title=" 充值管理"
           icon="📊"
           description="查看平台运营数据和关键指标"
-          route="/admin/dashboard"
+          route="/admin/rechargelist"
         />
         <FeatureCard
-          title="用户管理"
+          title="提现管理"
           icon="👥"
-          description="管理系统中的所有用户和角色"
-          route="/admin/usersManagement"
-          count="1234"
+          description="管理系统中的所有提现申请"
+          route="/admin/processwithdraw"
         />
         <FeatureCard
           title="财务管理"
@@ -130,7 +129,7 @@ export default function AdminControlPanel() {
           title="提现审核"
           icon="✅"
           description="处理用户提现申请"
-          route="/admin/finance/withdrawal-review"
+          route="/admin/processwithdraw"
           count="5"
         />
         <FeatureCard

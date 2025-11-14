@@ -1,112 +1,88 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
-interface WithdrawalDetail extends WithdrawalRecord {
-  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
-  fee?: number;
-  balanceAfter?: number;
-  remark?: string;
-}
+// 调试日志辅助函数
+const log = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${message}`, data || '');
+};
 
+// 与列表页统一的数据接口定义
 interface WithdrawalRecord {
-  id: string;
+  orderNo: string;
+  transactionType: string;
+  typeDescription: string;
   amount: number;
-  method: 'bank' | 'alipay';
-  target: string;
-  targetName?: string;
-  applyTime: string;
-  processTime?: string;
-  completeTime?: string;
-  orderId: string;
+  beforeBalance: number;
+  afterBalance: number;
+  status: string;
+  statusDescription: string;
+  description: string;
+  channel: string;
+  createTime: string;
+  updateTime: string;
 }
 
 const WithdrawalDetailPage = () => {
   const router = useRouter();
-  const params = useParams();
-  const { id } = params as { id: string };
-  const [detail, setDetail] = useState<WithdrawalDetail | null>(null);
+  const params = useParams() as { id: string };
+  const orderNo = params.id;
+  const [record, setRecord] = useState<WithdrawalRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  // 从API获取提现详情数据
+  // 从API获取提现记录数据
   useEffect(() => {
-    const fetchWithdrawalDetail = async () => {
-      setLoading(true);
+    log('提现详情页初始化');
+    log('获取的orderNo:', orderNo);
+    
+    const fetchRecord = async () => {
       try {
-        // 调用真实API获取提现详情
         const response = await fetch('/api/public/walletmanagement/transactionrecord', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            transactionType: 'withdrawal',
-            page: 1,
-            size: 100
-          })
+          body: JSON.stringify({ orderNo, page: 1, size: 1 }),
         });
-
+        
+        const result = await response.json();
+        log('API响应:', result);
+        
+        // 首先检查HTTP响应是否成功
         if (!response.ok) {
-          throw new Error('获取提现详情失败');
+          log('API请求失败，HTTP状态:', response.status);
+          setError(true);
+        } else {
+          // 检查API返回的业务码
+          if (result.code === 200 && result.data && result.data.list && result.data.list.length > 0) {
+            log('设置record:', result.data.list[0]);
+            setRecord(result.data.list[0]);
+          } else {
+            log('API返回业务码:', result.code);
+            setError(true);
+          }
         }
-
-        const data = await response.json();
-        // 在所有记录中查找当前ID对应的记录
-        const record = data.data.records.find((record: any) => record.id === id);
-        setDetail(record || null);
-      } catch (error) {
-        console.error('获取提现详情失败:', error);
+      } catch (err) {
+        log('API请求失败:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchWithdrawalDetail();
-  }, [id]);
-
-  // 获取状态文本和样式
-  const getStatusInfo = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return { text: '待处理', color: 'text-yellow-500' };
-      case 'SUCCESS':
-        return { text: '已完成', color: 'text-green-500' };
-      case 'FAILED':
-        return { text: '已失败', color: 'text-red-500' };
-      case 'CANCELLED':
-        return { text: '已取消', color: 'text-gray-500' };
-      default:
-        return { text: '未知', color: 'text-gray-500' };
+    
+    if (orderNo) {
+      fetchRecord();
+    } else {
+      setLoading(false);
+      setError(true);
     }
-  };
-
-  // 获取时间线数据
-  const getTimelineItems = () => {
-    if (!detail) return [];
-
-    const items = [
-      {
-        title: '发起提现',
-        time: detail.applyTime,
-        completed: true
-      },
-      {
-        title: '银行处理中',
-        time: detail.processTime,
-        completed: detail.status !== 'PENDING'
-      },
-      {
-        title: '到账',
-        time: detail.completeTime,
-        completed: detail.status === 'SUCCESS'
-      }
-    ];
-
-    return items;
-  };
-
+  }, [orderNo]);
+  
+  // 如果正在加载，显示加载中
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 px-3">
@@ -119,14 +95,15 @@ const WithdrawalDetailPage = () => {
           </button>
           <h1 className="text-xl font-medium">提现详情</h1>
         </div>
-        <div className="flex justify-center items-center py-12">
+        <div className="flex flex-col items-center justify-center py-16 bg-white rounded-lg">
           <p className="text-gray-500">加载中...</p>
         </div>
       </div>
     );
   }
-
-  if (!detail) {
+  
+  // 如果没有数据，返回找不到记录页面
+  if (!record) {
     return (
       <div className="min-h-screen bg-gray-50 py-4 px-3">
         <div className="flex items-center mb-6">
@@ -144,8 +121,80 @@ const WithdrawalDetailPage = () => {
       </div>
     );
   }
+  
+  // 提取需要的字段和转换逻辑
+  const method = record.channel === 'ALIPAY' ? 'alipay' : 'bank';
+  const targetName = record.description.split(' ')[1] || '';
+  const target = record.description.split(' ')[2] || '';
+  const completeTime = record.status === 'SUCCESS' ? record.updateTime : undefined;
+  const balanceAfter = record.afterBalance;
+  const orderId = record.orderNo;
 
-  const statusInfo = getStatusInfo(detail.status);
+  // 计算费用（示例逻辑，根据实际需求修改）
+  const fee = 0.00;
+  
+  // 处理时间信息
+  const getProcessTime = () => {
+    if (record.status === 'SUCCESS' || record.status === 'FAILED') {
+      return completeTime || record.updateTime || '-';
+    } else if (record.status === 'PENDING') {
+      return '处理中';
+    } else {
+      return '-';
+    }
+  };
+  
+  const processTime = getProcessTime();
+  
+  // 处理状态颜色
+  const getStatusColor = () => {
+    switch (record.status) {
+      case 'SUCCESS':
+        return '#4CAF50';
+      case 'FAILED':
+        return '#F44336';
+      case 'PENDING':
+        return '#FFC107';
+      case 'CANCELLED':
+        return '#9E9E9E';
+      default:
+        return '#9E9E9E';
+    }
+  };
+  
+
+  // 与列表页统一的状态文本和样式获取函数
+  const getStatusInfo = (status: string, statusDescription: string) => {
+    // 根据status设置颜色
+    let color = 'bg-gray-100 text-gray-800 border-gray-200';
+    if (status === 'PENDING' || status.includes('PENDING') || status.includes('processing')) {
+      color = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    } else if (status === 'SUCCESS' || status.includes('success') || status.includes('SUCCESS')) {
+      color = 'bg-green-100 text-green-800 border-green-200';
+    } else if (status === 'FAILED' || status.includes('failed') || status.includes('error')) {
+      color = 'bg-red-100 text-red-800 border-red-200';
+    } else if (status === 'CANCELLED' || status.includes('cancelled') || status.includes('cancel')) {
+      color = 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+    // 使用statusDescription作为显示文本，如果没有则使用默认
+    const text = statusDescription || '未知状态';
+    return { text, color };
+  };
+
+  // 获取时间线数据
+  const getTimelineItems = () => {
+    if (!record) return [];
+    const items = [
+      { title: '发起提现', time: record.createTime, completed: true },
+      { title: '银行处理中', time: record.createTime, completed: record.status === 'PENDING' },
+      { title: '到账', completed: record.status === 'SUCCESS' }
+    ];
+    return items;
+  };
+
+
+
+  const statusInfo = getStatusInfo(record.status, record.statusDescription);
   const timelineItems = getTimelineItems();
 
   return (
@@ -166,22 +215,14 @@ const WithdrawalDetailPage = () => {
       {/* 提现金额和状态 */}
       <Card className="mb-6">
         <div className="p-6 flex flex-col items-center">
-          <div className="text-4xl font-medium text-gray-900 mb-2">
-            -¥{detail.amount.toFixed(2)}
-          </div>
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-2">
+          <div className="w-12 h-12 rounded-full bg-yellow-200 flex items-center justify-center border border-yellow-500 border-[5px] mb-5">
               <span className="text-yellow-600">¥</span>
-            </div>
-            <div>
-              <div className="font-medium">
-                {detail.method === 'bank' ? '银行卡提现' : '支付宝提现'}
-                -{detail.targetName}
-              </div>
-              <div className={`text-sm ${statusInfo.color} font-medium`}>
-                {statusInfo.text}
-              </div>
-            </div>
+          </div>      
+          <div className="items-center">
+               余额提现-到{method === 'bank' ? '银行卡' : '支付宝'}
+          </div>
+          <div className="text-4xl font-medium text-gray-900 mb-2">
+            {record.amount.toFixed(2)}
           </div>
         </div>
       </Card>
@@ -222,53 +263,42 @@ const WithdrawalDetailPage = () => {
 
       {/* 提现信息详情 */}
       <Card className="mb-6">
-        <div className="p-4">
-          <h2 className="text-base font-medium mb-4">提现信息</h2>
+        <div className="">
           <div className="space-y-3">
             <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="text-gray-500">提现金额</span>
-              <span>¥{detail.amount.toFixed(2)}</span>
+              <span>¥{record.amount.toFixed(2)}</span>
             </div>
-            {detail.fee !== undefined && (
-              <div className="flex justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">服务费</span>
-                <span>¥{detail.fee.toFixed(2)}</span>
-              </div>
-            )}
+            <div className="flex justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">手续费</span>
+              <span>¥3.00</span>
+            </div>
             <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="text-gray-500">申请时间</span>
-              <span>{detail.applyTime}</span>
+              <span>{record.createTime}</span>
             </div>
-            {detail.completeTime && (
+            <div className="flex justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">到账时间</span>
+              <span>{record.updateTime}</span>
+            </div>
+            {completeTime && (
               <div className="flex justify-between py-1 border-b border-gray-100">
                 <span className="text-gray-500">到账时间</span>
-                <span>{detail.completeTime}</span>
+                <span>{completeTime}</span>
               </div>
             )}
             <div className="flex justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">提现{detail.method === 'bank' ? '银行' : '账户'}</span>
-              <span>{detail.targetName}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">{detail.method === 'bank' ? '银行卡号' : '支付宝账号'}</span>
-              <span>{detail.target}</span>
+              <span className="text-gray-500">{method === 'bank' ? '银行账号' : '支付宝'}</span>
+              <span>{target}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-gray-100">
               <span className="text-gray-500">提现单号</span>
-              <span className="text-sm">{detail.orderId}</span>
+              <span className="text-sm">{record.orderNo}</span>
             </div>
-            {detail.balanceAfter !== undefined && (
-              <div className="flex justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">零钱余额</span>
-                <span>{detail.balanceAfter.toFixed(2)}</span>
-              </div>
-            )}
-            {detail.remark && (
-              <div className="py-1 border-b border-gray-100">
-                <div className="text-gray-500 mb-1">备注</div>
-                <div className="text-red-500">{detail.remark}</div>
-              </div>
-            )}
+            <div className="flex justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">账户余额</span>
+              <span className="text-sm text-right">{record.beforeBalance.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </Card>

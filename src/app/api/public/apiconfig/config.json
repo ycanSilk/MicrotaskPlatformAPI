@@ -1,6 +1,6 @@
 {
   "baseUrl": "http://localhost:8083/api",
-  "timeout": 10000,
+  "timeout": 5000,
   "headers": {
     "accept": "*/*",
     "Content-Type": "application/json"

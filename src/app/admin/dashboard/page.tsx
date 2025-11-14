@@ -66,10 +66,8 @@ export default function AdminDashboardPage() {
     today: {
       totalTasks: 285,
       taskByCategory: [
-        { name: '美妆', count: 85, icon: '💄' },
-        { name: '数码', count: 65, icon: '📱' },
-        { name: '美食', count: 48, icon: '🍔' },
-        { name: '旅游', count: 35, icon: '✈️' },
+        { name: '评论任务', count: 85, icon: '💄' },
+        { name: '账户租赁', count: 65, icon: '📱' },
         { name: '其他', count: 52, icon: '📦' }
       ],
       taskStatus: {

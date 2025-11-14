@@ -1,3 +1,4 @@
+'use client';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from '@/types';

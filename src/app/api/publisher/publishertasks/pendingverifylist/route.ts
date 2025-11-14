@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     
     // 3. 身份验证
     const COOKIE_NAME = 'publisher_token';
-    const token = getTokenFromCookie(COOKIE_NAME, operation);
+    const token = await getTokenFromCookie(COOKIE_NAME, operation);
     console.log('认证信息:', { hasToken: !!token });
     
     if (!isValidToken(token)) {

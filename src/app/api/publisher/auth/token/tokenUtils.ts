@@ -17,14 +17,14 @@ export const formatLog = (operation: string, message: string): string => {
  * @param operation 操作名称，用于日志记录
  * @returns 获取到的token字符串，如果失败则返回空字符串
  */
-export const getTokenFromCookie = (
+export const getTokenFromCookie = async (
   cookieName: string = 'publisher_token',
   operation: string = 'UNKNOWN'
-): string => {
+): Promise<string> => {
   let token = '';
   
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const cookieToken = cookieStore.get(cookieName);
     token = cookieToken?.value || '';
     console.log(formatLog(operation, `从Cookie获取token: ${token ? '已获取到token' : '未获取到token'}`));

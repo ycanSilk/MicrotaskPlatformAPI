@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     const authorizationHeader = request.headers.get('Authorization');
     
     // 从Cookie中获取token作为备选
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
     let token: string | undefined;
     

@@ -3,9 +3,9 @@ import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
 
 // 从Cookie中获取token的函数
-const getTokenFromCookie = (): string | null => {
+const getTokenFromCookie = async (): Promise<string | null> => {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('publisher_token')?.value;
     return token || null;
   } catch (error) {
@@ -33,7 +33,7 @@ const validatePassword = (password: string): {
 export async function POST(req: NextRequest) {
   try {
     // 1. 从HttpOnly Cookie获取令牌
-    const token = getTokenFromCookie();
+    const token = await getTokenFromCookie();
     
     if (!token) {
       return NextResponse.json(

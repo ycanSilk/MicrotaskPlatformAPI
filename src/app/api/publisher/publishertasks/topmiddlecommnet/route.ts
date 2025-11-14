@@ -109,7 +109,7 @@ const saveImageFile = async (file: any, index: string, imageName?: string): Prom
 export async function POST(request: Request) {
   try {
     // 1. 获取token
-    const token = getTokenFromCookie('publisher_token');
+    const token = await getTokenFromCookie('publisher_token');
     
     // 验证token有效性
     if (!isValidToken(token)) {

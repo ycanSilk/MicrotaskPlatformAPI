@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { PublisherBottomNavigation } from './components/PublisherBottomNavigation';
 import { PublisherHeader } from '@/app/publisher/components/PublisherHeader';
@@ -34,7 +34,9 @@ export default function PublisherLayout({
 
       {/* 主要内容区域 */}
       <main className="flex-1 pb-20">
-        {children}
+        <Suspense fallback={<div className="w-full h-64 flex items-center justify-center">Loading...</div>}>
+          {children}
+        </Suspense>
       </main>
 
       {/* 底部导航栏 - 使用可复用组件 */}

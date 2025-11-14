@@ -6,7 +6,7 @@ const config = require('../../apiconfig/config.json');
 // 主函数：处理GET请求
 export async function GET() {
   // 从Cookie获取token
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const tokenKeys = ['commenter_token', 'user_token', 'auth_token', 'publisher_token', 'token'];
   let token: string | undefined;
   

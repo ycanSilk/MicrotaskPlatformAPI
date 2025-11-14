@@ -110,8 +110,12 @@ export function maskPhone(phone: string): string {
 }
 
 // 复制到剪贴板
+
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof navigator === 'undefined') {
+      return false;
+    }
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
       return true;

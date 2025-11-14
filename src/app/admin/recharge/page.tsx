@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import AlertModal from '../../../../components/ui/AlertModal';
+import AlertModal from '../../../components/ui/AlertModal';
 import { WalletOutlined, CreditCardOutlined, DollarOutlined, ShoppingOutlined, CoffeeOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 // 定义类型接口
@@ -101,21 +101,34 @@ export default function PublisherFinancePage() {
 
   // 处理充值 - 调用后端API
   const handleRecharge = async () => {
-    console.log('开始处理充值请求', { rechargeAmount });
+    console.log('开始处理充值请求', { rechargeAmount, userId, rechargeRemark });
+    
+    // 输入验证
+    if (!userId) {
+      console.log('用户ID不能为空');
+      showAlert('输入错误', '请输入用户ID', '⚠️');
+      return;
+    }
     
     if (!rechargeAmount || parseFloat(rechargeAmount) <= 0) {
       console.log('充值金额无效');
       showAlert('输入错误', '请输入有效的充值金额', '⚠️');
       return;
     }
+    
+    if (!rechargeRemark) {
+      console.log('充值备注不能为空');
+      showAlert('输入错误', '请输入充值备注', '⚠️');
+      return;
+    }
 
     try {
       const amount = parseFloat(rechargeAmount);
-      const targetUserId = params?.id as string || '';
+      const targetUserId = userId;
       const remark = rechargeRemark;
 
       // 调用后端充值API
-      const response = await fetch('/api/admin/wallet/recharge', {
+      const response = await fetch('/api/publish/walletmanagement/recharge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,6 +148,7 @@ export default function PublisherFinancePage() {
             balance: balance.balance + amount
           };
           setBalance(newBalance);
+          setUserId('');
           setRechargeAmount('');
           setRechargeRemark('');
         });
@@ -155,11 +169,17 @@ export default function PublisherFinancePage() {
 
   return (
     <div className="min-h-screen bg-gray-50  px-4">
-      {/* 用户ID信息显示 */}
+      {/* 用户ID输入 */}
       <div className="mx-4  mb-6">
         <div className="bg-white rounded-lg shadow-sm p-4">
           <h2 className="text-sm font-medium text-gray-700 mb-1">用户ID</h2>
-          <span className="text-lg font-bold text-gray-900">{userId || '未知'}</span>
+          <input
+            type="text"
+            placeholder="请输入用户ID"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
         </div>
       </div>
 
@@ -202,7 +222,7 @@ export default function PublisherFinancePage() {
               {/* 充值备注 */}
               <div className="mb-4">
                 <textarea
-                  placeholder="请输入充值备注（可选）"
+                  placeholder="请输入充值备注"
                   value={rechargeRemark}
                   onChange={(e) => setRechargeRemark(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-y min-h-[80px]"

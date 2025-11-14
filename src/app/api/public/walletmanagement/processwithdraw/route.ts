@@ -7,7 +7,7 @@ const config = require('../../apiconfig/config.json');
 // 主函数：处理POST请求
 export async function POST(request: Request) {
   // 定义操作类型
-  const operation = 'BIND_ALIPAY';
+  const operation = 'PROCESS_WITHDRAW';
   
   // 从Cookie获取token
   const cookieStore = await cookies();
@@ -34,13 +34,32 @@ export async function POST(request: Request) {
   }
   
   // 参数验证
-  if (!requestData.alipayAccount || !requestData.realName) {
-    console.warn(formatLog(operation, '缺少必要参数：支付宝账号或真实姓名'));
-    return NextResponse.json({ success: false, message: '支付宝账号和真实姓名不能为空' }, { status: 400 });
+  if (!('orderNo' in requestData) || !('success' in requestData) || !('remark' in requestData)) {
+    console.warn(formatLog(operation, '缺少必要参数：订单号、处理结果或备注'));
+    return NextResponse.json({ success: false, message: '订单号、处理结果和备注不能为空' }, { status: 400 });
   }
-  
-  // 简化API URL构建，直接拼接baseUrl和endpoint
-  const apiUrl = `${config.baseUrl}${config.endpoints.wallet.bindAlipay}`;
+
+  if (typeof requestData.orderNo !== 'string' || requestData.orderNo.trim() === '') {
+    console.warn(formatLog(operation, '订单号必须是有效的字符串'));
+    return NextResponse.json({ success: false, message: '订单号必须是有效的字符串' }, { status: 400 });
+  }
+
+  if (typeof requestData.success !== 'boolean') {
+    console.warn(formatLog(operation, '处理结果必须是布尔值(true/false)'));
+    return NextResponse.json({ success: false, message: '处理结果必须是布尔值(true/false)' }, { status: 400 });
+  }
+
+  if (typeof requestData.remark !== 'string' || requestData.remark.trim() === '') {
+    console.warn(formatLog(operation, '备注必须是有效的字符串'));
+    return NextResponse.json({ success: false, message: '备注必须是有效的字符串' }, { status: 400 });
+  }
+
+  // 构建API URL并设置查询参数
+  const apiUrl = new URL(`${config.baseUrl}/wallet/process-withdraw`);
+  // 添加查询参数
+  apiUrl.searchParams.append('orderNo', requestData.orderNo);
+  apiUrl.searchParams.append('success', requestData.success.toString());
+  apiUrl.searchParams.append('remark', requestData.remark);
   console.log(formatLog(operation, `准备调用API: ${apiUrl}`));
   
   // 直接调用外部API并返回原始响应
@@ -51,7 +70,7 @@ export async function POST(request: Request) {
       ...(config.headers || {}),
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify(requestData)
+
   });
     
     console.log(formatLog(operation, `API调用成功，状态码: ${response.status}`));
@@ -65,7 +84,7 @@ export async function POST(request: Request) {
     console.error(formatLog(operation, `API调用失败: ${(apiError as Error).message}`));
     return NextResponse.json({ 
       success: false, 
-      message: '绑定支付宝账号失败，请稍后重试' 
+      message: '提现处理失败。' 
     }, { status: 500 });
   }
 }
