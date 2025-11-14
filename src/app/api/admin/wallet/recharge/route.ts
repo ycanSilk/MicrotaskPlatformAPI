@@ -33,7 +33,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // 从Cookie获取admin_token
     let token = '';
     try {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const cookieToken = cookieStore.get('admin_token');
       token = cookieToken?.value || '';
     } catch (cookieError) {

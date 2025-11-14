@@ -84,12 +84,12 @@ export default function commenterProfilePage() {
       color: 'bg-blue-100',
       path: '/commenter/bank-cards'
     },
-    {
-      id: 'bankcards',
-      title: '支付设置',
-      icon: <BarChartOutlined className="text-xl" />,
-      color: 'bg-blue-100',
-      path: '/commenter/profile/paymentsettings'
+    { 
+      id: 'paymentsettings',
+      title: '支付设置',      
+      icon: <BarChartOutlined className="text-xl" />,      
+      color: 'bg-blue-100',      
+      path: '/commenter/profile/paymentsettings'    
     },
     {
       id: 'notifications',

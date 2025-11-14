@@ -5,9 +5,8 @@ import config from '../../../apiconfig/config.json';
 
 // 主函数：处理POST请求
 export async function POST(request: Request) {
-  console.log('API Route: /api/public/users/induser called');
   // 从Cookie获取token
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
   let token: string | undefined;
   
@@ -29,12 +28,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
   }
 
-  const apiUrl = `${config.baseUrl}/sys/role/${requestData.roleId}/enable`;
+
+  const apiUrl = `${config.baseUrl}/sys/role/${requestData.roleId}/menus`;
   
   // 直接调用外部API并返回原始响应
   try {
     const response = await fetch(apiUrl, {
-    method: 'POST',
+    method: 'GET',
     headers: {
       ...(config.headers || {}),
       'Authorization': `Bearer ${token}`
@@ -43,10 +43,9 @@ export async function POST(request: Request) {
     
   // 获取原始响应数据
     const responseData = await response.json();
-    console.log("这是平台管理员角色列表的后端API返回的日志输出:");
+    console.log("这是GET获取角色菜单权限菜单的后端API返回的日志输出:");
     console.log("请求url:", apiUrl);
     console.log("请求token:", token);
-    console.log("请求参数:", requestData.roleId);
     console.log("响应状态:", response.status);
     console.log("响应头:", response.headers);
     console.log("返回的数据:", responseData);

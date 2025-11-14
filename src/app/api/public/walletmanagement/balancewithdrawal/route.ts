@@ -23,16 +23,25 @@ export async function POST(request: Request) {
   let requestData;
   try {
     requestData = await request.json();
+    console.log('Received request data:', requestData);
   } catch (parseError) {
     return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
   }
   
+  // 参数验证
+  if (!requestData.amount || requestData.amount <= 0) {
+    return NextResponse.json({ success: false, message: '请输入有效的提现金额' }, { status: 400 });
+  }
+  
+  if (!requestData.securityPassword) {
+    return NextResponse.json({ success: false, message: '请输入支付密码' }, { status: 400 });
+  }
+  
   // 构建新的请求体，包含所需的参数
-  // 从前端传递的数据结构中正确获取参数
   const newRequestBody = {
-    amount: requestData.amount || 1,
-    securityPassword: requestData.paymentPassword || "", // 前端传递的是paymentPassword
-    remark: requestData.bankCard ? `${requestData.bankCard.bankName || requestData.bankCard.issuingBank || '未知银行'} ${requestData.bankCard.cardNumber || ''}` : ""
+    amount: requestData.amount,
+    securityPassword: requestData.securityPassword,
+    remark: requestData.remark || ""
   };
   
   // 简化API URL构建，直接拼接baseUrl和endpoint

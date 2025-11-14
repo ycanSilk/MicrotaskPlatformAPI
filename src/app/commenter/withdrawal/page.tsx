@@ -30,6 +30,7 @@ interface BankCard {
   id: string;
   bankName: string;
   cardNumber: string;
+  fullCardNumber: string;
   holderName: string;
   isDefault: boolean;
 }
@@ -95,6 +96,7 @@ const WithdrawalPage = () => {
           id: card.id,
           bankName: card.bank || card.issuingBank || '未知银行',
           cardNumber: formatBankCardNumber(card.cardNumber),
+          fullCardNumber: card.cardNumber,
           holderName: card.cardholderName,
           isDefault: card.isDefault
         }));
@@ -223,51 +225,76 @@ const WithdrawalPage = () => {
       setLoading(true);
       setPasswordError('');
 
-      // 获取当前选中的银行卡完整信息
-      const selectedBankCard = getSelectedBankCard();
-      
+      let selectedAccount;
+      let methodRemark;
+
+      // 根据选择的提现方式获取对应的账号信息
+      if (withdrawalMethod === 'bank') {
+        selectedAccount = getSelectedBankCard();
+        if (selectedAccount) {
+          methodRemark = `银行卡:${selectedAccount.fullCardNumber}`;
+        }
+      } else {
+        selectedAccount = alipayAccounts.find(acc => acc.id === selectedAlipayId);
+        if (selectedAccount) {
+          methodRemark = `支付宝:${selectedAccount.accountNumber}`;
+        }
+      }
+
+      // 验证选择的账号
+      if (!selectedAccount) {
+        setPasswordError('未选择有效的提现账户');
+        setLoading(false);
+        return;
+      }
+
+      // 验证金额
+      const numAmount = parseFloat(amount);
+      if (isNaN(numAmount) || numAmount <= 0) {
+        setPasswordError('请输入有效的提现金额');
+        setLoading(false);
+        return;
+      }
+
       console.log('Withdrawal request data:', {
         withdrawalMethod,
-        selectedBankCard: selectedBankCard?.id,
-        amount: amount,
+        selectedAccount: selectedAccount.id,
+        amount: numAmount,
+        remark: methodRemark,
         paymentPassword: '******' // 掩码显示密码
       });
+
+      // 调用后端API提交提现申请，处理两种提现方式
+      console.log('Calling withdrawal API...');
+      const response = await fetch('/api/public/walletmanagement/balancewithdrawal', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: numAmount,
+          securityPassword: paymentPassword,
+          remark: methodRemark
+        }),
+        credentials: 'include' as RequestCredentials
+      });
       
-      if (withdrawalMethod === 'bank' && selectedBankCard) {
-        // 调用后端API提交提现申请，并传递支付密码
-        console.log('Calling bank withdrawal API...');
-        const response = await fetch('/api/public/walletmanagement/balancewithdrawal', {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            amount: parseFloat(amount),
-            bankCardId: selectedBankCard.id,
-            bankCard: selectedBankCard,
-            withdrawalMethod: 'bank',
-            paymentPassword: paymentPassword  // 添加支付密码字段
-          }),
-          credentials: 'include' as RequestCredentials
-        });
-        
-        console.log('API response status:', response.status);
-        
-        // 检查响应状态
-        if (!response.ok) {
-          throw new Error(`请求失败，状态码: ${response.status}`);
-        }
-        
-        // 解析响应数据
-        const result = await response.json();
-        console.log('API response data:', result);
-        
-        // 处理API返回的错误
-        if (!result.success) {
-          const errorMsg = result.message || '提交提现申请失败';
-          throw new Error(errorMsg);
-        }
+      console.log('API response status:', response.status);
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`请求失败，状态码: ${response.status}`);
+      }
+      
+      // 解析响应数据
+      const result = await response.json();
+      console.log('API response data:', result);
+      
+      // 处理API返回的错误
+      if (!result.success) {
+        const errorMsg = result.message || '提交提现申请失败';
+        throw new Error(errorMsg);
       }
 
       // 关闭密码输入框

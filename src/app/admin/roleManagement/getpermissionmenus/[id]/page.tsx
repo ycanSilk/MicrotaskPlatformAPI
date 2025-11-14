@@ -56,7 +56,7 @@ const PermissionDetailsPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/role/systemrole/getpermissiondetails', {
+      const response = await fetch('/api/admin/role/systemrole/getpermissionmenus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roleId: id })

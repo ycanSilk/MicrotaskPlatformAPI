@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 interface WithdrawalDetail extends WithdrawalRecord {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
   fee?: number;
   balanceAfter?: number;
   remark?: string;
@@ -30,84 +30,32 @@ const WithdrawalDetailPage = () => {
   const [detail, setDetail] = useState<WithdrawalDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 模拟获取提现详情数据
+  // 从API获取提现详情数据
   useEffect(() => {
     const fetchWithdrawalDetail = async () => {
       setLoading(true);
       try {
-        // 模拟网络请求延迟
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // 调用真实API获取提现详情
+        const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transactionType: 'withdrawal',
+            page: 1,
+            size: 100
+          })
+        });
 
-        // 模拟提现详情数据，根据不同ID返回不同状态的数据
-        const mockDetails: Record<string, WithdrawalDetail> = {
-          '1': {
-            id: '1',
-            amount: 500,
-            status: 'pending',
-            method: 'bank',
-            target: '6222 **** **** 5678',
-            targetName: '工商银行',
-            applyTime: '2024-01-15 14:30:25',
-            orderId: 'WD202401150001',
-            balanceAfter: 798.00
-          },
-          '2': {
-            id: '2',
-            amount: 300,
-            status: 'processing',
-            method: 'alipay',
-            target: '138 **** 5678',
-            targetName: '张三',
-            applyTime: '2024-01-14 09:15:42',
-            processTime: '2024-01-14 09:16:00',
-            orderId: 'WD202401140002',
-            balanceAfter: 1098.00
-          },
-          '3': {
-            id: '3',
-            amount: 1000,
-            status: 'completed',
-            method: 'bank',
-            target: '6217 **** **** 1234',
-            targetName: '建设银行',
-            applyTime: '2024-01-10 16:45:18',
-            processTime: '2024-01-10 16:46:00',
-            completeTime: '2024-01-11 09:30:00',
-            fee: 2.5,
-            orderId: 'WD202401100003',
-            balanceAfter: 298.00
-          },
-          '4': {
-            id: '4',
-            amount: 200,
-            status: 'completed',
-            method: 'alipay',
-            target: '138 **** 5678',
-            targetName: '张三',
-            applyTime: '2024-01-05 11:20:33',
-            processTime: '2024-01-05 11:21:00',
-            completeTime: '2024-01-05 11:30:00',
-            fee: 0.5,
-            orderId: 'WD202401050004',
-            balanceAfter: 1298.00
-          },
-          '5': {
-            id: '5',
-            amount: 100,
-            status: 'failed',
-            method: 'bank',
-            target: '6222 **** **** 5678',
-            targetName: '工商银行',
-            applyTime: '2024-01-01 15:00:00',
-            processTime: '2024-01-01 15:01:00',
-            orderId: 'WD202401010005',
-            remark: '银行卡信息有误，请检查后重新申请',
-            balanceAfter: 1298.00
-          }
-        };
+        if (!response.ok) {
+          throw new Error('获取提现详情失败');
+        }
 
-        // 如果找不到对应ID的数据，默认使用ID为'3'的数据（已完成状态）
-        setDetail(mockDetails[id] || mockDetails['3']);
+        const data = await response.json();
+        // 在所有记录中查找当前ID对应的记录
+        const record = data.data.records.find((record: any) => record.id === id);
+        setDetail(record || null);
       } catch (error) {
         console.error('获取提现详情失败:', error);
       } finally {
@@ -121,14 +69,14 @@ const WithdrawalDetailPage = () => {
   // 获取状态文本和样式
   const getStatusInfo = (status: string) => {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return { text: '待处理', color: 'text-yellow-500' };
-      case 'processing':
-        return { text: '处理中', color: 'text-blue-500' };
-      case 'completed':
+      case 'SUCCESS':
         return { text: '已完成', color: 'text-green-500' };
-      case 'failed':
+      case 'FAILED':
         return { text: '已失败', color: 'text-red-500' };
+      case 'CANCELLED':
+        return { text: '已取消', color: 'text-gray-500' };
       default:
         return { text: '未知', color: 'text-gray-500' };
     }
@@ -147,12 +95,12 @@ const WithdrawalDetailPage = () => {
       {
         title: '银行处理中',
         time: detail.processTime,
-        completed: detail.status !== 'pending'
+        completed: detail.status !== 'PENDING'
       },
       {
         title: '到账',
         time: detail.completeTime,
-        completed: detail.status === 'completed'
+        completed: detail.status === 'SUCCESS'
       }
     ];
 
