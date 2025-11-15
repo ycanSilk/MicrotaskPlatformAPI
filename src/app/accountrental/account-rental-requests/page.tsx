@@ -5,35 +5,66 @@ import { useRouter } from 'next/navigation';
 import { SearchOutlined, CopyOutlined } from '@ant-design/icons';
 import { Button } from '@/components/ui/Button';
 
+// API响应数据类型定义
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+  success: boolean;
+  timestamp: number;
+}
+
+// 账号租赁列表响应数据类型
+interface RentalListResponse {
+  list: AccountRentalInfo[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
 // 账号租赁信息接口
-type AccountRequirements = {
+interface AccountRequirements {
   modifyNameAvatar: boolean;
   modifyBio: boolean;
   canComment: boolean;
   canPostVideo: boolean;
-};
+}
 
-type LoginMethod = {
+interface LoginMethod {
   scanCode: boolean;
   phoneVerification: boolean;
   noLogin: boolean;
-};
+}
 
-type AccountRentalInfo = {
+interface AccountRentalInfo {
   id: string;
-  rentalDescription: string;
-  price: number;
-  publishTime: string;
-  orderNumber: string;
-  orderStatus: string;
-  rentalDays: number;
-  images: string[];
+  userId: string;
+  platform: string;
+  accountType: string;
+  expectedPricePerDay: number;
+  budgetDeposit: number;
+  expectedLeaseDays: number;
+  description: string;
+  status: string;
+  createTime: string;
+  rentalDescription?: string;
+  price?: number;
+  publishTime?: string;
+  orderNumber?: string;
+  orderStatus?: string;
+  rentalDays?: number;
+  images?: string[];
   accountRequirements?: AccountRequirements;
   loginMethod?: LoginMethod;
-};
+}
 
 // 格式化发布时间
-const formatPublishTime = (timeString: string): string => {
+const formatPublishTime = (timeString: string | undefined): string => {
+  if (!timeString) {
+    return '未知时间';
+  }
+  
   const date = new Date(timeString);
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -50,139 +81,55 @@ const formatPublishTime = (timeString: string): string => {
   }
 };
 
-// 根据订单状态返回对应的样式类名
-const getOrderStatusClass = (status: string): string => {
-  switch (status) {
-    case '待确认':
-      return 'bg-yellow-100 text-yellow-800';
-    case '已确认':
-      return 'bg-green-100 text-green-800';
-    case '进行中':
-      return 'bg-blue-100 text-blue-800';
-    case '已完成':
-      return 'bg-purple-100 text-purple-800';
-    case '已取消':
-      return 'bg-gray-100 text-gray-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+
 
 const RentalRequestsPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [rentalRequests, setRentalRequests] = useState<AccountRentalInfo[]>([]);
-
+  const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
-  // 模拟获取求租信息数据
+  // 获取求租信息数据
   useEffect(() => {
     const fetchRentalRequests = async () => {
       try {
         setLoading(true);
-        // 模拟网络请求延迟
-        await new Promise(resolve => setTimeout(resolve, 600));
+        setError(null);
         
-        // 使用模拟数据，添加账号要求和登录方式支持情况
-        const mockData: AccountRentalInfo[] = [
-          {
-            id: 'req001',
-            rentalDescription: '求租抖音美食账号，用于餐厅推广活动',
-            price: 92.40,
-            publishTime: '2023-07-05T10:00:00',
-            orderNumber: 'REQ-20230705-001',
-            orderStatus: '待确认',
-            rentalDays: 2,
-            images: [
-              'images/0e92a4599d02a7.jpg'      
-            ],
-            accountRequirements: {
-              modifyNameAvatar: true,
-              modifyBio: true,
-              canComment: true,
-              canPostVideo: false
-            },
-            loginMethod: {
-              scanCode: true,
-              phoneVerification: false,
-              noLogin: false
-            }
+        // 调用后端API获取求租信息
+        const response = await fetch('/api/public/rental/requestrentalmarket', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          {
-            id: 'req002',
-            rentalDescription: '求租时尚穿搭账号，用于夏季新品推广',
-            price: 120.50,
-            publishTime: '2023-07-04T15:30:00',
-            orderNumber: 'REQ-20230704-002',
-            orderStatus: '已确认',
-            rentalDays: 3,
-            images: [
-              'images/0e92a4599d02a7.jpg'      
-            ],
-            accountRequirements: {
-              modifyNameAvatar: false,
-              modifyBio: true,
-              canComment: true,
-              canPostVideo: true
-            },
-            loginMethod: {
-              scanCode: false,
-              phoneVerification: true,
-              noLogin: false
-            }
-          },
-          {
-            id: 'req003',
-            rentalDescription: '求租科技类账号，用于数码产品评测',
-            price: 85.00,
-            publishTime: '2023-07-03T09:00:00',
-            orderNumber: 'REQ-20230703-003',
-            orderStatus: '进行中',
-            rentalDays: 5,
-            images: [
-              'images/0e92a4599d02a7.jpg'      
-            ],
-            accountRequirements: {
-              modifyNameAvatar: false,
-              modifyBio: false,
-              canComment: true,
-              canPostVideo: true
-            },
-            loginMethod: {
-              scanCode: false,
-              phoneVerification: false,
-              noLogin: true
-            }
-          },
-          {
-            id: 'req004',
-            rentalDescription: '求租生活方式账号，用于家居产品推广',
-            price: 75.00,
-            publishTime: '2023-07-02T14:00:00',
-            orderNumber: 'REQ-20230702-004',
-            orderStatus: '已完成',
-            rentalDays: 1,
-            images: [
-              'images/0e92a4599d02a7.jpg'      
-            ],
-            accountRequirements: {
-              modifyNameAvatar: true,
-              modifyBio: true,
-              canComment: false,
-              canPostVideo: false
-            },
-            loginMethod: {
-              scanCode: true,
-              phoneVerification: true,
-              noLogin: false
-            }
-          }
-        ];
+          body: JSON.stringify({ page: 1, size: 20 }), // 传递分页参数
+        });
         
-        setRentalRequests(mockData);
+        if (!response.ok) {
+          throw new Error('网络请求失败');
+        }
+        
+        const responseData: ApiResponse<RentalListResponse> = await response.json();
+        
+        if (!responseData.success) {
+          throw new Error(responseData.message || '获取求租信息失败');
+        }
+        
+        // 将API返回的list数据转换为页面所需格式
+        const formattedData = responseData.data.list.map(item => ({
+          ...item,
+          rentalDescription: item.description, // 保持与原代码的字段名一致
+          price: item.expectedPricePerDay, // 保持与原代码的字段名一致
+          publishTime: item.createTime, // 保持与原代码的字段名一致
+          rentalDays: item.expectedLeaseDays, // 保持与原代码的字段名一致
+        }));
+        
+        setRentalRequests(formattedData);
       } catch (error) {
         console.error('获取求租信息失败:', error);
+        setError(error instanceof Error ? error.message : '获取求租信息失败，请稍后重试');
       } finally {
         setLoading(false);
       }
@@ -193,8 +140,8 @@ const RentalRequestsPage = () => {
 
   // 过滤求租信息
   const filteredRequests = rentalRequests.filter(request => 
-    request.rentalDescription.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    request.rentalDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // 处理查看详情
@@ -237,6 +184,10 @@ const RentalRequestsPage = () => {
         {loading ? (
           <div className="flex justify-center items-center py-10">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+            <p className="text-red-500">{error}</p>
           </div>
         ) : filteredRequests.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-8 text-center">

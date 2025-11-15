@@ -23,19 +23,29 @@ export async function POST(request: Request) {
   let requestData;
   try {
     requestData = await request.json();
+    console.log('原始请求体:', requestData);
   } catch (parseError) {
     return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
   }
-  
+
+  // 验证必填参数
+  const requiredParams = ['platform', 'accountType', 'expectedPricePerDay', 'expectedLeaseDays'];
+  const missingParams = requiredParams.filter(param => !requestData[param]);
+  if (missingParams.length > 0) {
+    return NextResponse.json({ success: false, message: `缺少必填参数: ${missingParams.join(', ')}` }, { status: 400 });
+  }
+
   // 构建新的请求体，包含所需的参数
   const newRequestBody = {
-    platformv: requestData.platform || "",
-    accountType: requestData.accountType || "",
-    expectedPricePerDay: requestData.expectedPricePerDay || 1,
-    budgetDeposit: requestData.budgetDeposit || 1,
-    expectedLeaseDays: requestData.expectedLeaseDays || 1,
+    platform: requestData.platform,
+    accountType: requestData.accountType,
+    expectedPricePerDay: requestData.expectedPricePerDay,
+    budgetDeposit: requestData.budgetDeposit || (requestData.expectedPricePerDay * requestData.expectedLeaseDays), // 如果前端未提供押金，自动计算
+    expectedLeaseDays: requestData.expectedLeaseDays,
     description: requestData.description || "" 
   };
+
+  console.log('转换后的请求体:', newRequestBody);
   
   // 简化API URL构建，直接拼接baseUrl和endpoint
   const apiUrl = `${config.baseUrl}${config.endpoints.rental.publishrequestrental}`;
@@ -57,6 +67,7 @@ export async function POST(request: Request) {
     console.log('这是发布求租信息API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
+    console.log('请求体:', newRequestBody);
     console.log('返回的状态:', response.status);
     console.log('返回的原始数据', responseData);
     
@@ -65,7 +76,7 @@ export async function POST(request: Request) {
   } catch (apiError) {
     return NextResponse.json({ 
       success: false, 
-      message: '获取交易记录失败，请稍后重试' 
+      message: '发布求租信息失败，请稍后重试' 
     }, { status: 500 });
   }
 }

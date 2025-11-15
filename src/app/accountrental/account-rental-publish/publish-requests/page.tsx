@@ -3,6 +3,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+// 定义请求体接口
+export interface PublishRequestPayload {
+  platform: string;
+  accountType: string;
+  expectedPricePerDay: number;
+  budgetDeposit: number;
+  expectedLeaseDays: number;
+  description: string;
+}
+
+// 定义响应数据接口
+export interface PublishRequestResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
 const PublishForm = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -12,7 +29,8 @@ const PublishForm = () => {
     phoneNumber: '',
     email: '',
     qq: '',
-    platform: 'douyin',
+    platform: 'DOUYIN',
+    accountType: '个人账号', // 新增账号类型字段，默认值为个人账号
     accountRequirements: {
       canChangeName: false,
       canPostComments: false,
@@ -92,17 +110,91 @@ const PublishForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    // 这里可以添加表单验证和提交逻辑
-    console.log('Form submitted:', formData);
-    // 提交成功后显示成功模态框
-    setShowSuccessModal(true);
+    // 拼接账号要求和登录方式到description
+    let requirementsText = '';
+    let loginMethodsText = '';
+    
+    // 处理账号要求
+    const accountRequirements = formData.accountRequirements;
+    const accountRequirementItems = [
+      accountRequirements.canChangeName ? '修改抖音账号名称和头像' : '',
+      accountRequirements.canIntroduction ? '修改账号简介' : '',
+      accountRequirements.canPostComments ? '支持发布评论' : '',
+      accountRequirements.canPostVideos ? '支持发布视频' : ''
+    ].filter(item => item !== '');
+    
+    if (accountRequirementItems.length > 0) {
+      requirementsText = `账号要求：\n${accountRequirementItems.join('\n')}\n`;
+    }
+    
+    // 处理登录方式
+    const loginMethods = formData.loginMethods;
+    const loginMethodItems = [
+      loginMethods.qrCode ? '扫码登录' : '',
+      loginMethods.phoneSms ? '手机号+短信验证登录' : '',
+      loginMethods.noLogin ? '不登录账号，按照承租方要求完成租赁' : ''
+    ].filter(item => item !== '');
+    
+    if (loginMethodItems.length > 0) {
+    loginMethodsText = `登录方式：\n${loginMethodItems.join('\n')}`;
+  }
+  
+  // 处理联系方式：拼接QQ号、手机号、邮箱到description
+  let contactInfoText = '';
+  const contactItems = [];
+  // 按要求顺序：QQ号 → 手机号 → 邮箱
+  if (formData.qq) contactItems.push(`QQ号: ${formData.qq}`);
+  if (formData.phoneNumber) contactItems.push(`手机号: ${formData.phoneNumber}`);
+  if (formData.email) contactItems.push(`邮箱: ${formData.email}`);
+  
+  if (contactItems.length > 0) {
+    contactInfoText = `联系方式：\n${contactItems.join('\n')}\n`;
+  }
+  
+  // 合并拼接后的内容到description，严格遵循顺序：求助信息描述 → 联系方式 → 账号要求 → 登录方式
+  const finalDescription = `${formData.description ? `${formData.description}\n` : ''}${contactInfoText}${requirementsText}${loginMethodsText}`.trim();
+    
+    // 构造请求数据
+    const publishData: PublishRequestPayload = {
+      platform: formData.platform,
+      accountType: formData.accountType,
+      expectedPricePerDay: parseFloat(formData.price) || 0,
+      expectedLeaseDays: parseInt(formData.duration) || 1,
+      // 自动计算预算存款
+      budgetDeposit: (parseFloat(formData.price) || 0) * (parseInt(formData.duration) || 1),
+      description: finalDescription
+    };
+    
+    // 发送API请求
+    try {
+      const response = await fetch('/api/public/rental/publishrequestrental', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(publishData)
+      });
+      
+      const responseData: PublishRequestResponse = await response.json();
+      
+      if (responseData.success) {
+        // 提交成功后显示成功模态框
+        setShowSuccessModal(true);
+      } else {
+        // 处理错误响应
+        alert(responseData.message || '发布失败，请稍后重试');
+      }
+    } catch (error) {
+      console.error('API请求失败:', error);
+      alert('发布失败，请稍后重试');
+    }
   };
   
   const handleSuccessConfirm = () => {
@@ -130,7 +222,7 @@ const PublishForm = () => {
           {/* 描述输入 */}
           <div className="mb-1">
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              租赁信息描述 <span className="text-red-500">*</span>
+              求租信息描述 <span className="text-red-500">*</span>
             </label>
             <textarea
               id="description"
@@ -254,6 +346,23 @@ const PublishForm = () => {
               required
             >
               <option value="douyin">抖音平台</option>
+            </select>
+          </div>
+
+          {/* 账号类型选择 */}
+          <div className="mb-1">
+            <label htmlFor="accountType" className="block text-sm font-medium text-gray-700 mb-1">
+              账号类型 <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="accountType"
+              name="accountType"
+              value={formData.accountType}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+              required
+            >
+              <option value="个人账号">个人账号</option>
             </select>
           </div>
           
