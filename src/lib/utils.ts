@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import Cookies from 'js-cookie';
+import type { User } from '@/types';
 
 // Tailwind CSS类名合并工具
 export function cn(...inputs: ClassValue[]) {
@@ -94,6 +96,43 @@ export function getTaskStatusText(status: string): string {
 // 难度星级
 export function getDifficultyStars(difficulty: number): string {
   return '⭐'.repeat(Math.max(1, Math.min(3, difficulty)));
+}
+
+// 保存用户信息到Cookie
+export function saveUserInfoToCookie(userInfo: User): void {
+  try {
+    const cookieOptions = {
+      expires: 7, // 7天过期
+      secure: process.env.NODE_ENV === 'production', // 生产环境下使用HTTPS
+      sameSite: 'lax' as const, // 防止CSRF攻击
+      path: '/' 
+    };
+    Cookies.set('commenter_user_info', JSON.stringify(userInfo), cookieOptions);
+  } catch (error) {
+    console.error('保存用户信息到Cookie失败:', error);
+  }
+}
+
+// 从Cookie获取用户信息
+export function getUserInfoFromCookie(): User | null {
+  try {
+    const userInfoStr = Cookies.get('commenter_user_info');
+    if (userInfoStr) {
+      return JSON.parse(userInfoStr) as User;
+    }
+  } catch (error) {
+    console.error('从Cookie获取用户信息失败:', error);
+  }
+  return null;
+}
+
+// 从Cookie移除用户信息
+export function removeUserInfoFromCookie(): void {
+  try {
+    Cookies.remove('commenter_user_info', { path: '/' });
+  } catch (error) {
+    console.error('从Cookie移除用户信息失败:', error);
+  }
 }
 
 // 生成邀请码

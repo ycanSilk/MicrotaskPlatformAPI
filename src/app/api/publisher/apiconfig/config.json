@@ -17,7 +17,8 @@
     },
     "user": {
       "getuserinfo": "/biz/user/profile",
-      "changepwd": "/biz/user/change-password"
+      "changepwd": "/biz/user/change-password",
+      "getbizuserlist": "/biz/user/main-accounts/list"
     },
     "wallet": {
       "walletinfo": "/wallet/info",

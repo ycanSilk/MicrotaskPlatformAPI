@@ -17,7 +17,7 @@ export const AdminBottomNavigation: React.FC = () => {
     {
       icon: '👥',
       label: '管理中心',
-      path: '/admin/users'
+      path: '/admin/managementCenter'
     },
     {
       icon: '💰',

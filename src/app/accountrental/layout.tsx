@@ -20,37 +20,7 @@ const AccountRentalLayout = memo(({ children }: AccountRentalLayoutProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // 初始化默认登录用户，ID为3
-    const initializeDefaultUser = () => {
-      try {
-        console.log('初始化默认登录用户，ID为3');
-        
-        // 创建默认用户对象
-        const defaultUser: User = {
-          id: '3',
-          username: 'test_user',
-          role: 'commenter',
-          phone: '13800138000',
-          balance: 1000.00,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString()
-        };
-        
-        setUser(defaultUser);
-        console.log('默认用户已设置:', defaultUser);
-        
-      } catch (error) {
-        console.error('初始化默认用户时出错:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    initializeDefaultUser();
-  }, []);
 
   const handleMarketClick = () => {
     router.push('/accountrental/account-rental-market');

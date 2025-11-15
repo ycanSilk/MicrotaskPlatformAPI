@@ -95,38 +95,24 @@ export default function AdminControlPanel() {
       {/* 用户管理 */}
       <FeatureSection title="用户管理">
         <FeatureCard
-          title="评论员管理"
+          title="接单用户管理"
           icon="💬"
-          description="管理和审核评论员账号"
-          route="/admin/users/commenters"
-          count="856"
+          description="管理接单用户管理"
+          route="/admin/managementCenter/commenters"
         />
         <FeatureCard
-          title="派单员管理"
+          title="派单用户管理"
           icon="📋"
-          description="管理和审核派单员账号"
-          route="/admin/users/publishers"
+          description="管理派单用户"
+          route="/admin/managementCenter/publishers"
           count="234"
-        />
-        <FeatureCard
-          title="用户封禁管理"
-          icon="🚫"
-          description="管理已封禁用户和申诉处理"
-          route="/admin/users/banned"
-        />
-        <FeatureCard
-          title="在线用户监控"
-          icon="🟢"
-          description="实时监控在线用户活动"
-          route="/admin/users/online"
-          count="156"
         />
       </FeatureSection>
 
       {/* 财务管理 */}
       <FeatureSection title="财务管理">
         <FeatureCard
-          title="提现审核"
+          title="提现管理"
           icon="✅"
           description="处理用户提现申请"
           route="/admin/processwithdraw"
@@ -181,60 +167,14 @@ export default function AdminControlPanel() {
         />
       </FeatureSection>
 
-      {/* 报表管理 */}
-      <FeatureSection title="报表管理">
-        <FeatureCard
-          title="运营报表"
-          icon="📈"
-          description="查看平台运营数据分析报表"
-          route="/admin/reports/operation"
-        />
-        <FeatureCard
-          title="财务报表"
-          icon="💰"
-          description="查看平台财务数据分析报表"
-          route="/admin/reports/finance"
-        />
-        <FeatureCard
-          title="用户行为分析"
-          icon="👣"
-          description="分析用户行为和活跃情况"
-          route="/admin/reports/user-behavior"
-        />
-        <FeatureCard
-          title="任务完成率分析"
-          icon="✅"
-          description="分析任务完成率和质量"
-          route="/admin/reports/task-complete-rate"
-        />
-      </FeatureSection>
-
       {/* 系统管理 */}
       <FeatureSection title="系统管理">
-        <FeatureCard
-          title="系统设置"
-          icon="⚙️"
-          description="管理系统各项设置参数"
-          route="/admin/settings/system"
-        />
-        <FeatureCard
-          title="公告管理"
-          icon="📢"
-          description="发布和管理系统公告"
-          route="/admin/settings/announcements"
-        />
         <FeatureCard
           title="角色管理"
           icon="🔑"
           description="管理系统角色和权限"
           route="/admin/roleManagement"
-        />
-        <FeatureCard
-          title="日志管理"
-          icon="📋"
-          description="查看系统操作日志和审计记录"
-          route="/admin/settings/logs"
-        />
+        />      
       </FeatureSection>
     </div>
   );

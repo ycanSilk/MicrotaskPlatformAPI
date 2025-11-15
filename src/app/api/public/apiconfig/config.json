@@ -37,7 +37,13 @@
       "getleasestats": "/api/rental/stats"
     },
     "user": {
-      "getinbuserlist": "/ind/user/list"
+      "getinbuserlist": "/ind/user/list",
+      "getbizuserstats": "/biz/user/main-accounts/list"
+    },
+    "inviteagent": {
+      "agentstats": "/agent/stats",
+      "myagentteam": "/agent/team",
+      "myinvitationcode": "/agent/invitation-code"
     }
   },
   "mockMode": false,

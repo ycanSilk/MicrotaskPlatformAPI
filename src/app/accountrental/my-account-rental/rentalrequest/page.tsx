@@ -16,19 +16,37 @@ import type { TabsProps } from 'antd';
 // 求租信息状态类型
 type RentalRequestStatus = '待匹配' | '已匹配' | '已完成' | '已取消';
 
-// 求租信息接口
+// 顶级响应对象类型
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+  success: boolean;
+  timestamp: number;
+}
+
+// data对象类型
+interface RentalListResponse {
+  list: RentalRequest[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+// list数组中的元素对象类型
 interface RentalRequest {
   id: string;
-  requestNo: string;
-  userName: string;
   userId: string;
+  platform: string;
   accountType: string;
-  accountDescription: string;
-  requiredFollowers: string;
-  rentalDays: number;
-  budget: number;
-  createTime: string;
+  expectedPricePerDay: number;
+  budgetDeposit: number;
+  expectedLeaseDays: number;
+  description: string;
   status: RentalRequestStatus;
+  createTime: string;
+  requestNo: string;
   imageUrl?: string;
 }
 
@@ -47,78 +65,48 @@ const RentalRequestPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('全部');
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
-  const [requests, setRequests] = useState<RentalRequest[]>([
-    {
-      id: '1',
-      requestNo: 'REQ20240620001',
-      userName: '张三',
-      userId: 'USER123456',
-      accountType: '抖音',
-      accountDescription: '需要一个拥有10万+粉丝的美食类抖音账号，用于推广新餐厅开业活动，要求互动率高，评论区活跃',
-      requiredFollowers: '10万以上',
-      rentalDays: 5,
-      budget: 3000,
-      createTime: '2024-06-20 10:30:00',
-      status: '待匹配',
-      imageUrl: '/images/douyin-logo.png'
-    },
-    {
-      id: '2',
-      requestNo: 'REQ20240619002',
-      userName: '李四',
-      userId: 'USER234567',
-      accountType: '小红书',
-      accountDescription: '寻找美妆类小红书达人账号，推广新品口红，需要有详细的产品展示和真实使用效果分享',
-      requiredFollowers: '5万-10万',
-      rentalDays: 3,
-      budget: 1500,
-      createTime: '2024-06-19 15:20:00',
-      status: '已匹配',
-      imageUrl: '/images/xiaohongshu-logo.png'
-    },
-    {
-      id: '3',
-      requestNo: 'REQ20240618003',
-      userName: '王五',
-      userId: 'USER345678',
-      accountType: '微博',
-      accountDescription: '需要知名旅游博主账号发布目的地推荐，要求图文并茂，内容质量高',
-      requiredFollowers: '50万以上',
-      rentalDays: 2,
-      budget: 5000,
-      createTime: '2024-06-18 09:15:00',
-      status: '已完成',
-      imageUrl: '/images/0e92a4599d02a7.jpg'
-    },
-    {
-      id: '4',
-      requestNo: 'REQ20240617004',
-      userName: '赵六',
-      userId: 'USER456789',
-      accountType: '快手',
-      accountDescription: '寻找搞笑视频创作者账号，推广新游戏上线活动，要求内容幽默有趣',
-      requiredFollowers: '10万-50万',
-      rentalDays: 7,
-      budget: 2500,
-      createTime: '2024-06-17 14:30:00',
-      status: '已取消',
-      imageUrl: '/images/kuaishou-logo.png'
-    },
-    {
-      id: '5',
-      requestNo: 'REQ20240616005',
-      userName: '钱七',
-      userId: 'USER567890',
-      accountType: '抖音',
-      accountDescription: '需要游戏主播账号直播试玩新游戏，要求技术好，解说专业，能够展示游戏核心玩法',
-      requiredFollowers: '20万-50万',
-      rentalDays: 1,
-      budget: 4000,
-      createTime: '2024-06-16 11:20:00',
-      status: '待匹配',
-      imageUrl: '/images/douyin-logo.png'
-    }
-  ]);
+  const [requests, setRequests] = useState<RentalRequest[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 加载数据
+  React.useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch('/api/public/rental/myrequestrentalinfolist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            page: 1,
+            size: 20,
+            sortField: 'createTime',
+            sortOrder: 'desc',
+            status: activeTab === '全部' ? '' : activeTab,
+          }),
+        });
+        
+        const apiResponse: ApiResponse<RentalListResponse> = await response.json();
+        
+        if (apiResponse.success) {
+          setRequests(apiResponse.data.list);
+        } else {
+          setError(apiResponse.message || '获取求租信息失败');
+        }
+      } catch (err) {
+        setError('网络请求失败，请稍后重试');
+        console.error('API请求失败:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRequests();
+  }, [activeTab]);
 
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
@@ -130,7 +118,11 @@ const RentalRequestPage = () => {
   ];
 
   // 复制求租编号功能
-  const copyRequestNo = (requestNo: string) => {
+  const copyRequestNo = (requestNo?: string) => {
+    if (!requestNo) {
+      message.error('求租编号不存在');
+      return;
+    }
     navigator.clipboard.writeText(requestNo).then(() => {
       message.success('求租编号已复制');
     }).catch(() => {
@@ -228,13 +220,21 @@ const RentalRequestPage = () => {
 
       {/* 求租列表 */}
       <div className="">
-        {filteredRequests.map((request) => (
+        {loading ? (
+          <div className="bg-white p-8 text-center">
+            <p className="text-sm text-black">加载中...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white p-8 text-center">
+            <p className="text-sm text-red-500">{error}</p>
+          </div>
+        ) : filteredRequests.map((request) => (
             <Link href={`/accountrental/my-account-rental/rentalrequest/rentalrequest-detail/${request.id}`} key={request.id}>
               <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
                 {/* 求租头部信息 */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <span className="text-sm text-black">求租编号：{request.requestNo}</span>
+                    <span className="text-sm text-black">求租编号：{request.requestNo || 'N/A'}</span>
                     <Button 
                       type="text" 
                       onClick={(e) => {
@@ -276,9 +276,9 @@ const RentalRequestPage = () => {
 
                   {/* 右侧信息区域 */}
                   <div className="flex-1">
-                      <div className="text-sm text-gray-600 line-clamp-2">{request.accountDescription}</div>
-                      <div>求租时长：{request.rentalDays} 天</div>
-                      <div>预算：¥{request.budget}</div>
+                      <div className="text-sm text-gray-600 line-clamp-2">{request.description}</div>
+                      <div>求租时长：{request.expectedLeaseDays} 天</div>
+                      <div>预算：¥{request.budgetDeposit}</div>
                   </div>
                 </div>
                 
@@ -352,7 +352,7 @@ const RentalRequestPage = () => {
           ))}
 
         {/* 如果没有求租信息 */}
-        {filteredRequests.length === 0 && (
+        {!loading && !error && filteredRequests.length === 0 && (
           <div className="bg-white p-8 text-center">
             <p className="text-sm text-black">暂无求租信息</p>
           </div>

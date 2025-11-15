@@ -14,15 +14,11 @@
     },
     "user": {
       "refreshToken": "/ind/user/refresh",
-      "userlist": "/ind/user/list",
+      "getinduserlist": "/ind/user/list",
       "resetpwd": "/ind/user/reset-password",
       "forgotpwd": "/ind/user/forgot-password",
       "changepwd": "/ind/user/change-password",
       "userprofile": "/ind/user/profile"
-    },
-    "bankcards": {
-      "banklist": "/bank/list",
-      "bankdetail": "/bank/detail"
     },
     "task": {
       "accepttask": "/tasks/{taskId}/accept",

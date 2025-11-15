@@ -1,33 +1,109 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CommenterHallContentPage from '../hall-content/page';
 import TopNavigationBar from '../components/TopNavigationBar';
+import axios from 'axios';
+import { saveUserInfo } from '@/hooks/useUser';
+import type { User } from '@/types';
 
-// 直接从localStorage获取用户信息的辅助函数
-const getCurrentUser = () => {
-  if (typeof localStorage === 'undefined') return null;
-  try {
-    const authDataStr = localStorage.getItem('commenter_auth_data');
-    if (authDataStr) {
-      const authData = JSON.parse(authDataStr);
-      // 构建用户信息对象
-      return {
-        id: authData.userId || '',
-        username: authData.username || '',
-        role: 'commenter',
-        ...(authData.userInfo || {})
-      };
-    }
-  } catch (error) {
-    console.error('获取用户信息失败:', error);
-  }
-  return null;
-};
 
 export default function CommenterHallPage() {
-  // 获取当前登录用户信息
-  const currentUser = getCurrentUser();
-  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    // 页面加载时获取用户信息
+    const fetchUserInfo = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // 从localStorage获取token信息（仅用于日志显示）
+        const tokenStorage = localStorage.getItem('commenterAuthToken');
+        console.log('获取用户信息开始，本地存储的token信息：', tokenStorage ? JSON.parse(tokenStorage) : null);
+
+        // 从后端API获取用户信息
+        console.log('发起API请求获取用户信息：', '/api/commenter/user/getloginuserinfo');
+        const response = await axios.get<{
+          success: boolean;
+          data?: {
+            userInfo?: {
+              id: string;
+              username: string;
+              email?: string | null;
+              phone?: string;
+              createTime?: string;
+              avatar?: string;
+              invitationCode?: string;
+            };
+          };
+          message?: string;
+        }>('/api/commenter/user/getloginuserinfo');
+        const data = response.data;
+        console.log('API响应数据：', response);
+
+        if (data.success && data.data?.userInfo) {
+          // 构建符合User类型的用户信息对象
+          const userInfo: User = {
+            id: data.data.userInfo.id,
+            username: data.data.userInfo.username,
+            email: data.data.userInfo.email || undefined,
+            phone: data.data.userInfo.phone || undefined,
+            role: 'commenter',
+            status: 'active',
+            createdAt: data.data.userInfo.createTime || new Date().toISOString(),
+            balance: 0, // 假设后端返回的用户信息中包含balance，如果没有则设为默认值
+            avatar: data.data.userInfo.avatar || undefined,
+            invitationCode: data.data.userInfo.invitationCode || undefined
+          };
+
+          // 保存到localStorage
+          saveUserInfo(userInfo);
+          setCurrentUser(userInfo);
+          console.log('用户信息保存到localStorage:', userInfo);
+        } else {
+          console.error('API请求失败:', data.message || '获取用户信息失败');
+          throw new Error(data.message || '获取用户信息失败');
+        }
+      } catch (err) {
+        console.error('获取用户信息异常:', err);
+        // 如果API请求失败，尝试从localStorage获取作为后备
+        try {
+          const authDataStr = localStorage.getItem('commenter_auth_data');
+          if (authDataStr) {
+            const authData = JSON.parse(authDataStr);
+            const userInfo: User = {
+              id: authData.userId || '',
+              username: authData.username || '',
+              role: 'commenter',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              balance: 0
+            };
+            setCurrentUser(userInfo);
+          }
+        } catch (localStorageErr) {
+          console.error('从localStorage获取用户信息失败:', localStorageErr);
+          setError('获取用户信息失败，请稍后重试');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  // 如果加载失败且没有后备数据，显示错误信息
+  if (error && !currentUser) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex justify-center items-center">
+        <div className="text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* 使用固定的顶部导航栏 */}

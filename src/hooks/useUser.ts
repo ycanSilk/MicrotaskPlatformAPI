@@ -73,6 +73,27 @@ const isAnyUserLoggedIn = (): boolean => {
   }
 };
 
+// 保存用户信息到localStorage
+export const saveUserInfo = (user: User): void => {
+  try {
+    if (typeof window === 'undefined') return;
+
+    if (user.role === 'commenter') {
+      // 保存commenter用户信息
+      localStorage.setItem('commenter_auth_data', JSON.stringify({
+        userId: user.id,
+        username: user.username,
+        userInfo: user
+      }));
+    } else if (user.role === 'publisher') {
+      // 保存publisher用户信息
+      localStorage.setItem('publisher_user_info', JSON.stringify(user));
+    }
+  } catch (error) {
+    console.error('保存用户信息失败:', error);
+  }
+};
+
 // 通用登录函数
 const commonLogin = async (credentials: any) => {
   try {

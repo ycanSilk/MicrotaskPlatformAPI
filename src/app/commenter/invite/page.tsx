@@ -1,128 +1,188 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserOutlined, CodeOutlined, MessageOutlined, MobileOutlined, LaptopOutlined, ShareAltOutlined, BulbOutlined, RightOutlined, UserAddOutlined, DollarOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { User } from '@/types';
 
 // 邀请页面组件
 const InvitePage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'invite' | 'invited' | 'commission'>('invite');
   const [copied, setCopied] = useState<boolean>(false);
+  // 定义与后端API一致的数据接口类型
+  interface ApiResponse<T = any> {
+    code: number;
+    message: string;
+    success: boolean;
+    timestamp: number;
+    data: T;
+  }
 
-  // 模拟用户信息
-  const userInfo = {
-    id: 'user-123',
-    name: '张三',
-    avatar: <UserOutlined />,
-  };
+  // 邀请码API响应数据类型
+  interface InvitationCodeData {
+    inviteCode: string;
+    userId: string;
+  }
 
-  // 生成模拟邀请记录数据
-  const generateMockInviteRecords = () => {
-    return Array.from({ length: 5 }, (_, i) => ({
-      id: `invite-${i + 1}`,
-      inviteeName: `用户${i + 1}`,
-      inviteeAvatar: [
-        <UserOutlined />, 
-        <UserOutlined />, 
-        <UserOutlined />, 
-        <CodeOutlined />, 
-        <CodeOutlined />
-      ][i % 5],
-      inviteDate: new Date(Date.now() - (i + 1) * 86400000).toISOString(),
-      joinDate: i < 3 ? new Date(Date.now() - i * 86400000 - 43200000).toISOString() : null,
-      status: i < 2 ? 'active' : i < 3 ? 'joined' : 'pending',
-      completedTasks: i < 2 ? Math.floor(Math.random() * 10) + 1 : 0,
-      totalEarnings: i < 2 ? Math.random() * 500 + 100 : 0,
-      myCommission: i < 2 ? Math.random() * 100 + 20 : 0,
-    }));
-  };
+  // 统计数据API响应数据类型
+  interface AgentStatsData {
+    teamMemberCount: number;
+    totalReward: number;
+    pendingReward: number;
+    todayReward: number;
+    monthReward: number;
+    totalInvited: number;
+    activeUsers: number;
+  }
 
-  // 生成模拟佣金记录数据
-  const generateMockCommissionRecords = () => {
-    const records = [];
-    const types = ['task', 'register', 'team'];
-    const names = ['任务一', '任务二', '任务三', '任务四', '任务五'];
-    const members = ['用户1', '用户2', '用户3', '用户4', '用户5'];
-    
-    for (let i = 0; i < 12; i++) {
-      const type = types[Math.floor(Math.random() * types.length)];
-      const taskName = type === 'task' ? names[Math.floor(Math.random() * names.length)] : '';
-      const commissionRate = type === 'task' ? 0.1 : type === 'register' ? 1 : 0.05;
-      const commission = type === 'task' ? Math.random() * 50 + 10 : type === 'register' ? 20 : Math.random() * 100 + 10;
-      const taskEarning = type === 'task' ? commission / commissionRate : 0;
-      
-      records.push({
-        id: `comm-${i + 1}`,
-        date: new Date(Date.now() - i * 86400000).toISOString(),
-        type,
-        memberName: members[Math.floor(Math.random() * members.length)],
-        taskName,
-        commission,
-        commissionRate,
-        taskEarning,
-        description: type === 'team' ? '来自团队成员的业绩分成' : '',
-      });
-    }
-    
-    return records;
-  };
+  // 邀请记录数据类型
+  interface InviteRecord {
+    id: string;
+    inviteeName: string;
+    inviteeAvatar: React.ReactNode;
+    inviteDate: string;
+    joinDate: string | null;
+    status: 'active' | 'joined' | 'pending';
+    completedTasks: number;
+    totalEarnings: number;
+    myCommission: number;
+  }
 
-  // 直接使用模拟数据
-  const mockInviteRecords = generateMockInviteRecords();
-  const mockCommissionRecords = generateMockCommissionRecords();
+  // 佣金记录数据类型
+  interface CommissionRecord {
+    id: string;
+    date: string;
+    type: 'task' | 'register' | 'team';
+    memberName: string;
+    taskName: string;
+    commission: number;
+    commissionRate: number;
+    taskEarning: number;
+    description: string;
+  }
 
-  // 计算邀请统计数据
-  const inviteStats = {
-    totalInvited: mockInviteRecords.length,
-    activeUsers: mockInviteRecords.filter(record => record.status === 'active').length,
-    totalCommission: mockInviteRecords.reduce((sum, record) => sum + record.myCommission, 0),
-  };
+  // 状态管理
+  const [invitationCodeData, setInvitationCodeData] = useState<InvitationCodeData | null>(null);
+  const [agentStatsData, setAgentStatsData] = useState<AgentStatsData | null>(null);
+  const [inviteRecords, setInviteRecords] = useState<InviteRecord[]>([]);
+  const [commissionRecords, setCommissionRecords] = useState<CommissionRecord[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 计算佣金统计数据
-  const totalCommission = mockCommissionRecords.reduce((sum, record) => record.type !== 'team' ? sum + record.commission : sum, 0);
-  const monthCommission = mockCommissionRecords
-    .filter(record => new Date(record.date).getMonth() === new Date().getMonth() && record.type !== 'team')
-    .reduce((sum, record) => sum + record.commission, 0);
-  const yesterdayCommission = mockCommissionRecords
-    .filter(record => {
-      const recordDate = new Date(record.date);
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      return recordDate.toDateString() === yesterday.toDateString() && record.type !== 'team';
-    })
-    .reduce((sum, record) => sum + record.commission, 0);
-  const todayCommission = mockCommissionRecords
-    .filter(record => {
-      const recordDate = new Date(record.date);
-      const today = new Date();
-      return recordDate.toDateString() === today.toDateString() && record.type !== 'team';
-    })
-    .reduce((sum, record) => sum + record.commission, 0);
+  // 定义localStorage中存储的评论者认证数据类型
+  interface CommenterAuthData {
+    userId: string;
+    username: string;
+    userInfo: User;
+    inviteCode?: string; // 邀请码字段
+  }
 
-  const taskCommission = mockCommissionRecords
-    .filter(record => record.type === 'task')
-    .reduce((sum, record) => sum + record.commission, 0);
-  const registerCommission = mockCommissionRecords
-    .filter(record => record.type === 'register')
-    .reduce((sum, record) => sum + record.commission, 0);
+  // 实现API请求逻辑，仅请求agentstats API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      let userId: string | undefined;
+      try {
+          const commenterAuthDataStr = localStorage.getItem('commenter_auth_data');
+          if (commenterAuthDataStr) {
+            const commenterAuthData = JSON.parse(commenterAuthDataStr) as CommenterAuthData;
+            const userInfo = commenterAuthData.userInfo;
+            const storedInviteCode = userInfo.invitationCode;
+            userId = userInfo.id;
+            console.log('从localStorage获取到的user ID:', userId);
+            console.log('从localStorage获取到的invitation_code:', storedInviteCode);
+            // 从localStorage获取邀请码
+            
+            if (storedInviteCode && typeof storedInviteCode === 'string') {
+              // 设置邀请码数据
+              setInvitationCodeData({
+                inviteCode: storedInviteCode,
+                userId: userId || commenterAuthData.userId || ''
+              });
+              console.log('从localStorage获取到的邀请码:', storedInviteCode);
+            }
+          }
+          const agentStatsResponse = await fetch('/api/public/inviteagent/agentstats', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-User-Id': userId || ''
+            },
+          });
 
-  const commissionStats = {
-    total: totalCommission,
-    month: monthCommission,
-    yesterday: yesterdayCommission,
-    today: todayCommission,
-    breakdown: { task: taskCommission, register: registerCommission },
-  };
+          if (!agentStatsResponse.ok) {
+            console.log('请求失败')
+            console.log('代理人统计API响应状态:', agentStatsResponse.status);
+          }
 
-  // 复制邀请链接
+          if (agentStatsResponse.ok) {
+            console.log('请求成功')
+            console.log('代理人统计API响应状态:', agentStatsResponse.status);
+          }
+          const agentStatsResponseData: ApiResponse<AgentStatsData> = await agentStatsResponse.json();
+          console.log('请求url:', '/api/public/inviteagent/agentstats');
+          console.log('从代理人统计API获取到的统计数据:', agentStatsResponseData.data);
+          setAgentStatsData(agentStatsResponseData.data);
+
+
+
+
+
+          const agentteamResponse = await fetch('/api/public/inviteagent/myagentteam', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-User-Id': userId || ''
+            },
+          });
+        if (!agentteamResponse.ok) {
+            console.log('请求失败')
+            console.log('代理人团队统计API响应状态:', agentteamResponse.status);
+          }
+
+          if (agentteamResponse.ok) {
+            console.log('请求成功')
+            console.log('代理人团队统计API响应状态:', agentteamResponse.status);
+          }
+          const agentteamResponseData: any = await agentteamResponse.json();
+          console.log('请求url:', '/api/public/inviteagent/myagentteam');
+          console.log('从代理人团队统计API获取到的统计数据:', agentteamResponseData.data);
+          
+          // 处理团队成员列表数据
+          const teamResponse = agentteamResponseData.data;
+          if (teamResponse?.list) {
+            const formattedInviteRecords: InviteRecord[] = teamResponse.list.map((item: any) => ({
+              id: item.id,
+              inviteeName: item.username,
+              inviteeAvatar: <UserOutlined />,
+              inviteDate: item.createTime,
+              joinDate: item.registerTime,
+              status: 'active',
+              completedTasks: 0, // 假设API当前未返回该字段，暂时设置为0
+              totalEarnings: 0, // 假设API当前未返回该字段，暂时设置为0
+              myCommission: 0, // 假设API当前未返回该字段，暂时设置为0
+            }));
+            setInviteRecords(formattedInviteRecords);
+          }
+
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '获取代理人统计数据失败';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // 复制邀请码
   const copyInviteLink = async () => {
     try {
-      const inviteLink = `https://example.com/invite?ref=${userInfo?.id || 'default'}`;
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      
-      // 3秒后重置复制状态
+      const inviteCode = invitationCodeData?.inviteCode || '';
+      await navigator.clipboard.writeText(inviteCode);
+      setCopied(true); 
       setTimeout(() => {
         setCopied(false);
       }, 3000);
@@ -131,32 +191,31 @@ const InvitePage = () => {
       alert('复制失败，请手动复制');
     }
   };
-
-  // 分享到社交媒体
-  const shareToSocialMedia = (platform: string) => {
-    const inviteLink = `https://example.com/invite?ref=${userInfo?.id || 'default'}`;
-    const shareText = `我正在使用微任务平台，邀请你一起加入！完成任务赚取佣金，还有邀请奖励哦！${inviteLink}`;
-    
-    switch (platform) {
-      case 'wechat':
-        alert('已复制邀请链接，请在微信中粘贴分享');
-        navigator.clipboard.writeText(shareText);
-        break;
-      case 'weibo':
-        // 实际项目中应该使用微博分享API
-        alert('跳转至微博分享页面');
-        break;
-      case 'qq':
-        // 实际项目中应该使用QQ分享API
-        alert('跳转至QQ分享页面');
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 加载状态 */}
+      {loading && (
+        <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <div className="text-gray-700">加载中...</div>
+          </div>
+        </div>
+      )}
+
+      {/* 错误提示 */}
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+          <strong className="font-bold">错误：</strong>
+          <span>{error}</span>
+          <button 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3" 
+            onClick={() => setError(null)}
+          >
+            <span className="text-red-500 hover:text-red-700">×</span>
+          </button>
+        </div>
+      )}
 
       {/* 标签页切换 - 修改为按钮样式 */}
       <div className="bg-white px-2 py-4 mb-2">
@@ -190,15 +249,15 @@ const InvitePage = () => {
             <h3 className="font-bold text-gray-800 mb-4">我的邀请数据</h3>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-blue-50 rounded-lg p-2">
-                <div className="text-sm font-bold text-blue-600">{inviteStats.totalInvited}</div>
+                <div className="text-sm font-bold text-blue-600">{agentStatsData?.totalInvited || 0}</div>
                 <div className="text-sm ">累计邀请</div>
               </div>
               <div className="bg-green-50 rounded-lg p-2">
-                <div className="text-sm font-bold text-green-600">{inviteStats.activeUsers}</div>
+                <div className="text-sm font-bold text-green-600">{agentStatsData?.activeUsers || 0}</div>
                 <div className="text-sm ">活跃用户</div>
               </div>
               <div className="bg-orange-50 rounded-lg p-2">
-                <div className="text-sm font-bold text-orange-600">¥{inviteStats.totalCommission.toFixed(2)}</div>
+                <div className="text-sm font-bold text-orange-600">¥{(agentStatsData?.totalReward || 0).toFixed(2)}</div>
                 <div className="text-sm ">累计佣金</div>
               </div>
             </div>
@@ -209,7 +268,7 @@ const InvitePage = () => {
             <h3 className="font-bold text-gray-800 mb-3">我的专属邀请码</h3>
             <div className="w-full items-center mb-4">
               <div className="bg-blue-100 text-center py-3 px-4 rounded-lg mb-4">
-                <span className="text-2xl font-bold text-blue-600">{userInfo?.id.slice(-8).toUpperCase() || 'XXXXXXXXX'}</span>
+                <span className="text-2xl font-bold text-blue-600">{invitationCodeData?.inviteCode || 'XXXXXXXX'}</span>
               </div>
             </div>
             <div className="w-full items-center mb-4">
@@ -221,60 +280,8 @@ const InvitePage = () => {
               </button>
             </div>
             
-            {/* 邀请链接 */}
-            <div className="mt-4">
-              <h3 className="font-bold text-gray-800 mb-3">邀请链接</h3>
-              <div className=" items-center justify-between">
-                <div className="text-sm bg-blue-100 px-4 py-4 text-center rounded-lg flex-1 truncate text-blue-600">
-                  https://example.com/invite?ref={userInfo?.id || 'default'}
-                </div>
-                <div className='my-2  items-center'>
-                   <button 
-                      onClick={copyInviteLink}
-                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors w-full"
-                      >
-                      {copied ? <CheckCircleOutlined /> : '复制邀请链接'}
-                    </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* 快速分享 */}
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-3">快速分享</h3>
-            <div className="grid grid-cols-4 gap-4">
-              <button 
-                onClick={() => shareToSocialMedia('wechat')}
-                className="flex flex-col items-center p-3 bg-blue-500 rounded hover:bg-blue-700 transition-colors"
-              >
-                <MessageOutlined className="text-2xl mb-1 text-white" />
-                <div className="text-xs text-white">微信</div>
-              </button>
-              <button 
-                onClick={() => shareToSocialMedia('weibo')}
-                className="flex flex-col items-center p-3 bg-blue-500 rounded hover:bg-blue-700 transition-colors"
-              >
-                <MobileOutlined className="text-2xl mb-1 text-white" />
-                <div className="text-xs text-white">微博</div>
-              </button>
-              <button 
-                onClick={() => shareToSocialMedia('qq')}
-                className="flex flex-col items-center p-3 bg-blue-500 rounded hover:bg-blue-700 transition-colors"
-              >
-                <LaptopOutlined className="text-2xl mb-1 text-white" />
-                <div className="text-xs text-white">QQ</div>
-              </button>
-              <button 
-                onClick={() => shareToSocialMedia('other')}
-                className="flex flex-col items-center p-3 bg-blue-500 rounded hover:bg-blue-700 transition-colors"
-              >
-                <ShareAltOutlined className="text-2xl mb-1 text-white" />
-                <div className="text-xs text-white">更多</div>
-              </button>
-            </div>
           </div>
-
           {/* 邀请奖励规则 */}
           <div className="bg-white rounded-lg shadow-sm p-4">
             <h3 className="font-bold mb-3">邀请奖励规则</h3>
@@ -293,18 +300,15 @@ const InvitePage = () => {
       {/* 已邀请好友标签页 */}
       {activeTab === 'invited' && (
         <div className="mx-4 space-y-6">
-      
-
-          {/* 邀请记录列表 */}
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-4 border-b">
               <div className="text-center">
-                <h3 className="font-bold text-gray-800">已邀请好友 ({mockInviteRecords.filter(record => record.status !== 'pending').length}人)</h3>
+                <h3 className="font-bold text-gray-800">已邀请好友 ({inviteRecords.filter((record: InviteRecord) => record.status !== 'pending').length}人)</h3>
               </div>
             </div>
             <div className="divide-y">
-              {mockInviteRecords.filter(record => record.status !== 'pending').length > 0 ? (
-                mockInviteRecords.filter(record => record.status !== 'pending').map((invite) => (
+              {inviteRecords.filter((record: InviteRecord) => record.status !== 'pending').length > 0 ? (
+                inviteRecords.filter((record: InviteRecord) => record.status !== 'pending').map((invite: InviteRecord) => (
                   <div key={invite.id} className="p-4">
                     {/* 被邀请人基本信息 */}
                     <div className="flex items-center justify-between mb-3">
@@ -315,8 +319,7 @@ const InvitePage = () => {
                         <div>
                           <div className="font-medium text-gray-800">{invite.inviteeName || '未知用户'}</div>
                           <div className="text-xs ">
-                            邀请时间: {new Date(invite.inviteDate).toLocaleDateString()}
-                         
+                            邀请时间: {new Date(invite.inviteDate).toLocaleDateString()}                         
                           </div>
                         </div>
                       </div>
@@ -377,73 +380,40 @@ const InvitePage = () => {
           {/* 佣金统计 */}
           <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
             <h3 className="font-bold text-gray-800 mb-4">佣金统计</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-blue-50 rounded">
-                <div className="text-lg font-bold text-blue-600">¥{commissionStats.total.toFixed(2)}</div>
-                <div className="text-xs ">累计佣金</div>
-              </div>
-              <div className="text-center p-3 bg-green-50 rounded">
-                <div className="text-lg font-bold text-green-600">¥{commissionStats.month.toFixed(2)}</div>
-                <div className="text-xs ">本月佣金</div>
-              </div>
-              <div className="text-center p-3 bg-orange-50 rounded">
-                <div className="text-lg font-bold text-orange-600">¥{commissionStats.yesterday.toFixed(2)}</div>
-                <div className="text-xs ">昨日佣金</div>
-              </div>
-              <div className="text-center p-3 bg-purple-50 rounded">
-                <div className="text-lg font-bold text-purple-600">¥{commissionStats.today.toFixed(2)}</div>
-                <div className="text-xs ">今日佣金</div>
-              </div>
-            </div>
+            <div className="grid grid-cols-4 gap-3">
+          <div className="text-center p-3 bg-gray-50 rounded">
+            <div className="text-lg font-bold text-gray-600">¥{(agentStatsData?.totalReward || 0).toFixed(2)}</div>
+            <div className="text-xs ">累计佣金</div>
+          </div>
+          <div className="text-center p-3 bg-blue-50 rounded">
+            <div className="text-lg font-bold text-blue-600">¥{(agentStatsData?.monthReward || 0).toFixed(2)}</div>
+            <div className="text-xs ">本月佣金</div>
+          </div>
+          <div className="text-center p-3 bg-green-50 rounded">
+            <div className="text-lg font-bold text-green-600">¥{(agentStatsData?.pendingReward || 0).toFixed(2)}</div>
+            <div className="text-xs ">昨日佣金</div>
+          </div>
+          <div className="text-center p-3 bg-purple-50 rounded">
+            <div className="text-lg font-bold text-purple-600">¥{(agentStatsData?.todayReward || 0).toFixed(2)}</div>
+            <div className="text-xs ">今日佣金</div>
+          </div>
+        </div>
           </div>
           
-          {/* 佣金来源分析 */}
-          {commissionStats.total > 0 && (
-            <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
-              <h3 className="font-bold text-gray-800 mb-4">佣金来源分析</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span className="text-sm ">任务佣金</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-gray-800">¥{commissionStats.breakdown.task.toFixed(2)}</div>
-                    <div className="text-xs ">{((commissionStats.breakdown.task / commissionStats.total) * 100).toFixed(1)}%</div>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span className="text-sm ">注册奖励</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-bold text-gray-800">¥{commissionStats.breakdown.register.toFixed(2)}</div>
-                    <div className="text-xs ">{((commissionStats.breakdown.register / commissionStats.total) * 100).toFixed(1)}%</div>
-                  </div>
-                </div>
-                
-                {/* 总计金额 */}
-                <div className="mt-6 text-center">
-                  <div className="text-lg font-bold text-gray-800">¥{commissionStats.total.toFixed(2)}</div>
-                  <div className="text-xs ">总计佣金</div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* 佣金来源分析 - 暂时隐藏，后续可以根据API返回数据添加 */}
 
           {/* 佣金明细 */}
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-4 border-b">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-gray-800">佣金明细</h3>
-                <span className="text-xs ">最近{Math.min(mockCommissionRecords.length, 10)}条记录</span>
+                <span className="text-xs ">最近{Math.min(commissionRecords.length, 10)}条记录</span>
               </div>
             </div>
             <div className="divide-y overflow-y-auto">
               {/* 限制只显示前10条记录 */}
-              {mockCommissionRecords.filter(record => record.type !== 'team').length > 0 ? (
-                mockCommissionRecords.filter(record => record.type !== 'team').slice(0, 10).map((record) => (
+              {commissionRecords.filter(record => record.type !== 'team').length > 0 ? (
+                commissionRecords.filter(record => record.type !== 'team').slice(0, 10).map((record) => (
                   <div key={record.id} className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
@@ -493,7 +463,7 @@ const InvitePage = () => {
           </div>
           
           {/* 查看更多 */}
-          {mockCommissionRecords.filter(record => record.type !== 'team').length > 10 && (
+          {commissionRecords.filter(record => record.type !== 'team').length > 10 && (
             <div className="p-4 border-t bg-gray-50">
               <button className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors">
                 查看全部佣金记录
