@@ -56,224 +56,147 @@ export default function PublisherFinancePage() {
     }
   };
 
-  // 模拟用户信息
-  const getMockUserInfo = () => {
-    return {
-      userId: 'pub003',
-      username: '测试发布者',
-      exp: Date.now() + 86400000 // 模拟token有效期
-    };
-  };
 
-  // 模拟登录状态检查
-  useEffect(() => {
-    const userInfo = getMockUserInfo();
-    console.log(`当前模拟用户: ${userInfo.username} (ID: ${userInfo.userId})`);
-  }, []);
 
-  // 获取财务数据 - 使用静态数据
-  const fetchFinanceData = () => {
+  // 获取财务数据 - 调用API
+  const fetchFinanceData = async () => {
     try {
       setLoading(true);
-      console.log('开始获取财务数据（静态数据）');
+      console.log('开始获取财务数据（调用API）');
       
-      // 设置模拟余额数据
-      const newBalance: BalanceData = {
-        balance: 1298 // 模拟余额数据
+      // 调用交易记录API
+      const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          page: 1,
+          pageSize: 10
+        }),
+      });
+      
+      const result = await response.json();
+      
+      console.log('交易记录API响应:', result);
+      if (result.success) {
+         // 兼容不同API响应结构，从data.list、data或list中获取交易记录数组，并确保是数组类型
+         const rawTransactions = result.data?.list || result.data || result.list || [];
+         const allTransactions = Array.isArray(rawTransactions) ? rawTransactions : [];
+         // 筛选出transactionType或type为RECHARGE的记录
+         const rechargeTransactions = allTransactions.filter((record: any) => record.transactionType === 'RECHARGE' || record.type === 'RECHARGE');
+          
+         // 本地存储
+         localStorage.setItem('transactionRecords', JSON.stringify(allTransactions));
+          
+         // 转换API字段为UI使用的字段
+         const convertedTransactions = rechargeTransactions.map((record: any) => ({
+           id: record.orderNo || `txn${Date.now()}`,
+           userId: record.userId || '',
+           type: record.transactionType || record.type || 'RECHARGE',
+           expenseType: record.businessType || record.expenseType,
+           amount: parseFloat(record.amount) || 0,
+           time: record.createTime || record.time || new Date().toISOString(),
+           method: record.channel || record.method || 'ALIPAY',
+           balanceAfter: parseFloat(record.balanceAfter) || 0,
+           status: record.status || 'RECHARGE'
+         }));
+          
+         // 按月份分组交易记录
+         const monthlyData: Record<string, any[]> = {};
+         convertedTransactions.forEach((transaction: any) => {
+           if (transaction.time) {
+             const date = new Date(transaction.time);
+             const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+             if (!monthlyData[monthKey]) {
+               monthlyData[monthKey] = [];
+             }
+             monthlyData[monthKey].push(transaction);
+           }
+         });
+          
+         // 按月份降序排列
+         const sortedMonthlyData: Record<string, any[]> = {};
+         Object.keys(monthlyData).sort((a, b) => {
+           const [yearA, monthA] = a.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
+           const [yearB, monthB] = b.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
+           return (yearB * 12 + monthB) - (yearA * 12 + monthA);
+         }).forEach(key => {
+           sortedMonthlyData[key] = monthlyData[key];
+         });
+          
+         setTransactions(convertedTransactions);
+         setMonthlyTransactions(sortedMonthlyData);
+        
+        // 假设API也返回余额数据
+        if (result.balance) {
+          setBalance({ balance: result.balance });
+        }
+        } else {
+          showAlert('错误', '加载交易记录失败', '❌');
+        } 
+        } catch (error) {
+          console.error('获取财务数据失败:', error);
+          showAlert('错误', '加载数据失败', '❌');
+        } finally {
+          setLoading(false);
+        }
       };
-      
-      console.log('使用模拟余额数据:', newBalance);
-      setBalance(newBalance);
-      
-      // 设置静态交易记录数据
-      const mockTransactions = [
-        {
-          id: 'txn001',
-          userId: 'pub003',
-          type: 'recharge',
-          amount: 500,
-          time: new Date(Date.now() - 1 * 86400000).toISOString(),
-          method: '支付宝',
-          balanceAfter: 1798,
-          status: 'success'
-        },
-        {
-          id: 'txn002',
-          userId: 'pub003',
-          type: 'expense',
-          expenseType: 'task_publish',
-          amount: -200,
-          time: new Date(Date.now() - 2 * 86400000).toISOString(),
-          method: '账户支出',
-          balanceAfter: 1298,
-          status: 'success'
-        },
-        {
-          id: 'txn003',
-          userId: 'pub003',
-          type: 'recharge',
-          amount: 1000,
-          time: new Date(Date.now() - 5 * 86400000).toISOString(),
-          method: '支付宝',
-          balanceAfter: 1498,
-          status: 'success'
-        },
-        {
-          id: 'txn004',
-          userId: 'pub003',
-          type: 'expense',
-          expenseType: 'task_publish',
-          amount: -150,
-          time: new Date(Date.now() - 7 * 86400000).toISOString(),
-          method: '账户支出',
-          balanceAfter: 498,
-          status: 'success'
-        },
-        {
-          id: 'txn005',
-          userId: 'pub003',
-          type: 'recharge',
-          amount: 648,
-          time: new Date(Date.now() - 10 * 86400000).toISOString(),
-          method: 'USDT (TRC20)',
-          balanceAfter: 648,
-          status: 'success'
-        }
-      ];
-      
-      setTransactions(mockTransactions);
-      
-      // 按月份分组交易记录
-      const monthlyData: Record<string, any[]> = {};
-      mockTransactions.forEach((transaction) => {
-        if (transaction.time) {
-          const date = new Date(transaction.time);
-          const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-          if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = [];
-          }
-          monthlyData[monthKey].push(transaction);
-        }
-      });
-      
-      // 按月份降序排列
-      const sortedMonthlyData: Record<string, any[]> = {};
-      Object.keys(monthlyData).sort((a, b) => {
-        const [yearA, monthA] = a.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
-        const [yearB, monthB] = b.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
-        return (yearB * 12 + monthB) - (yearA * 12 + monthA);
-      }).forEach(key => {
-        sortedMonthlyData[key] = monthlyData[key];
-      });
-      
-      setMonthlyTransactions(sortedMonthlyData);
-      
-    } catch (error) {
-      console.error('获取财务数据失败:', error);
-      showAlert('错误', '加载数据失败', '❌');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 处理充值 - 模拟实现
-  const handleRecharge = () => {
+  // 处理充值 - 调用API
+  const handleRecharge = async () => {
     console.log('开始处理充值请求', { rechargeAmount, selectedPaymentMethod });
-    
     if (!rechargeAmount || parseFloat(rechargeAmount) <= 0) {
       console.log('充值金额无效');
       showAlert('输入错误', '请输入有效的充值金额', '⚠️');
       return;
     }
-
     try {
       const amount = parseFloat(rechargeAmount);
+      setLoading(true);
       
-      // 模拟充值处理延迟
-      setTimeout(() => {
-        // 模拟充值成功
+      // 调用充值API
+      const response = await fetch('/api/public/walletmanagement/usersrecharge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amount,
+          channel: "ALIPAY",
+          remark: ""
+        }),
+      });    
+      const result = await response.json();    
+      if (result.success) {
         showAlert('充值成功', `成功充值 ${amount} 元`, '✅', () => {
-          // 用户点击确认后的回调函数
-          setRechargeSuccess(true);
-          // 更新余额和交易记录
-          const newBalance = {
-            balance: balance.balance + amount
-          };
-          setBalance(newBalance);
-          
-          // 添加新的充值记录
-          const newTransaction = {
-            id: `txn${Date.now()}`,
-            userId: 'pub003',
-            type: 'recharge',
-            amount: amount,
-            time: new Date().toISOString(),
-            method: selectedPaymentMethod === 'alipay' ? '支付宝' : 'USDT (TRC20)',
-            balanceAfter: newBalance.balance,
-            status: 'success'
-          };
-          
-          const updatedTransactions = [newTransaction, ...transactions];
-          setTransactions(updatedTransactions);
-          
-          // 重新计算月度交易数据
-          const monthlyData: Record<string, any[]> = {};
-          updatedTransactions.forEach((transaction) => {
-            if (transaction.time) {
-              const date = new Date(transaction.time);
-              const monthKey = `${date.getFullYear()}年${date.getMonth() + 1}月`;
-              if (!monthlyData[monthKey]) {
-                monthlyData[monthKey] = [];
-              }
-              monthlyData[monthKey].push(transaction);
-            }
-          });
-          
-          // 按月份降序排列
-          const sortedMonthlyData: Record<string, any[]> = {};
-          Object.keys(monthlyData).sort((a, b) => {
-            const [yearA, monthA] = a.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
-            const [yearB, monthB] = b.match(/(\d+)年(\d+)月/)!.slice(1).map(Number);
-            return (yearB * 12 + monthB) - (yearA * 12 + monthA);
-          }).forEach(key => {
-            sortedMonthlyData[key] = monthlyData[key];
-          });
-          
-          setMonthlyTransactions(sortedMonthlyData);
           setRechargeAmount('');
+          // 重新加载交易记录
+          fetchFinanceData();
         });
-      }, 1000);
+      } else {
+        showAlert('充值失败', result.message || '充值失败，请稍后重试', '❌');
+      }
     } catch (error) {
       console.error('充值失败:', error);
       showAlert('错误', '充值失败，请稍后重试', '❌');
+    } finally {
+      setLoading(false);
     }
   };
 
 
 
-  // 初始加载数据 - 使用静态数据
+  // 初始加载数据
   useEffect(() => {
-    fetchFinanceData();
+    const loadData = async () => {
+      await fetchFinanceData();
+    };
+    loadData();
   }, []);
 
-  // 余额字段说明：
-  // 1. balance: 主要的余额字段，前端页面直接使用这个字段显示余额
-  // 2. currentBalance: 冗余字段，当前实现中与balance保持一致
-  // 3. availableBalance: 冗余字段，当前实现中与balance保持一致
-  // 这三个字段在当前版本中存储相同的值，是为了未来可能的扩展需求，比如实现余额冻结功能
-
-  // 获取交易图标
+  // 获取交易图标 - 只显示"￥"符号
   const getTransactionIcon = (type: string, expenseType?: string) => {
-    if (type === 'recharge') return <WalletOutlined className="h-6 w-6" />;
-    if (type === 'withdraw') return <DollarOutlined className="h-6 w-6" />;
-    if (type === 'expense') {
-      switch (expenseType) {
-        case 'task_publish': return <ShoppingOutlined className="h-6 w-6" />;
-        case 'platform_fee': return <CreditCardOutlined className="h-6 w-6" />;
-        default: return <CoffeeOutlined className="h-6 w-6" />;
-      }
-    }
-    return <InfoCircleOutlined className="h-6 w-6" />;
+    return '￥';
   };
   
   // 跳转到交易详情页
@@ -326,20 +249,8 @@ export default function PublisherFinancePage() {
             activeTab === 'records' ? 'bg-green-500 text-white shadow-md' : 'bg-white border border-gray-300 text-gray-600 hover:bg-green-50'
           }`}
         >
-          记录
+          充值记录
         </button>
-      </div>
-
-      {/* 余额显示 */}
-      <div className="mx-4 mt-6">
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6">
-          <div className="text-center">
-            <div className="text-sm mb-2">账户余额</div>
-            <div className="text-4xl font-bold">
-              {loading ? '加载中...' : `¥${balance.balance.toFixed(2)}`}
-            </div>
-          </div>
-        </div>
       </div>
 
       {activeTab === 'recharge' && (
@@ -411,18 +322,17 @@ export default function PublisherFinancePage() {
               <div className="mb-4 flex flex-col items-center">
                 {selectedPaymentMethod === 'alipay' ? (
                   <>
-                    <div className="bg-white p-4 border border-gray-200 rounded-lg mb-3">
+                    <div className="bg-white p-2 border border-gray-200 rounded-lg mb-3">
                       <div className="w-48 h-48 bg-gray-50 flex items-center justify-center">
-                        {/* 使用假的二维码图片 - 这里使用data:image/svg+xml创建一个简单的二维码样式图像 */}
                         <img 
-                          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192'%3E%3Crect width='192' height='192' fill='%23ffffff'/%3E%3Crect x='16' y='16' width='48' height='48' fill='%23000000'/%3E%3Crect x='16' y='128' width='48' height='48' fill='%23000000'/%3E%3Crect x='128' y='16' width='48' height='48' fill='%23000000'/%3E%3Crect x='96' y='96' width='32' height='32' fill='%23000000'/%3E%3Cpath d='M128 80v64H80V80h48m8-8H72v80h64V72z' fill='%23000000'/%3E%3C/svg%3E" 
+                          src="/images/Alipay.png" 
                           alt="支付宝二维码" 
                           className="w-full h-full"
                         />
                       </div>
                     </div>
                     <p className="text-sm text-gray-500">请使用支付宝扫描二维码完成支付</p>
-                    <p className="text-sm font-medium text-gray-700 mt-1">充值金额: ¥{rechargeAmount || '0.00'}</p>
+                    <p className="text-sm text-gray-500">渊（备注）</p>
                   </>
                 ) : (
                   <>
@@ -548,7 +458,7 @@ export default function PublisherFinancePage() {
                     })}
                   </>
                 ) : (
-                  <div className="p-8 text-center text-gray-500">暂无交易记录</div>
+                  <div className="p-8 text-center text-gray-500">暂无充值记录</div>
                 )}
               </div>
               

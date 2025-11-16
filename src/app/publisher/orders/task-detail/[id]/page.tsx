@@ -63,7 +63,7 @@ interface ApiSubOrder {
 }
 
 // 定义前端展示使用的子订单数据类型
-interface SubOrder {
+export interface SubOrder {
   id: string;
   orderId: string;
   userId: string;
@@ -73,6 +73,11 @@ interface SubOrder {
   submitTime: string;
   submitLink: string;
   screenshots: string[];
+  reviewTime?: string;
+  reward?: number;
+  content?: string;
+  createTime?: string;
+  updateTime?: string;
 }
 
 // 定义任务详情数据类型

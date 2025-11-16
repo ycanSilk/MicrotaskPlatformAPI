@@ -19,6 +19,8 @@ interface TransactionRecord {
   channel: string;
   createTime: string;
   updateTime: string;
+  totalBalance: number,
+  totalIncome: number,
 }
 
 // 交易响应类型定义
@@ -75,16 +77,13 @@ const BalancePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
-
-  
-
+  const [totalBalance, setTotalBalance] = useState(0.00);
   // 合并获取钱包信息和交易记录
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
         // 首先调用获取钱包信息API
         const walletResponse = await fetch('/api/public/walletmanagement/getwalletinfo', {
           method: 'GET',
@@ -92,13 +91,10 @@ const BalancePage = () => {
             'Content-Type': 'application/json'
           }
         });
-        
         if (!walletResponse.ok) {
           throw new Error(`获取钱包信息失败: ${walletResponse.status}`);
         }
-        
-        const walletData: WalletInfoResponse = await walletResponse.json();
-        
+        const walletData: WalletInfoResponse = await walletResponse.json();       
         if (walletData.success && walletData.data) {
           // 设置余额和冻结金额
           setBalance(walletData.data.availableBalance || 0);
@@ -178,8 +174,6 @@ const BalancePage = () => {
     };
   };
 
-
-
   // 处理充值
   const handleRecharge = () => {
     router.push('/commenter/transaction-list' as any);
@@ -215,14 +209,17 @@ const BalancePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-    
       {/* 余额卡片 */}
       <div className="p-2 mt-3 relative">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white overflow-hidden relative">
           <div className="absolute right-0 top-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16" />
           <div className="absolute left-0 bottom-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12" />
           <div className="p-2 relative z-10 ">
-            <div className="mb-10 grid grid-cols-2 gap-2">
+            <div className="mb-10 grid grid-cols-3 gap-2">
+              <div className="text-center bg-green-500 rounded-lg p-2">
+                <div>总余额:</div>
+                <div>{totalBalance.toFixed(2)}</div>
+              </div>
               <div className="text-center bg-green-500 rounded-lg p-2">
                 <div>可用余额:</div>
                 <div>{balance.toFixed(2)}</div>

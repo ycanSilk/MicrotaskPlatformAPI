@@ -96,6 +96,8 @@ export default function ActiveTabPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
 
   useEffect(() => {
     console.log('组件挂载，开始初始化...');
@@ -275,13 +277,44 @@ export default function ActiveTabPage() {
     });
   };
 
-  // 复制评论功能
-  const handleCopyComment = (comment: string) => {
-    navigator.clipboard.writeText(comment).then(() => {
-      showCopySuccess('评论已复制');
-    }).catch(() => {
-      // 静默处理复制失败
-    });
+  // 复制评论功能 - 接受评论文本作为参数
+  // 返回Promise表示复制操作是否成功
+  const handleCopyComment = async (commentText: string): Promise<boolean> => {
+    try {
+      // 验证评论内容是否为空
+      if (!commentText) {
+        throw new Error('评论内容为空');
+      }
+      
+      // 执行复制操作 - 优先使用现代Clipboard API
+      try {
+        await navigator.clipboard.writeText(commentText);
+        showCopySuccess('评论已复制');
+        return true;
+      } catch {
+        // 降级方案：使用document.execCommand（兼容旧版浏览器）
+        const textArea = document.createElement('textarea');
+        textArea.value = commentText;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (success) {
+          showCopySuccess('评论已复制');
+          return true;
+        } else {
+          throw new Error('降级复制方案失败');
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '复制评论失败';
+      console.error('复制评论失败:', error);
+      // 可根据需求添加失败提示
+      return false;
+    }
   };
 
 
@@ -292,10 +325,9 @@ export default function ActiveTabPage() {
   const MainOrderCard: React.FC<{
     task: Task;
     onCopyOrderNumber?: (orderNumber: string) => void;
-    onCopyComment?: (comment: string) => void;
     onViewDetails?: (orderId: string) => void;
     onReorder?: (orderId: string) => void;
-  }> = ({ task, onCopyOrderNumber, onCopyComment, onViewDetails, onReorder }) => {
+  }> = ({ task, onCopyOrderNumber, onViewDetails, onReorder }) => {
     const router = useRouter();
 
     // 直接使用API返回的原始统计数据
@@ -366,18 +398,26 @@ export default function ActiveTabPage() {
         <div className="mb-1 bg-blue-50 border border-blue-500 py-2 px-3 rounded-lg">
           <p className='mb-1  text-sm text-blue-600'>任务视频点击进入：</p>
           <a 
-            href="http://localhost:3000/publisher/dashboard?tab=active" 
+            href="https://v.douyin.com/oiunFce071s/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm  inline-flex items-center"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
-              // 在实际应用中，这里应该跳转到抖音视频页面
-              window.open('https://www.douyin.com', '_blank');
+              // 获取评论内容
+              const blueDiv = e.currentTarget.closest('div.bg-blue-50');
+              const commentSpan = blueDiv?.querySelector('p:last-of-type span');
+              const commentText = commentSpan?.textContent || '';
+              // 复制评论
+              await handleCopyComment(commentText);
+              // 设置当前视频URL并打开模态框
+              setCurrentVideoUrl('https://v.douyin.com/oiunFce071s/');
+              setIsModalOpen(true);
             }}
           >
              打开视频
           </a>
+          <p>视频评论链接：<span>90:/. 06/15 k@p.qr 复制打开抖音，查看【初代风华】发布作品的评论：想起李白的一句诗，今月不是古时月，今月曾照古时人[...ŠŠcjs5gch5s19➝➝</span></p>
         </div>
         
         <div className="flex gap-2 mb-1">
@@ -441,6 +481,34 @@ export default function ActiveTabPage() {
           {tooltipMessage}
         </div>
       )}
+      {/* 打开视频确认模态框 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-medium mb-4">提示</h3>
+            <p className="text-gray-700 mb-6">是否需要打开抖音APP？</p>
+            <div className="flex justify-end space-x-3">
+              <button 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                onClick={() => {
+                  // 打开视频链接
+                  window.open(currentVideoUrl, '_blank');
+                  // 关闭模态框
+                  setIsModalOpen(false);
+                }}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* 使用标准模板组件 - 移除排序功能 */}
       <OrderHeaderTemplate
@@ -461,7 +529,6 @@ export default function ActiveTabPage() {
               key={task.id}
               task={task}
               onCopyOrderNumber={handleCopyOrderNumber}
-              onCopyComment={handleCopyComment}
               onViewDetails={(orderId) => {
                 if (task.taskType === 'ACCOUNT_RENTAL') {
                   router.push(`/publisher/orders/account-rental/${orderId}`);

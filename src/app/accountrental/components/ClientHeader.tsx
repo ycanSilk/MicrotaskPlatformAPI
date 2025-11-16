@@ -289,7 +289,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
           onClick={handleDashboardClick}
           className="text-sm cursor-pointer text-xl text-white transition-all duration-300 ease"
         >
-          退出
+          返回
         </button>
       </div>
     </div>

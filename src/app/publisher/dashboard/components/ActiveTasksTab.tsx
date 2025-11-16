@@ -2,7 +2,7 @@ import React from 'react';
 import ReorderButton from '../../../commenter/components/ReorderButton';
 import OrderHeaderTemplate from './OrderHeaderTemplate';
 import MainOrderCard from '../../../../components/task/main-order/Main-Order';
-import type { Order } from '../../../../components/task/main-order/Main-Order';
+import type { Order } from '@/types';
 import { useRouter } from 'next/navigation';
 
 interface Task {

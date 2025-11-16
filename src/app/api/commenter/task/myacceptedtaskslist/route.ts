@@ -10,11 +10,7 @@ async function handleTasksListRequest(request: NextRequest) {
   try {
     // 获取token - 支持从请求头和Cookie获取，提高兼容性
     let token = '';
-    
-    // 1. 首先尝试从请求头获取token
-    token = request.headers.get('X-Auth-Token') || '';
-    
-    // 2. 如果请求头中没有token，尝试从Cookie获取
+
     if (!token) {
       try {
         const cookieStore = await cookies();

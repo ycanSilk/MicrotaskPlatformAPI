@@ -117,6 +117,11 @@ export async function POST(request: Request) {
     const isSuccess = responseData.success === true && (responseData.code === 200 || !responseData.code);
     const statusCode = isSuccess ? 200 : 500;
     
+    console.log("这是获取我发布的订单的API请求结果",responseData)
+    console.log("请求token Bearer",token)
+    console.log("请求url",apiUrl)
+   
+
     // 8. 构建响应
     const restResponse = {
       success: responseData.success,

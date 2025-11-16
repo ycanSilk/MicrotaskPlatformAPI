@@ -1,6 +1,7 @@
 export * from './accountBalance';
 export * from './financialRecords';
 export * from './invite';
+export * from './order';
 export * from './settings';
 export * from './rentalOrder';
 

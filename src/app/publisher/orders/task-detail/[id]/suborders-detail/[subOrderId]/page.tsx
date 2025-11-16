@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { LeftOutlined, CopyOutlined } from '@ant-design/icons';
-import { SubOrder } from '../../../../page';
+import { SubOrder } from '../../page';
 import OrderStatus from '../../../../../../../components/order/OrderStatus';
 import OrderTaskType, { TaskType } from '../../../../../../../components/order/OrderTaskType';
 
@@ -31,13 +31,15 @@ const SubOrderDetailPage: React.FC = () => {
           userId: 'user-001',
           userName: '测试用户',
           status: 'processing', // 固定状态为"进行中"
+          commentContent: '这是一个固定的测试子订单内容。用户正在处理该任务，已经提交了初步的工作成果。',
           submitTime: '2024-01-15T10:30:00.000Z', // 固定日期时间
+          submitLink: 'https://example.com/submit-link',
           reviewTime: '2024-01-15T14:45:00.000Z',
           reward: 50,
           content: '这是一个固定的测试子订单内容。用户正在处理该任务，已经提交了初步的工作成果。',
           screenshots: [
-            'https://picsum.photos/id/237/400/300', // 使用固定ID的图片，避免随机变化
-            'https://picsum.photos/id/239/400/300'
+            'https://via.placeholder.com/600x400?text=Screenshot+1',
+            'https://via.placeholder.com/600x400?text=Screenshot+2'
           ]
         };
 
@@ -216,7 +218,7 @@ const SubOrderDetailPage: React.FC = () => {
                 </div>
                 <div className="flex items-start">
                   <span className="text-sm font-medium  mr-2">奖励金额:</span>
-                  <span className="text-sm text-gray-900 font-medium">¥{subOrder.reward.toFixed(2)}</span>
+                  <span className="text-sm text-gray-900 font-medium">¥{(subOrder.reward ?? 0).toFixed(2)}</span>
                 </div>
                 <div className="flex items-start">
                   <span className="text-sm font-medium  mr-2">提交时间:</span>

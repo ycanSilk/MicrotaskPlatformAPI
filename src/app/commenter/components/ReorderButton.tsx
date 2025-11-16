@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import type { Order } from '../../publisher/orders/page';
+import type { Order } from '@/types';
 
 interface ReorderButtonProps {
   order?: Order;

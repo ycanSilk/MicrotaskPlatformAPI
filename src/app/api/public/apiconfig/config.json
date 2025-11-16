@@ -13,7 +13,8 @@
       "withdraw": "/wallet/withdraw",
       "availablebalance": "/wallet/available-balance",
       "validatepwd": "/wallet/validate-security-password?password=",
-      "transactionrecord": "/wallet/transactions"
+      "transactionrecord": "/wallet/transactions",
+      "usersrecharge": "/wallet/recharge"
     },
     "task": {
       "missionhall": "/tasks/hall"

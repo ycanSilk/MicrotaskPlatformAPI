@@ -2,7 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import MainOrderCard from '../../../../components/task/main-order/Main-Order';
-import type { Order } from '../../../../components/task/main-order/Main-Order';
+import type { Order } from '@/types';
 
 interface Stats {
   totalTasks: number;
