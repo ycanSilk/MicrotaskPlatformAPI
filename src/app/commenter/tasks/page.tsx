@@ -146,11 +146,7 @@ export default function CommenterTasksPage() {
       // 检查响应状态
       console.log('API响应状态码:', response.status);
       console.log('API响应头部信息:', Array.from(response.headers.entries()));
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+
       // 解析响应数据
       const responseData: ApiResponse = await response.json();
       // 记录API响应日志，帮助调试

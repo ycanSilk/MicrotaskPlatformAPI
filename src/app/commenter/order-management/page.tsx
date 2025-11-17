@@ -8,21 +8,85 @@ import Link from 'next/link';
 // 定义订单状态类型
 type OrderStatus = '进行中' | '待审核' | '已完成' | '异常订单';
 
-// 定义订单接口
-interface Order {
-  id: string;
-  orderNo: string;
-  parentOrderNo: string;
-  title: string;
-  price: number;
-  status: OrderStatus;
-  publishTime: string;
-  deadline?: string;
-  submitTime?: string;
-  completedTime?: string;
-  taskType: string;
-  taskRequirements: string;
-}
+interface TaskItem {
+    id: string;
+    mainTaskId: string;
+    mainTaskTitle: string;
+    mainTaskPlatform: string;
+    workerId: string;
+    workerName: string;
+    agentId: string;
+    agentName: string;
+    commentGroup: string;
+    commentType: string;
+    unitPrice: number;
+    userReward: number;
+    agentReward: number;
+    status: OrderStatus;
+    acceptTime: string;
+    expireTime: string;
+    submitTime: string;
+    completeTime: string;
+    settleTime: string;
+    submittedImages: string;
+    submittedLinkUrl: string;
+    submittedComment: string;
+    verificationNotes: string;
+    rejectReason: string;
+    cancelReason: string;
+    cancelTime: string;
+    releaseCount: number;
+    settled: boolean;
+    verifierId: string;
+    verifierName: string;
+    createTime: string;
+    updateTime: string;
+    taskDescription: string;
+    taskRequirements: string;
+    taskDeadline: string;
+    remainingMinutes: number;
+    isExpired: boolean;
+    isAutoVerified: boolean;
+    canSubmit: boolean;
+    canCancel: boolean;
+    canVerify: boolean;
+    verifyResult: string;
+    verifyTime: string;
+    verifyComment: string;
+    settlementStatus: string;
+    settlementTime: string;
+    settlementRemark: string;
+    workerRating: number;
+    workerComment: string;
+    publisherRating: number;
+    publisherComment: string;
+    firstGroupComment: string;
+    secondGroupComment: string;
+    firstGroupImages: string;
+    secondGroupImages: string;
+    // UI所需的别名字段
+    orderNo: string;
+    title: string;
+    price: number;
+    publishTime: string;
+    deadline?: string;
+    taskType: string;
+  }
+
+  interface ApiResponse {
+    code: number;
+    message: string;
+    data: {
+      list: TaskItem[];
+      total: number;
+      page: number;
+      size: number;
+      pages: number;
+    };
+    success: boolean;
+    timestamp: number;
+  }
+
 
 // 获取状态对应的标签颜色
 const getStatusTagColor = (status: OrderStatus): string => {
@@ -226,69 +290,74 @@ const OrderManagementPage = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: '1',
-      orderNo: 'COM20240620001',
-      parentOrderNo: 'PUB20240620001',
-      title: '中下评评论',
-      price: 6.00,
-      status: '进行中',
-      publishTime: '2025-10-20 10:30:00',
-      deadline: '2025-10-23 23:59:59',
-      taskType: 'comment_middle',
-      taskRequirements: '1. 查看指定视频 2. 发表中下评评论 3. 评论需包含关键词'
-    },
-    {
-      id: '2',
-      orderNo: 'COM20240619002',
-      parentOrderNo: 'PUB20240619002',
-      title: '中下评评论',
-      price: 5.88,
-      status: '待审核',
-      publishTime: '2025-10-19 15:20:00',
-      submitTime: '2025-10-20 09:45:00',
-      taskType: 'comment_middle',
-      taskRequirements: '1. 查看指定视频 2. 发表中下评评论 3. 评论需包含关键词'
-    },
-    {
-      id: '3',
-      orderNo: 'COM20240618003',
-      parentOrderNo: 'PUB20240618003',
-      title: '中评评论',
-      price: 8.50,
-      status: '已完成',
-      publishTime: '2025-10-18 09:15:00',
-      submitTime: '2025-10-19 11:30:00',
-      completedTime: '2025-10-20 16:45:00',
-      taskType: 'comment_middle',
-      taskRequirements: '1. 查看指定视频 2. 发表中下评评论 3. 评论需包含关键词'
-    },
-    {
-      id: '4',
-      orderNo: 'COM20240617004',
-      parentOrderNo: 'PUB20240617004',
-      title: '上评评论',
-      price: 7.20,
-      status: '异常订单',
-      publishTime: '2025-10-17 14:30:00',
-      submitTime: '2025-10-18 10:20:00',
-      taskType: 'comment_top',
-      taskRequirements: '1. 查看指定视频 2. 发表上评评论 3. 评论需包含关键词'
-    },
-    {
-      id: '5',
-      orderNo: 'COM20240616005',
-      parentOrderNo: 'PUB20240616005',
-      title: '上中评评论',
-      price: 12.00,
-      status: '进行中',
-      publishTime: '2025-10-16 11:20:00',
-      deadline: '2025-10-22 23:59:59',
-      taskType: 'comment_top_middle',
-      taskRequirements: '1. 查看指定视频 2. 发表上中评评论 3. 评论需包含关键词'
-    }
-  ]);
+
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  
+  // API响应数据接口
+  
+
+
+
+  // 定义订单列表状态
+  const [orders, setOrders] = useState<TaskItem[]>([]);
+
+  // 页面加载时获取订单数据
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const response = await fetch('/api/commenter/task/myacceptedtaskslist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}), // 使用默认参数
+        });
+
+        if (!response.ok) {
+          throw new Error('网络请求失败，请稍后重试');
+        }
+
+        const result: ApiResponse = await response.json();
+
+        if (result.success) {
+          // 映射API数据到UI需要的格式
+          const mappedOrders: TaskItem[] = result.data.list.map(item => ({
+            ...item,
+            status: mapStatusToChinese(item.status),
+            orderNo: item.mainTaskId || item.id,
+            title: item.mainTaskTitle || '',
+            price: item.unitPrice || 0,
+            publishTime: item.acceptTime || '',
+            deadline: item.expireTime,
+            taskType: item.commentType || '未知',
+          }));
+
+          setOrders(mappedOrders);
+        } else {
+          setError(result.message || '获取订单失败');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '获取订单失败，请检查网络连接');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+  // 状态映射函数
+  const mapStatusToChinese = (status: string): OrderStatus => {
+    const statusMap: Record<string, OrderStatus> = {
+      COMPLETED: '已完成',
+      SUBMITTED: '待审核',
+      IN_PROGRESS: '进行中'
+    };
+    return statusMap[status] || '异常订单'; // 默认异常订单
+  };
 
   // 复制订单号功能
   const copyOrderNo = (orderNo: string) => {
@@ -313,11 +382,11 @@ const OrderManagementPage = () => {
     
     if (selectedDateRange) {
       // 日期范围过滤
-      const orderDate = order.publishTime.split(' ')[0]; // 只取日期部分
-      dateMatch = orderDate >= selectedDateRange.start && orderDate <= selectedDateRange.end;
+      const orderDate = order.publishTime?.split(' ')[0] || ''; // 只取日期部分
+      dateMatch = !!orderDate && orderDate >= selectedDateRange.start && orderDate <= selectedDateRange.end;
     } else if (selectedMonth !== '全部') {
       // 月份过滤
-      dateMatch = order.publishTime.startsWith(selectedMonth);
+      dateMatch = order.publishTime?.startsWith(selectedMonth) || false;
     }
     
     return statusMatch && dateMatch;
@@ -421,8 +490,12 @@ const OrderManagementPage = () => {
           <Link href={`/commenter/order-management/${order.id}`} key={order.id}>
             <div className="bg-white rounded-lg p-4 shadow-sm transition-all hover:shadow-md cursor-pointer mb-3">
               {/* 订单头部信息 */}
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-sm text-black">订单号：{order.orderNo}</span>
+              <div className="flex justify-between items-center pb-2 border-b border-gray-500">
+                <div className="flex items-center space-x-2">
+                  <div className="overflow-hidden text-ellipsis whitespace-nowrap" style={{ maxWidth: '200px' }}>
+                    订单号：{order.orderNo}
+                  </div>
+                </div>
                 <button 
                   className="text-blue-500 hover:text-blue-700 transition-colors"
                   onClick={(e) => {
@@ -438,43 +511,44 @@ const OrderManagementPage = () => {
 
               {/* 订单详细信息 */}
               <div className="py-3">
-                {/* 状态和价格在同一行，状态在左侧 */}
-                <div className="flex justify-between items-center mb-3">
+                {/* 状态和价格在同一行，价格在左侧，状态在右侧 */}
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-red-500">订单价格：¥{order.price.toFixed(2)}</span>
                   <div className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusTagColor(order.status)}`}>
                     {order.status}
                   </div>
-                  <span className="text-lg font-bold text-red-500">¥{order.price.toFixed(2)}</span>
                 </div>
                 
                 {/* 时间信息 - 删除任务类型显示 */}
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm">
-                    <span className="text-gray-500">发布时间：{order.publishTime}</span>
+                <div className="">
+                  <div className="">
+                    接取时间：{order.acceptTime}
                   </div>
                   
                   {/* 根据状态显示不同的时间信息 */}
-                  {order.status === '进行中' && order.deadline && (
-                    <div className="text-sm text-gray-500">截止时间：{order.deadline}</div>
+                  {order.status === '进行中' && order.expireTime && (
+                    <div className="">截止时间：{order.expireTime}</div>
                   )}
                   {order.status === '待审核' && order.submitTime && (
-                    <div className="text-sm text-gray-500">提交时间：{order.submitTime}</div>
+                    <div className="">提交时间：{order.submitTime}</div>
                   )}
-                  {order.status === '已完成' && order.completedTime && (
-                    <div className="text-sm text-gray-500">完成时间：{order.completedTime}</div>
+                  {order.status === '已完成' && order.completeTime && (
+                    <div className="">完成时间：{order.completeTime}</div>
                   )}
                   {order.status === '异常订单' && order.submitTime && (
-                    <div className="text-sm text-gray-500">提交时间：{order.submitTime}</div>
+                    <div className="">提交时间：{order.submitTime}</div>
                   )}
                 </div>
                 
                 {/* 任务要求摘要 */}
-                <div className="mt-3 text-sm text-gray-600 line-clamp-2">
-                  任务要求：{order.taskRequirements}
+                <div>任务标题：{order.mainTaskTitle}</div>
+                <div className="line-clamp-2">
+                  任务要求：{order.taskDescription}
                 </div>
               </div>
               
               {/* 操作按钮区域 */}
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+              <div className="flex justify-end text-right pt-3 border-t border-gray-500">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -482,22 +556,31 @@ const OrderManagementPage = () => {
                     e.stopPropagation();
                     handleContactService(order.id);
                   }}
-                  className="text-sm text-blue-500 hover:text-blue-700 transition-colors"
+                  className="text-sm text-white hover:text-blue-700 transition-colors bg-blue-500 px-4 py-2 rounded-md"
                 >
                   联系客服
                 </button>
-                <div className="text-sm text-gray-500">
-                  父订单号：{order.parentOrderNo}
-                </div>
               </div>
             </div>
           </Link>
         ))}
 
-        {/* 如果没有订单 */}
-        {filteredOrders.length === 0 && (
+        {/* 加载状态 */}
+        {loading && (
           <div className="bg-white p-8 text-center rounded-lg">
-            <p className="text-sm text-gray-500">暂无订单</p>
+            <p className="">加载中...</p>
+          </div>
+        )}
+        {/* 错误状态 */}
+        {!loading && error && (
+          <div className="bg-white p-8 text-center rounded-lg">
+            <p className="text-sm text-red-500">{error}</p>
+          </div>
+        )}
+        {/* 如果没有订单且没有错误 */}
+        {!loading && !error && filteredOrders.length === 0 && (
+          <div className="bg-white p-8 text-center rounded-lg">
+            <p className="">暂无订单</p>
           </div>
         )}
       </div>

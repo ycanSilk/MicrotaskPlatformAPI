@@ -7,6 +7,7 @@ import config from '../../apiconfig/config.json';
 interface LoginRequest {
   username: string;
   password: string;
+  captcha: string; // 新增验证码字段
 }
 
 // 定义响应接口
@@ -19,8 +20,8 @@ interface ApiResponse {
 // 基础验证函数
 function validateLoginData(data: LoginRequest): { isValid: boolean; error?: string } {
   // 检查必填字段
-  if (!data.username || !data.password) {
-    return { isValid: false, error: '用户名和密码为必填项' };
+  if (!data.username || !data.password || !data.captcha) {
+    return { isValid: false, error: '用户名、密码和验证码为必填项' };
   }
 
   if (data.username.length < 4 || data.username.length > 16) {
@@ -30,6 +31,11 @@ function validateLoginData(data: LoginRequest): { isValid: boolean; error?: stri
   // 验证密码长度
   if (data.password.length < 6 || data.password.length > 20) {
     return { isValid: false, error: '密码长度必须在6-20个字符之间' };
+  }
+
+  // 验证验证码长度
+  if (data.captcha.length !== 4) {
+    return { isValid: false, error: '验证码必须是4个字符' };
   }
 
   return { isValid: true };
@@ -75,7 +81,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // 构建后端API请求数据
     const backendRequestData = {
       username: requestData.username.trim(),
-      password: requestData.password
+      password: requestData.password,
+      captcha: requestData.captcha // 新增验证码参数
     };
 
     // 调用实际的后端API

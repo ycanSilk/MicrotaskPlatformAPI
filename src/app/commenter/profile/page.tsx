@@ -16,17 +16,54 @@ interface MenuItem {
   path: string;
 }
 
+// 与后端API返回结构完全一致的用户信息接口
+interface UserInfo {
+  id: string;
+  username: string;
+  email: string;
+  phone: string;
+  parentId: string;
+  companyName: string;
+  contactPerson: string;
+  userType: string;
+  createTime: string;
+  subAccountCount: number;
+  invitationCode?: string;
+  avatar?: string;
+}
+
 export default function commenterProfilePage() {
   const router = useRouter();
   const [balance, setBalance] = useState<BalanceData>({ balance: 0 });
-  const [userInfo, setUserInfo] = useState({
-    nickname: '张三',
-    phoneNumber: '13800138000',
-    imgurl: '/images/0e92a4599d02a7.jpg'
-  });
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   // 获取余额数据和未读通知数量
+  // 加载用户信息
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/commenter/user/getloginuserinfo');
+        const result = await response.json();
+        if (response.ok && result.success) {
+          setUserInfo(result.data.userInfo);
+        } else {
+          throw new Error(result.message || 'Failed to fetch user information');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        message.error(err instanceof Error ? err.message : 'An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
   useEffect(() => {
     // 模拟数据加载
     setTimeout(() => {
@@ -64,7 +101,7 @@ export default function commenterProfilePage() {
       path: '/commenter/balance'
     },
     {
-      id: 'balance',
+      id: 'withdrawal-list',
       title: '提现明细',
       icon: <WalletOutlined className="text-xl" />,
       color: 'bg-yellow-100',
@@ -144,17 +181,17 @@ export default function commenterProfilePage() {
       <div className="bg-blue-500 text-white mb-5">
         <div 
           className="flex items-center justify-between space-x-4 mb-4 cursor-pointer rounded-lg p-4 transition-colors"
-          onClick={() => router.push('/commenter/profile/settings' as any)}
+          onClick={() => router.push('/commenter/profile/userinfo' as any)}
         >
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center text-2xl">
-              <img src={userInfo.imgurl} alt="" className="w-full h-full overflow-hidden rounded-lg" />
+              <img src={userInfo?.avatar || '/images/0e92a4599d02a7.jpg'} alt="User Avatar" className="w-full h-full overflow-hidden rounded-lg" />
             </div>
             <div>
               <span className="flex font-bold text-lg items-center">
-                {userInfo.nickname}
+                {loading ? 'Loading...' : userInfo?.username}
               </span>
-              <span className="flex text-sm opacity-80">{userInfo.phoneNumber}</span>
+              <span className="flex text-sm opacity-80">{loading ? 'Loading...' : userInfo?.phone}</span>
             </div>
           </div>
           <div className="text-white">

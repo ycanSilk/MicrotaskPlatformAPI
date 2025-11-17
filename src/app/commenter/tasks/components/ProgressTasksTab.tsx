@@ -89,11 +89,15 @@ interface ProgressTasksTabProps {
 }
 
 const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewImage, fetchUserTasks, setModalMessage, setShowModal, handleCopyComment, handleUploadScreenshot, handleRemoveImage, handleSubmitOrder, isSubmitting }) => {
-  // 组件内部状态管理
-  const [reviewLinks, setReviewLinks] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+    // 组件内部状态管理
+    const [reviewLinks, setReviewLinks] = useState<Record<string, string>>({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+    // 视频模态框状态
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentVideoUrl, setCurrentVideoUrl] = useState('');
+    const [currentComment, setCurrentComment] = useState('');
   // modal相关状态通过props传入，无需在组件内部重复声明
     
   // 处理评论链接输入变化
@@ -276,7 +280,9 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
           // 刷新任务列表 - 使用传入的fetchUserTasks回调
           fetchUserTasks && fetchUserTasks();
         } else {
-          throw new Error(data.message || '任务提交失败');
+          setModalMessage(data.message || '任务提交失败');
+          setShowModal(true);
+          console.log('提交订单失败:', data);
         }
       } catch (error) {
         console.error('提交订单失败:', error);
@@ -381,7 +387,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
           </div>
           
           {/* 推荐评论区域 - 所有任务都显示 */}
-        <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
+        <div className="mb-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
           <div className="flex justify-between items-center mb-1">
             <h4 className="text-sm font-medium text-blue-700"><EditOutlined className="inline-block mr-1" /> 推荐评论</h4>
             <button
@@ -398,7 +404,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
      
           {/* 提交的图片显示 */}
           {task.submittedImages && (
-            <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
+            <div className="mb-2 border border-blue-200 rounded-lg p-3 bg-blue-50">
               <span className="text-sm text-blue-700 mr-2">已提交的截图：</span>
               <img 
                 src={task.submittedImages} 
@@ -408,11 +414,35 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
               />
             </div>
           )}
-          
+
+      <div className="mb-2 bg-blue-50 border border-blue-500 py-2 px-3 rounded-lg">
+          <p className='mb-1  text-sm text-blue-600'>任务视频点击进入：</p>
+          <a 
+            href="https://v.douyin.com/oiunFce071s/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm  inline-flex items-center"
+            onClick={async (e) => {
+              e.preventDefault();
+              // 获取评论内容
+              const blueDiv = e.currentTarget.closest('div.bg-blue-50');
+              const commentSpan = blueDiv?.querySelector('p:last-of-type span');
+              const commentText = commentSpan?.textContent || '';
+              // 复制评论
+              await handleCopyComment?.(task.id, commentText);
+              // 设置当前视频URL并打开模态框
+              setCurrentVideoUrl('https://v.douyin.com/oiunFce071s/');
+              setIsModalOpen(true);
+            }}
+          >
+             打开视频
+          </a>
+          <p>视频评论链接：<span>90:/. 06/15 k@p.qr 复制打开抖音，查看【初代风华】发布作品的评论：想起李白的一句诗，今月不是古时月，今月曾照古时人[...ŠŠcjs5gch5s19➝➝</span></p>
+      </div>    
           
           
       
-
+      
       {/* 评论链接输入框 - 新增 */}
       <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50">
         <label className="block text-sm font-medium mb-1 text-blue-700">
@@ -428,7 +458,18 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
         {reviewLinks[task.id] || task.submittedLinkUrl ? (
           <button
               className="mt-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-              onClick={() => { const url = reviewLinks[task.id] || task.submittedLinkUrl; url && window.open(url, '_blank'); }}
+              onClick={() => {
+                const url = reviewLinks[task.id] || task.submittedLinkUrl;
+                if (url && task.id) {
+                  // 保存当前视频URL和评论
+                  setCurrentVideoUrl(url);
+                  setCurrentComment(task.submittedComment || '');
+                  // 复制评论
+                  handleCopyComment?.(task.id, task.submittedComment || '');
+                  // 打开模态框
+                  setIsModalOpen(true);
+                }
+              }}
           >
             打开视频
           </button>
@@ -501,6 +542,36 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
           
         </div>
       ))}
+
+      {/* 打开视频确认模态框 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-medium mb-4">提示</h3>
+            <p className="text-gray-700 mb-6">是否需要打开抖音APP？</p>
+            <div className="flex justify-end space-x-3">
+              <button 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                onClick={() => {
+                  // 打开视频链接
+                  window.open(currentVideoUrl, '_blank');
+                  // 关闭模态框
+                  setIsModalOpen(false);
+                }}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

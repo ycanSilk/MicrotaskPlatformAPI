@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { UserOutlined } from '@ant-design/icons';
 import { CustomerServiceButton } from '../../../components/button/CustomerServiceButton';
 import SearchBar from '../../../components/button/SearchBar';
+import { BellOutlined } from '@ant-design/icons';
 
 // 导入路由配置
 import { 
@@ -207,7 +208,15 @@ export default function TopNavigationBar({ user }: TopNavigationBarProps) {
           userId={user?.id || 'guest'}
           className="text-white"
         />
-        
+      
+        <div className="mr-2 relative">
+          <BellOutlined className="text-3xl text-white rounded-full p-1" />
+          {/* 通知数量提示 */}
+          <div className="absolute top-0 left-5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+            3
+          </div>
+        </div>
+
         {/* 用户头像和下拉菜单 */}
         <div className="relative ml-3">
           <button 

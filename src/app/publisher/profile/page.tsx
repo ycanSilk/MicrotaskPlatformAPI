@@ -15,15 +15,113 @@ interface MenuItem {
   color: string;
   path: string;
 }
+// 定义用户信息接口
+interface UserProfile {
+  id?: string;
+  avatar: string;
+  name: string;
+  phone: string;
+  email: string;
+  companyName: string;
+  contactPerson: string;
+  userType: string;
+  [key: string]: any;
+}
 
+// API响应接口
+  interface ApiResponse<T = any> {
+    code: number;
+    message: string;
+    data: T;
+  }
 export default function PublisherProfilePage() {
   const router = useRouter();
   const [balance, setBalance] = useState<BalanceData>({ balance: 0 });
-  const [userInfo, setUserInfo] = useState({
-    nickname: '张三',
-    phoneNumber: '13800138000',
-    imgurl: '/images/0e92a4599d02a7.jpg'
+  // 用户个人信息状态
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+      avatar: '/images/0e92a4599d02a7.jpg',
+      name: '', 
+      phone: '',
+      email: '',
+      companyName: '',
+      contactPerson: '',
+      userType: ''
   });
+  // 加载状态和错误信息
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+      const fetchUserInfo = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          const response = await fetch('/api/publisher/user/getuserinfo', {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json'
+              // Cookie中的token会自动传递
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json() as ApiResponse;
+          
+          // 打印完整的响应数据，用于调试
+          console.log('完整的API响应数据:', result);
+          
+          // 处理后端返回的数据结构
+          if (result.code === 200 && result.data && result.data.userInfo) {
+            // 从userInfo对象中提取数据
+            const apiUserData = result.data.userInfo;
+            
+            // 映射数据到UserProfile格式
+            const mappedUserProfile: UserProfile = {
+              id: apiUserData.id,
+              avatar: apiUserData.avatar || '/images/0e92a4599d02a7.jpg',
+              name: apiUserData.username || '用户',
+              phone: apiUserData.phone || '',
+              email: apiUserData.email || '',
+              companyName: apiUserData.companyName || '',
+              contactPerson: apiUserData.contactPerson || '',
+              userType: apiUserData.userType || '未设置'
+            };
+            
+            setUserProfile(mappedUserProfile);
+            console.log('映射后的用户信息:', mappedUserProfile);
+          } else {
+            setError(result.message || '获取用户信息失败');
+            console.warn('API响应数据不符合预期:', result);
+            // 设置默认数据以便展示
+            setUserProfile(prev => ({
+              ...prev,
+              name: '用户',
+              accountType: '未设置'
+            }));
+          }
+        } catch (err) {
+          console.error('获取用户信息错误:', err);
+          setError('网络请求失败，请稍后重试');
+          // 设置默认数据以便展示
+          setUserProfile(prev => ({
+            ...prev,
+            name: '用户',
+            accountType: '未设置'
+          }));
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchUserInfo();
+    }, []);
+
+
+
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   // 获取余额数据和未读通知数量
@@ -134,13 +232,13 @@ export default function PublisherProfilePage() {
         >
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-lg flex items-center justify-center text-2xl">
-              <img src={userInfo.imgurl} alt="" className="w-full h-full overflow-hidden rounded-lg" />
+              <img src={userProfile.avatar} alt="" className="w-full h-full overflow-hidden rounded-lg" />
             </div>
             <div>
               <span className="flex font-bold text-lg items-center">
-                {userInfo.nickname}
+                {userProfile.name}
               </span>
-              <span className="flex text-sm opacity-80">{userInfo.phoneNumber}</span>
+              <span className="flex text-sm opacity-80">{userProfile.phone}</span>
             </div>
           </div>
           <div className="text-white">
@@ -189,7 +287,7 @@ export default function PublisherProfilePage() {
       <div>
         <div className="text-center text-gray-500 text-xs">
           <p>商家中心 v1.0.0</p>
-          <p className="mt-1">© 2023 版权所有</p>
+          <p className="mt-1">© 2025 版权所有</p>
         </div>
       </div>
     </div>

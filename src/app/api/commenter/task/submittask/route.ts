@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
     const timeout = config.timeout || 5000;
     const defaultHeaders = config.headers || {};
     
-    // 构造完整的API URL，将taskId作为路径参数
-    const apiUrl = `${baseUrl}/tasks/accepted/${subtaskId}/submit/`;
+    // 构造完整的API URL，将subtaskId作为路径参数
+    const apiUrl = `${baseUrl}/tasks/accepted/${subtaskId}/submit`;
     // 构造请求头，合并默认头和token头
     const requestHeaders: HeadersInit = {
       ...defaultHeaders,

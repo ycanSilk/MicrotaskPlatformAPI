@@ -66,6 +66,9 @@ export default function CompletedTabPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
+  // 视频模态框状态
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
 
   useEffect(() => {
     console.log('组件挂载，开始初始化...');
@@ -268,14 +271,17 @@ export default function CompletedTabPage() {
         <div className="mb-1 bg-blue-50 border border-blue-500 py-2 px-3 rounded-lg">
           <p className='mb-1  text-sm text-blue-600'>任务视频点击进入：</p>
           <a 
-            href="http://localhost:3000/publisher/dashboard?tab=active" 
+            href="https://v.douyin.com/oiunFce071s/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm  inline-flex items-center"
             onClick={(e) => {
               e.preventDefault();
-              // 在实际应用中，这里应该跳转到抖音视频页面
-              window.open('https://www.douyin.com', '_blank');
+              // 复制评论
+              handleCopyComment(task.commentDetail || '');
+              // 设置当前视频URL并打开模态框
+              setCurrentVideoUrl('https://v.douyin.com/oiunFce071s/');
+              setIsModalOpen(true);
             }}
           >
              打开视频
@@ -351,6 +357,8 @@ export default function CompletedTabPage() {
         </div>
       )}
       
+
+      
       {/* 使用标准模板组件 - 移除排序功能 */}
       <OrderHeaderTemplate
         title="已完成的订单"
@@ -387,6 +395,35 @@ export default function CompletedTabPage() {
           </div>
         )}
       </div>
+
+      {/* 打开视频确认模态框 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-medium mb-4">提示</h3>
+            <p className="text-gray-700 mb-6">是否需要打开抖音APP？</p>
+            <div className="flex justify-end space-x-3">
+              <button 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                onClick={() => {
+                  // 打开视频链接
+                  window.open(currentVideoUrl, '_blank');
+                  // 关闭模态框
+                  setIsModalOpen(false);
+                }}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

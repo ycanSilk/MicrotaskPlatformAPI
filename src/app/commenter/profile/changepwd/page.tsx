@@ -225,9 +225,9 @@ export default function ResetPasswordPage() {
   // 移除密码强度指示器组件
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="flex-1 flex justify-center items-center p-4">
-        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
+    <div className="flex w-full px-10">
+      <div className="flex-1 flex justify-center items-center w-full">
+        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md mt-10">
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">修改密码</h1>
           </div>
@@ -329,7 +329,7 @@ export default function ResetPasswordPage() {
               {/* 返回按钮 */}
               <div>
                 <Button
-                  onClick={() => router.push('/commenter/profile/settings')}
+                  onClick={() => router.push('/commenter/profile/userinfo')}
                   className="w-full"
                 >
                   返回个人中心

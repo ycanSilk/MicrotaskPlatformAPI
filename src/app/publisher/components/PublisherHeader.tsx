@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LeftOutlined } from '@ant-design/icons';
 import { CustomerServiceButton } from '../../../components/button/CustomerServiceButton';
+import { BellOutlined } from '@ant-design/icons';
 import { 
   getFlatRouteTitleMap, 
   routeHierarchyMap, 
@@ -465,6 +466,14 @@ export const PublisherHeader: React.FC<PublisherHeaderProps> = ({ user = null })
           />
         )}
         
+        <div className="mr-2 relative">
+          <BellOutlined className="text-3xl text-white rounded-full p-1" />
+          {/* 通知数量提示 */}
+          <div className="absolute top-0 left-5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+            3
+          </div>
+        </div>
+
         {/* 用户头像和下拉菜单 */}
         <div className="relative ml-3">
           <button 

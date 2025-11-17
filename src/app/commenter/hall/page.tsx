@@ -22,9 +22,7 @@ export default function CommenterHallPage() {
         // 从localStorage获取token信息（仅用于日志显示）
         const tokenStorage = localStorage.getItem('commenterAuthToken');
         console.log('获取用户信息开始，本地存储的token信息：', tokenStorage ? JSON.parse(tokenStorage) : null);
-
-        // 从后端API获取用户信息
-        console.log('发起API请求获取用户信息：', '/api/commenter/user/getloginuserinfo');
+       
         const response = await axios.get<{
           success: boolean;
           data?: {
@@ -39,7 +37,7 @@ export default function CommenterHallPage() {
             };
           };
           message?: string;
-        }>('/api/commenter/user/getloginuserinfo');
+        }>('/api/commenter/user/getloginuserinfo', { withCredentials: true });
         const data = response.data;
         console.log('API响应数据：', response);
 

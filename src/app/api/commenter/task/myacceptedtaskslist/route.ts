@@ -90,7 +90,11 @@ async function handleTasksListRequest(request: NextRequest) {
     
     const responseData = await response.json();
     // 只输出一次外部API响应日志
-    console.log('外部API返回的完整JSON响应:', { status: responseData.code, message: responseData.message, dataLength: responseData.data?.list?.length || 0 });
+    console.log('这是我接取的任务的API请求结果')
+    console.log(apiUrl)
+    console.log(token)
+    console.log('外部API返回的完整JSON响应:', responseData.data);
+
    
 
     // 将外部API返回的数据原封不动地传递给前端

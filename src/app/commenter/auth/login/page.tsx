@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import SuccessModal from '../../../../components/button/authButton/SuccessModal';
+// import SuccessModal from '../../../../components/button/authButton/SuccessModal'; // 移除SuccessModal导入
 
 // 获取认证用户信息
 const getAuthUserFromStorage = () => {
@@ -84,8 +84,13 @@ const validationRules = {
   password: {
     minLength: 6,
     maxLength: 20,
-    pattern: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{6,20}$/,
+    pattern: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};:"\\|,.<>\/?]{6,20}$/,
     message: '密码必须包含6-20个字符'
+  },
+  captcha: {
+    minLength: 4,
+    maxLength: 4,
+    message: '验证码必须是4个字符'
   }
 };
 
@@ -100,8 +105,9 @@ export default function CommenterLoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [loginSuccessMessage, setLoginSuccessMessage] = useState('');
+  // 移除与登录成功提示框相关的状态
+  // const [showSuccessModal, setShowSuccessModal] = useState(false);
+  // const [loginSuccessMessage, setLoginSuccessMessage] = useState('');
   const router = useRouter();
 
   // 生成随机验证码
@@ -116,8 +122,14 @@ export default function CommenterLoginPage() {
 
   // 验证单个字段
   const validateField = (fieldName: keyof LoginFormData, value: string): string => {
-    // 对于验证码字段，暂时跳过验证
     if (fieldName === 'captcha') {
+      if (!value.trim()) {
+        return '验证码不能为空';
+      }
+      const rules = validationRules[fieldName];
+      if (value.length < rules.minLength || value.length > rules.maxLength) {
+        return rules.message;
+      }
       return '';
     }
     
@@ -147,15 +159,13 @@ export default function CommenterLoginPage() {
     const errors: Partial<Record<keyof LoginFormData, string>> = {};
     let isValid = true;
     
-    // 验证用户名和密码（跳过验证码验证）
+    // 验证所有字段，包括验证码
     Object.keys(formData).forEach(key => {
-      if (key !== 'captcha') { // 跳过验证码字段
-        const fieldName = key as keyof LoginFormData;
-        const error = validateField(fieldName, formData[fieldName]);
-        if (error) {
-          errors[fieldName] = error;
-          isValid = false;
-        }
+      const fieldName = key as keyof LoginFormData;
+      const error = validateField(fieldName, formData[fieldName]);
+      if (error) {
+        errors[fieldName] = error;
+        isValid = false;
       }
     });
     
@@ -213,22 +223,12 @@ export default function CommenterLoginPage() {
       [fieldName]: value
     }));
     
-    // 实时验证当前字段
-    if (fieldName !== 'captcha') { // 验证码不实时验证，只在提交时验证
-      const error = validateField(fieldName, value);
-      setFieldErrors(prev => ({
-        ...prev,
-        [fieldName]: error
-      }));
-    } else {
-      // 清除验证码错误提示（如果有）
-      setFieldErrors(prev => {
-        if (!prev.captcha) return prev;
-        const newErrors = { ...prev };
-        delete newErrors.captcha;
-        return newErrors;
-      });
-    }
+    // 实时验证当前字段，包括验证码
+    const error = validateField(fieldName, value);
+    setFieldErrors(prev => ({
+      ...prev,
+      [fieldName]: error
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -247,7 +247,8 @@ export default function CommenterLoginPage() {
         },
         body: JSON.stringify({
           username: formData.username.trim(),
-          password: formData.password
+          password: formData.password,
+          captcha: formData.captcha // 新增验证码参数
         }),
         signal: AbortSignal.timeout(10000),
         credentials: 'include' // 关键设置，允许浏览器处理认证Cookie
@@ -268,11 +269,8 @@ export default function CommenterLoginPage() {
         throw new Error('处理登录响应失败');
       }
       
-      // token由浏览器通过HttpOnly Cookie自动管理
-      
-      const savedUser = getAuthUserFromStorage();
-      setLoginSuccessMessage(`登录成功！欢迎 ${savedUser?.username || formData.username}`);
-      setShowSuccessModal(true);
+      // 直接跳转到首页，不显示模态框
+      router.push(getCommenterHomePath());
     } catch (error) {
       let errorMsg = '登录过程中出现错误，请稍后再试';
       const typedError = error as Error;
@@ -417,14 +415,14 @@ export default function CommenterLoginPage() {
         </div>
         
         {/* 登录成功提示框 */}
-        <SuccessModal
+        {/* <SuccessModal
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           title="登录成功"
           message={loginSuccessMessage}
           buttonText="确认"
           redirectUrl="/commenter/hall"
-        />
+        /> */}
       </div>
     </div>
   );

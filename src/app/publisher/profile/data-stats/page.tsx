@@ -1,56 +1,82 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+
+interface TaskCountData {
+  publishedCount: number;
+  acceptedCount: number;
+  submittedCount: number;
+  completedCount: number;
+  totalEarnings: number;
+  pendingEarnings: number;
+  todayEarnings: number;
+  monthEarnings: number;
+  passedCount: number;
+  rejectedCount: number;
+  passRate: number;
+  avgCompletionTime: number;
+  ranking: number;
+  agentTasksCount: number;
+  agentEarnings: number;
+  invitedUsersCount: number;
+}
+
+interface TaskCountResponse {
+  code: number;
+  message: string;
+  data: TaskCountData;
+  success: boolean;
+  timestamp: number;
+}
 
 export default function DataStatsPage() {
   const router = useRouter();
-  const [dateRange, setDateRange] = useState('week'); // 'today' | 'week' | 'month'
-  
-  // 模拟数据
-  const statsData = {
-    today: {
-      publishedTasks: 12,
-      completedTasks: 8,
-      totalSpent: 156.80,
-      pendingReview: 3
-    },
-    week: {
-      publishedTasks: 45,
-      completedTasks: 38,
-      totalSpent: 892.50,
-      pendingReview: 7
-    },
-    month: {
-      publishedTasks: 189,
-      completedTasks: 165,
-      totalSpent: 3847.20,
-      pendingReview: 24
-    }
-  };
+  const [dateRange, setDateRange] = useState('today'); // 'today' | 'week' | 'month'
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [taskCountData, setTaskCountData] = useState<TaskCountResponse | null>(null);
 
-  const currentStats = statsData[dateRange as keyof typeof statsData];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/publisher/publishertasks/taskcount?dateRange=${dateRange}`);
+        const data = await response.json();
+        if (data.success) {
+          setTaskCountData(data);
+        } else {
+          setError(data.message || 'Failed to fetch data.');
+        }
+      } catch (err) {
+        setError('An error occurred. Please try again later.');
+        console.error('Error fetching task count data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // 任务分类统计
-  const categoryStats = [
-    { category: '美食', count: 45, spent: 324.50, color: 'bg-orange-50 text-orange-600' },
-    { category: '数码', count: 38, spent: 612.80, color: 'bg-blue-50 text-blue-600' },
-    { category: '美妆', count: 32, spent: 258.70, color: 'bg-pink-50 text-pink-600' },
-    { category: '旅游', count: 28, spent: 445.60, color: 'bg-green-50 text-green-600' },
-    { category: '影视', count: 25, spent: 189.30, color: 'bg-purple-50 text-purple-600' }
-  ];
-
-  // 效果统计
-  const effectStats = [
-    { metric: '平均完成率', value: '87.3%', trend: '+2.5%', color: 'text-green-600' },
-    { metric: '平均单价', value: '¥4.85', trend: '+0.32', color: 'text-green-600' },
-    { metric: '用户满意度', value: '4.8分', trend: '+0.1', color: 'text-green-600' },
-    { metric: '复购率', value: '73.2%', trend: '-1.2%', color: 'text-red-500' }
-  ];
+    fetchData();
+  }, [dateRange]);
 
   const handleBack = () => {
     router.back();
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-50 pb-8 flex justify-center items-center text-xl">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="min-h-screen bg-gray-50 pb-8 flex justify-center items-center text-xl text-red-600">Error: {error}</div>;
+  }
+
+  if (!taskCountData) {
+    return <div className="min-h-screen bg-gray-50 pb-8 flex justify-center items-center text-xl">No data available.</div>;
+  }
+
+  const { data } = taskCountData;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
@@ -105,19 +131,19 @@ export default function DataStatsPage() {
           <h3 className="font-medium text-gray-700 mb-4">核心数据</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col items-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-lg font-bold text-blue-600">{currentStats.publishedTasks}</div>
+              <div className="text-lg font-bold text-blue-600">{data.publishedCount}</div>
               <div className="text-xs text-blue-700 mt-1">发布任务</div>
             </div>
             <div className="flex flex-col items-center p-3 bg-green-50 rounded-lg">
-              <div className="text-lg font-bold text-green-600">{currentStats.completedTasks}</div>
+              <div className="text-lg font-bold text-green-600">{data.completedCount}</div>
               <div className="text-xs text-green-700 mt-1">完成任务</div>
             </div>
             <div className="flex flex-col items-center p-3 bg-orange-50 rounded-lg">
-              <div className="text-lg font-bold text-orange-600">¥{currentStats.totalSpent}</div>
+              <div className="text-lg font-bold text-orange-600">¥{data.totalEarnings}</div>
               <div className="text-xs text-orange-700 mt-1">总支出</div>
             </div>
             <div className="flex flex-col items-center p-3 bg-purple-50 rounded-lg">
-              <div className="text-lg font-bold text-purple-600">{currentStats.pendingReview}</div>
+              <div className="text-lg font-bold text-purple-600">{data.submittedCount}</div>
               <div className="text-xs text-purple-700 mt-1">待审核</div>
             </div>
           </div>
@@ -145,15 +171,15 @@ export default function DataStatsPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">订单总数</div>
-                  <div className="font-bold text-gray-800">{dateRange === 'today' ? 10 : dateRange === 'week' ? 38 : 156}</div>
+                  <div className="font-bold text-gray-800">{data.publishedCount}</div>
                 </div>
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">已完成</div>
-                  <div className="font-bold text-green-600">{dateRange === 'today' ? 7 : dateRange === 'week' ? 32 : 134}</div>
+                  <div className="font-bold text-green-600">{data.completedCount}</div>
                 </div>
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">总支出</div>
-                  <div className="font-bold text-orange-600">¥{dateRange === 'today' ? 128.5 : dateRange === 'week' ? 724.3 : 3125.8}</div>
+                  <div className="font-bold text-orange-600">¥{data.totalEarnings}</div>
                 </div>
               </div>
             </div>
@@ -174,15 +200,15 @@ export default function DataStatsPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">订单总数</div>
-                  <div className="font-bold text-gray-800">{dateRange === 'today' ? 2 : dateRange === 'week' ? 7 : 33}</div>
+                  <div className="font-bold text-gray-800">{data.agentTasksCount}</div>
                 </div>
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">进行中</div>
-                  <div className="font-bold text-blue-600">{dateRange === 'today' ? 1 : dateRange === 'week' ? 3 : 12}</div>
+                  <div className="font-bold text-blue-600">{data.acceptedCount}</div>
                 </div>
                 <div className="text-center p-2 bg-gray-50 rounded">
                   <div className="text-xs text-gray-500 mb-1">总支出</div>
-                  <div className="font-bold text-orange-600">¥{dateRange === 'today' ? 28.3 : dateRange === 'week' ? 168.2 : 721.4}</div>
+                  <div className="font-bold text-orange-600">¥{data.agentEarnings}</div>
                 </div>
               </div>
             </div>
@@ -195,19 +221,22 @@ export default function DataStatsPage() {
         <div className="bg-white rounded-lg p-5 shadow-sm">
           <h3 className="font-medium text-gray-700 mb-4">效果分析</h3>
           <div className="grid grid-cols-2 gap-3">
-            {effectStats.slice(0, 2).map((item, index) => (
-              <div key={index} className="border border-gray-100 rounded-lg p-3">
-                <div className="text-xs text-gray-500 mb-1.5">{item.metric}</div>
-                <div className="font-bold text-gray-800 mb-1.5">{item.value}</div>
-                <div className={`text-xs ${item.color} flex items-center`}>
-                  {item.trend.startsWith('+') ? (
-                    <>↗️ <span>{item.trend}</span></>
-                  ) : (
-                    <>↘️ <span>{item.trend}</span></>
-                  )}
-                </div>
-              </div>
-            ))}
+            <div className="border border-gray-100 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1.5">通过数</div>
+              <div className="font-bold text-gray-800 mb-1.5">{data.passedCount}</div>
+            </div>
+            <div className="border border-gray-100 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1.5">拒绝数</div>
+              <div className="font-bold text-gray-800 mb-1.5">{data.rejectedCount}</div>
+            </div>
+            <div className="border border-gray-100 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1.5">通过率</div>
+              <div className="font-bold text-gray-800 mb-1.5">{data.passRate}%</div>
+            </div>
+            <div className="border border-gray-100 rounded-lg p-3">
+              <div className="text-xs text-gray-500 mb-1.5">评价完成时间</div>
+              <div className="font-bold text-gray-800 mb-1.5">{data.avgCompletionTime}</div>
+            </div>
           </div>
         </div>
       </div>

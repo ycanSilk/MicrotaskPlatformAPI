@@ -97,6 +97,9 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
   // 显示复制成功提示
   const [showCopyTooltip, setShowCopyTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState('');
+  // 视频模态框状态
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
   // 模态框状态
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -324,6 +327,35 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
         onViewAllClick={() => router.push('/publisher/orders')}
       />
       
+      {/* 打开视频确认模态框 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-medium mb-4">提示</h3>
+            <p className="text-gray-700 mb-6">是否需要打开抖音APP？</p>
+            <div className="flex justify-end space-x-3">
+              <button 
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
+                onClick={() => setIsModalOpen(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                onClick={() => {
+                  // 打开视频链接
+                  window.open(currentVideoUrl, '_blank');
+                  // 关闭模态框
+                  setIsModalOpen(false);
+                }}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 子订单列表 - 内联实现AuditOrderCard功能 */}
       {filteredOrders.map((order, index) => (
         <div key={`pending-${order.id}-${index}`} className="p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow mb-1 bg-white">
@@ -403,8 +435,11 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
               className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm font-medium inline-flex items-center"
               onClick={(e) => {
                 e.preventDefault();
-                // 在实际应用中，这里应该跳转到抖音视频页面
-                window.open('https://www.douyin.com', '_blank');
+                // 复制评论
+                handleCopyComment(order.submittedComment || '');
+                // 设置当前视频URL并打开模态框
+                setCurrentVideoUrl('https://www.douyin.com');
+                setIsModalOpen(true);
               }}
             >
               <span className="mr-1">⦿</span> 打开视频
