@@ -21,7 +21,7 @@ export const AdminBottomNavigation: React.FC = () => {
     },
     {
       icon: '💰',
-      label: '财务',
+      label: '充值管理',
       path: '/admin/finance'
     },
     {

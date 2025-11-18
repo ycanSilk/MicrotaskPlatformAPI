@@ -23,6 +23,11 @@
     },
     "wallet": {
       "recharge": "/wallet/admin/recharge"
+    },
+    "menu": {
+      "createmenu": "/sys/menu/",
+      "getmenutree": "/sys/menu/tree",
+      "getchildrenmenulist": "/sys/menu/children"
     }
   },
   "mockMode": false,

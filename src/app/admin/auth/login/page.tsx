@@ -282,6 +282,7 @@ export default function AdminLoginPage() {
                   placeholder="请输入管理员用户名"
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleLoginClick())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   disabled={loading}
                   aria-disabled={loading}
@@ -299,6 +300,7 @@ export default function AdminLoginPage() {
                   autoComplete="current-password"
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleLoginClick())}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   disabled={loading}
                   aria-disabled={loading}
@@ -316,7 +318,8 @@ export default function AdminLoginPage() {
                     placeholder="请输入验证码"
                     value={formData.captcha}
                     onChange={(e) => handleInputChange('captcha', e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleLoginClick())}
+                    className="flex-1  border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     maxLength={4}
                     disabled={loading}
                     aria-disabled={loading}

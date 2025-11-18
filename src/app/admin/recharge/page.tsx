@@ -75,30 +75,6 @@ export default function PublisherFinancePage() {
     setLoading(false);
   }, [params]);
 
-  // 获取财务数据 - 使用静态数据
-  const fetchFinanceData = () => {
-    try {
-      setLoading(true);
-      console.log('开始获取财务数据（静态数据）');
-      
-      // 设置空余额数据
-      const newBalance: BalanceData = {
-        balance: 0
-      };
-      
-      console.log('使用空余额数据:', newBalance);
-      setBalance(newBalance);
-      
-      
-      
-    } catch (error) {
-      console.error('获取财务数据失败:', error);
-      showAlert('错误', '加载数据失败', '❌');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // 处理充值 - 调用后端API
   const handleRecharge = async () => {
     console.log('开始处理充值请求', { rechargeAmount, userId, rechargeRemark });
@@ -161,11 +137,6 @@ export default function PublisherFinancePage() {
       showAlert('错误', '充值失败，请稍后重试', '❌');
     }
   };
-
-  // 初始加载数据 - 使用静态数据
-  useEffect(() => {
-    fetchFinanceData();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50  px-4">

@@ -1,186 +1,158 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { calculateProgress } from '@/lib/utils';
+
+// 定义与后端API返回数据一致的接口类型
+type PlatformStatsResponse = {
+  code: number;
+  message: string;
+  data: {
+    totalTasks: number;
+    totalSubTasks: number;
+    completedSubTasks: number;
+    totalTransactionAmount: number;
+    totalRewardAmount: number;
+    activePublishers: number;
+    activeWorkers: number;
+    platformRevenue: number;
+    statsTime: string;
+    platformDistribution: { [key: string]: number };
+    taskTypeDistribution: { [key: string]: number };
+    revenueDistribution: { [key: string]: number };
+  };
+  success: boolean;
+  timestamp: number;
+};
+
+// 定义页面使用的状态类型
+type DashboardStats = {
+  totalTasks: number;
+  totalSubTasks: number;
+  completedSubTasks: number;
+  totalTransactionAmount: number;
+  totalRewardAmount: number;
+  activePublishers: number;
+  activeWorkers: number;
+  platformRevenue: number;
+  statsTime: string;
+  platformDistribution: { [key: string]: number };
+  taskTypeDistribution: { [key: string]: number };
+  revenueDistribution: { [key: string]: number };
+};
+
 
 export default function AdminDashboardPage() {
   const [dateRange, setDateRange] = useState('today');
   
-  // 模拟平台概览数据
-  const platformOverviewData = {
-    today: {
-      totalUsers: 12345,
-      newUsers: 234,
-      activeUsers: 3120,
-      activeRate: 25.3,
-      avgDailyActive: 2850,
-      retentionRate: 68.5
+  // 添加API数据状态
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 将dateRange转换为API所需的startDate和endDate
+  const getDateRangeParams = () => {
+    const today = new Date();
+    let startDate: string;
+    let endDate: string = today.toISOString().split('T')[0];
+
+    switch (dateRange) {
+      case 'today':
+        startDate = endDate;
+        break;
+      case 'week':
+        const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate = oneWeekAgo.toISOString().split('T')[0];
+        break;
+      case 'month':
+        const oneMonthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate = oneMonthAgo.toISOString().split('T')[0];
+        break;
+      default:
+        startDate = endDate;
+    }
+
+    return { startDate, endDate };
+  };
+
+  // 页面加载和dateRange变化时调用后端API
+  useEffect(() => {
+    const fetchPlatformStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // 获取日期范围参数
+        const { startDate, endDate } = getDateRangeParams();
+        
+        // 调用后端API，传递startDate和endDate参数
+        const response = await fetch(`/api/public/taskmodule/tasksplatformstats?startDate=${startDate}&endDate=${endDate}`);
+        
+        const responseData = await response.json();
+        
+        if(response.ok){
+          console.log('请求成功')
+          console.log('请求url:', response.url)
+          console.log('响应结果:', responseData)
+        }
+        if (!response.ok) {
+          console.log('请求失败')
+        }
+        
+        const data: PlatformStatsResponse = responseData;
+        
+        if (data.success) {
+          setStatsData(data.data);
+        } else {
+          throw new Error(data.message || 'Failed to fetch platform stats');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Error fetching platform stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlatformStats();
+  }, [dateRange]);
+
+        
+
+  // 基于API数据计算财务数据
+  const currentFinanceData = {
+    transactionCount: statsData?.totalTasks || 0,
+    revenue: statsData?.platformRevenue || 0,
+    withdrawalAmount: statsData?.totalRewardAmount || 0
+  };
+
+  // 基于API数据计算运营数据
+  const currentOperationData = {
+    complaints: {
+      total: 0,
+      pending: 0,
+      processing: 0,
+      resolved: 0,
+      resolutionRate: 0
     },
-    week: {
-      totalUsers: 12345,
-      newUsers: 1234,
-      activeUsers: 8970,
-      activeRate: 72.7,
-      avgDailyActive: 3010,
-      retentionRate: 71.2
-    },
-    month: {
-      totalUsers: 12345,
-      newUsers: 4567,
-      activeUsers: 10230,
-      activeRate: 82.9,
-      avgDailyActive: 3250,
-      retentionRate: 75.8
+    withdrawals: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      processingTime: 0
     }
   };
 
-  // 模拟今日财务数据
-  const financeData = {
-    today: {
-      depositAmount: 23500.50,
-      taskAmount: 18750.75,
-      commissionAmount: 12500.20,
-      revenue: 6250.55,
-      withdrawalAmount: 8300.10,
-      transactionCount: 125
-    },
-    week: {
-      depositAmount: 145200.20,
-      taskAmount: 115350.45,
-      commissionAmount: 78500.30,
-      revenue: 36850.15,
-      withdrawalAmount: 52300.60,
-      transactionCount: 845
-    },
-    month: {
-      depositAmount: 585600.80,
-      taskAmount: 465800.95,
-      commissionAmount: 315200.60,
-      revenue: 150600.35,
-      withdrawalAmount: 210800.40,
-      transactionCount: 3520
-    }
-  };
-
-  // 模拟今日任务数据
-  const taskData = {
-    today: {
-      totalTasks: 285,
-      taskByCategory: [
-        { name: '评论任务', count: 85, icon: '💄' },
-        { name: '账户租赁', count: 65, icon: '📱' },
-        { name: '其他', count: 52, icon: '📦' }
-      ],
-      taskStatus: {
-        pending: 125,
-        inProgress: 85,
-        completed: 75
-      }
-    },
-    week: {
-      totalTasks: 1845,
-      taskByCategory: [
-        { name: '美妆', count: 540, icon: '💄' },
-        { name: '数码', count: 420, icon: '📱' },
-        { name: '美食', count: 310, icon: '🍔' },
-        { name: '旅游', count: 225, icon: '✈️' },
-        { name: '其他', count: 350, icon: '📦' }
-      ],
-      taskStatus: {
-        pending: 820,
-        inProgress: 540,
-        completed: 485
-      }
-    },
-    month: {
-      totalTasks: 7580,
-      taskByCategory: [
-        { name: '美妆', count: 2250, icon: '💄' },
-        { name: '数码', count: 1780, icon: '📱' },
-        { name: '美食', count: 1250, icon: '🍔' },
-        { name: '旅游', count: 980, icon: '✈️' },
-        { name: '其他', count: 1320, icon: '📦' }
-      ],
-      taskStatus: {
-        pending: 3250,
-        inProgress: 2280,
-        completed: 2050
-      }
-    }
-  };
-
-  // 模拟运营处理数据
-  const operationData = {
-    today: {
-      complaints: {
-        total: 15,
-        pending: 5,
-        processing: 4,
-        resolved: 6,
-        resolutionRate: 75.0
-      },
-      withdrawals: {
-        total: 32,
-        pending: 12,
-        approved: 15,
-        rejected: 5,
-        processingTime: 45
-      }
-    },
-    week: {
-      complaints: {
-        total: 98,
-        pending: 15,
-        processing: 25,
-        resolved: 58,
-        resolutionRate: 82.5
-      },
-      withdrawals: {
-        total: 185,
-        pending: 35,
-        approved: 125,
-        rejected: 25,
-        processingTime: 38
-      }
-    },
-    month: {
-      complaints: {
-        total: 385,
-        pending: 45,
-        processing: 95,
-        resolved: 245,
-        resolutionRate: 86.5
-      },
-      withdrawals: {
-        total: 752,
-        pending: 85,
-        approved: 585,
-        rejected: 82,
-        processingTime: 32
-      }
-    }
-  };
-
-  // 获取当前时间范围的数据
-  const currentOverviewData = platformOverviewData[dateRange as keyof typeof platformOverviewData];
-  const currentFinanceData = financeData[dateRange as keyof typeof financeData];
-  const currentTaskData = taskData[dateRange as keyof typeof taskData];
-  const currentOperationData = operationData[dateRange as keyof typeof operationData];
-
-  // 用户分布数据
+  // 空的用户分布数据（等待API提供）
   const userStats = {
-    commenter: { count: 8567, active: 6234, growth: '+12.5%' },
-    publisher: { count: 1234, active: 890, growth: '+8.3%' },
-    admin: { count: 12, active: 8, growth: '0%' }
+    commenter: { count: 0, active: 0, growth: '0%' },
+    publisher: { count: 0, active: 0, growth: '0%' },
+    admin: { count: 0, active: 0, growth: '0%' }
   };
 
-  // 最近活动
-  const recentActivities = [
-    { id: 1, type: 'user', action: '新用户注册', user: '评论员小李', time: '5分钟前', icon: '👤' },
-    { id: 2, type: 'task', action: '任务完成', user: '派单员小王', time: '8分钟前', icon: '✅' },
-    { id: 3, type: 'review', action: '任务审核', user: '管理员A', time: '12分钟前', icon: '📋' },
-    { id: 4, type: 'withdraw', action: '提现申请', user: '评论员小张', time: '15分钟前', icon: '💰' },
-    { id: 5, type: 'system', action: '系统维护', user: '系统', time: '30分钟前', icon: '⚙️' }
-  ];
+  // 空的最近活动数据（等待API提供）
+  const recentActivities: Array<{ id: number, type: string, action: string, user: string, time: string, icon: string }> = [];
 
   // 自定义进度条组件
   const ProgressBar = ({ value, max = 100, color = 'bg-blue-500' }: { value: number, max?: number, color?: string }) => {
@@ -228,7 +200,17 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="pb-20">
+    <div className="min-h-screen bg-gray-50">
+      {loading ? (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-xl">Loading...</div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center h-screen text-red-600">Error: {error}</div>
+      ) : !statsData ? (
+        <div className="flex items-center justify-center h-screen">No data available</div>
+      ) : (
+        <div className="pb-20">
       {/* 时间范围选择 */}
       <div className="mx-4 mt-4 grid grid-cols-3 gap-2">
         <button
@@ -261,36 +243,55 @@ export default function AdminDashboardPage() {
       <div className="mx-4 mt-6">
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <h3 className="font-bold text-gray-800 mb-4">平台概览</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-blue-600">{currentOverviewData.totalUsers.toLocaleString()}</div>
-              <div className="text-xs text-blue-700">总用户数</div>
-            </div>
-            <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-green-600">{currentOverviewData.newUsers}</div>
-              <div className="text-xs text-green-700">新增用户</div>
-            </div>
-            <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
-              <div className="text-center mb-2">
-                <div className="text-lg font-bold text-orange-600">{currentOverviewData.activeUsers.toLocaleString()}</div>
-                <div className="text-xs text-orange-700">活跃用户</div>
+          <div className="grid grid-cols-4 gap-3">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-blue-600">{statsData ? (statsData.activePublishers + statsData.activeWorkers) || 0 : 0}</div>
+                <div className="text-xs text-blue-700">总活跃用户</div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">活跃占比</span>
-                <span className="text-xs font-medium text-orange-600">{currentOverviewData.activeRate}%</span>
+              <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-green-600">{statsData?.activePublishers || 0}</div>
+                <div className="text-xs text-green-700">活跃发布者</div>
               </div>
-              <ProgressBar value={currentOverviewData.activeRate} color="bg-orange-500" />
+              <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                <div className="text-center mb-2">
+                  <div className="text-lg font-bold text-orange-600">{statsData?.activeWorkers || 0}</div>
+                  <div className="text-xs text-orange-700">活跃工作者</div>
+                </div>
+                <div className="flex justify-between items-center">
+                   <span className="text-xs text-gray-600">活跃占比</span>
+                   <span className="text-xs font-medium text-orange-600">
+                     {statsData ? (
+                       ((statsData.activePublishers + statsData.activeWorkers) > 0 
+                         ? ((statsData.activeWorkers / (statsData.activePublishers + statsData.activeWorkers)) * 100).toFixed(1) 
+                         : 0)
+                     ) : 0}%
+                   </span>
+                 </div>
+                 <ProgressBar 
+                   value={statsData ? (
+                     ((statsData.activePublishers + statsData.activeWorkers) > 0 
+                       ? ((statsData.activeWorkers / (statsData.activePublishers + statsData.activeWorkers)) * 100) 
+                       : 0)
+                   ) : 0} 
+                   color="bg-orange-500" 
+                 />
+              </div>
+              <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
+                <div className="text-center mb-2">
+                   <div className="text-lg font-bold text-purple-600">
+                     {statsData ? (
+                       statsData.totalTransactionAmount > 0 
+                         ? ((statsData.platformRevenue / statsData.totalTransactionAmount) * 100).toFixed(1) 
+                         : 0
+                     ) : 0}%
+                   </div>
+                   <div className="text-xs text-purple-700">收入率</div>
+                 </div>
+                <div className="text-center text-xs text-gray-600">
+                  统计时间: {statsData?.statsTime || ''}
+                </div>
+              </div>
             </div>
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-3">
-              <div className="text-center mb-2">
-                <div className="text-lg font-bold text-purple-600">{currentOverviewData.retentionRate}%</div>
-                <div className="text-xs text-purple-700">留存率</div>
-              </div>
-              <div className="text-center text-xs text-gray-600">
-                平均日活: {currentOverviewData.avgDailyActive}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -299,22 +300,22 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-lg p-4 shadow-sm">
           <h3 className="font-bold text-gray-800 mb-4">财务数据</h3>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-blue-600">¥{currentFinanceData.depositAmount.toLocaleString()}</div>
-                <div className="text-xs text-blue-700">充值金额</div>
+                <div className="text-lg font-bold text-blue-600">¥{statsData?.totalTransactionAmount?.toLocaleString() || 0}</div>
+                <div className="text-xs text-blue-700">总交易金额</div>
               </div>
               <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-green-600">¥{currentFinanceData.taskAmount.toLocaleString()}</div>
-                <div className="text-xs text-green-700">任务金额</div>
+                <div className="text-lg font-bold text-green-600">¥{statsData?.totalRewardAmount?.toLocaleString() || 0}</div>
+                <div className="text-xs text-green-700">总奖励金额</div>
               </div>
               <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-yellow-600">¥{currentFinanceData.commissionAmount.toLocaleString()}</div>
-                <div className="text-xs text-yellow-700">佣金金额</div>
+                <div className="text-lg font-bold text-yellow-600">¥{statsData?.platformRevenue?.toLocaleString() || 0}</div>
+                <div className="text-xs text-yellow-700">平台收入</div>
               </div>
               <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-purple-600">¥{currentFinanceData.revenue.toLocaleString()}</div>
-                <div className="text-xs text-purple-700">平台收入</div>
+                <div className="text-lg font-bold text-purple-600">¥{statsData?.platformRevenue?.toLocaleString() || 0}</div>
+                <div className="text-xs text-purple-700">净收入</div>
               </div>
             </div>
             
@@ -362,7 +363,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-4">
             {/* 任务总量 */}
             <div className="text-center bg-blue-50 border border-blue-100 rounded-lg p-3">
-              <div className="text-2xl font-bold text-blue-600">{currentTaskData.totalTasks}</div>
+              <div className="text-2xl font-bold text-blue-600">{statsData?.totalTasks || 0}</div>
               <div className="text-sm text-blue-700">任务总数量</div>
             </div>
             
@@ -370,8 +371,10 @@ export default function AdminDashboardPage() {
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3">任务分类统计</h4>
               <div className="space-y-2">
-                {currentTaskData.taskByCategory.map((category, index) => {
-                  const percentage = (category.count / currentTaskData.totalTasks) * 100;
+                {/* 暂时使用空数据，等待API提供完整数据 */}
+                {([] as Array<{ name: string, count: number, icon: string }>).map((category, index) => {
+                  const totalTasks = statsData?.totalTasks || 0;
+                  const percentage = totalTasks > 0 ? (category.count / totalTasks) * 100 : 0;
                   return (
                     <div key={index}>
                       <div className="flex justify-between items-center mb-1">
@@ -383,7 +386,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <ProgressBar 
                         value={category.count} 
-                        max={currentTaskData.totalTasks} 
+                        max={totalTasks || category.count}
                         color={index % 5 === 0 ? 'bg-pink-500' : index % 5 === 1 ? 'bg-blue-500' : index % 5 === 2 ? 'bg-green-500' : index % 5 === 3 ? 'bg-purple-500' : 'bg-orange-500'}
                       />
                     </div>
@@ -397,15 +400,15 @@ export default function AdminDashboardPage() {
               <h4 className="text-sm font-medium text-gray-700 mb-3">任务状态统计</h4>
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold text-yellow-600">{currentTaskData.taskStatus.pending}</div>
+                  <div className="text-sm font-bold text-yellow-600">{statsData?.totalTasks - (statsData?.completedSubTasks || 0) || 0}</div>
                   <div className="text-xs text-yellow-700">待接单</div>
                 </div>
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold text-blue-600">{currentTaskData.taskStatus.inProgress}</div>
+                  <div className="text-sm font-bold text-blue-600">{statsData?.totalSubTasks - (statsData?.completedSubTasks || 0) || 0}</div>
                   <div className="text-xs text-blue-700">进行中</div>
                 </div>
                 <div className="bg-green-50 border border-green-100 rounded-lg p-2 text-center">
-                  <div className="text-sm font-bold text-green-600">{currentTaskData.taskStatus.completed}</div>
+                  <div className="text-sm font-bold text-green-600">{statsData?.completedSubTasks || 0}</div>
                   <div className="text-xs text-green-700">已完成</div>
                 </div>
               </div>
@@ -534,6 +537,9 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
+      </div>
+
+  )} 
+</div> 
+);
 }

@@ -68,7 +68,7 @@ export default function AdminControlPanel() {
         <FeatureCard
           title=" 充值管理"
           icon="📊"
-          description="查看平台运营数据和关键指标"
+          description="管理系统中的所有充值申请"
           route="/admin/rechargelist"
         />
         <FeatureCard
@@ -78,16 +78,16 @@ export default function AdminControlPanel() {
           route="/admin/processwithdraw"
         />
         <FeatureCard
-          title="财务管理"
+          title="充值记录"
           icon="💰"
-          description="查看收入、支出和平台收益"
-          route="/admin/finance/overview"
+          description="管理系统中的所有充值记录"
+          route="/admin/rechargerecord"
         />
         <FeatureCard
-          title="交易记录"
+          title="提现记录"
           icon="📝"
-          description="查看和管理所有交易明细"
-          route="/admin/transactions"
+          description="管理系统中的所有提现记录"
+          route="/admin/withdrawalrecord"
           count="125"
         />
       </FeatureSection>
@@ -106,64 +106,6 @@ export default function AdminControlPanel() {
           description="管理派单用户"
           route="/admin/managementCenter/publishers"
           count="234"
-        />
-      </FeatureSection>
-
-      {/* 财务管理 */}
-      <FeatureSection title="财务管理">
-        <FeatureCard
-          title="提现管理"
-          icon="✅"
-          description="处理用户提现申请"
-          route="/admin/processwithdraw"
-          count="5"
-        />
-        <FeatureCard
-          title="充值记录"
-          icon="💳"
-          description="查看用户充值明细"
-          route="/admin/finance/deposits"
-        />
-        <FeatureCard
-          title="资金流水"
-          icon="💹"
-          description="查看平台资金流向和明细"
-          route="/admin/finance/transactions"
-        />
-        <FeatureCard
-          title="佣金结算"
-          icon="🧾"
-          description="管理平台佣金和结算规则"
-          route="/admin/finance/commission"
-        />
-      </FeatureSection>
-
-      {/* 订单与任务管理 */}
-      <FeatureSection title="订单与任务管理">
-        <FeatureCard
-          title="任务管理"
-          icon="📋"
-          description="管理和审核平台任务"
-          route="/admin/tasks/manage"
-          count="285"
-        />
-        <FeatureCard
-          title="任务分类管理"
-          icon="📂"
-          description="管理平台任务分类和标签"
-          route="/admin/tasks/categories"
-        />
-        <FeatureCard
-          title="订单管理"
-          icon="🛒"
-          description="查看和管理平台订单"
-          route="/admin/orders/manage"
-        />
-        <FeatureCard
-          title="订单审核"
-          icon="🔍"
-          description="审核平台任务订单"
-          route="/admin/orders/review"
         />
       </FeatureSection>
 

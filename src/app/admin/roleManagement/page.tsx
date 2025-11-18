@@ -188,10 +188,6 @@ export default function RoleManagementPage() {
                   <span className="w-3/4 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-gray-900">{role.userCount}</span>
                 </div>
               </div>
-
-
-            
-
               <div className="flex justify-end space-x-2 mt-3">
                   <button 
                       className={`${role.status === 'ENABLED' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-md px-2 py-2`}
@@ -202,8 +198,12 @@ export default function RoleManagementPage() {
                   <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-2 py-2" onClick={() => router.push(`/admin/roleManagement/getpermissionmenus/${role.id}`)}>编辑权限</button>
               </div>
             </div>
+
           ))
         )}
+        <div className="flex justify-center">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-10 py-3" onClick={() => router.push(`/admin/roleManagement/createrole`)}>添加角色</button>
+        </div>
       </div>
     </div>
   );

@@ -17,7 +17,8 @@
       "usersrecharge": "/wallet/recharge"
     },
     "task": {
-      "missionhall": "/tasks/hall"
+      "missionhall": "/tasks/hall",
+      "platformStats": "/tasks/platform-stats"
     },
     "bank": {
       "getbankcardslist": "/bank-cards/",
