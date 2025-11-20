@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message } from 'antd';
 import Link from 'next/link';
@@ -47,78 +47,106 @@ const RentalOrderPage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>('全部');
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
-  const [orders, setOrders] = useState<RentalOrder[]>([
-    {
-      id: '1',
-      orderNo: 'RENT20240620001',
-      userName: '张三',
-      userId: 'USER123456',
-      accountInfo: '抖音账号 - 美食达人',
-      rentalDays: 3,
-      totalAmount: 199.00,
-      createTime: '2024-06-20 10:30:00',
-      startTime: '2024-06-20 12:00:00',
-      endTime: '2024-06-23 12:00:00',
-      status: '待付款',
-      imageUrl: '/images/douyin-logo.png'
-    },
-    {
-      id: '2',
-      orderNo: 'RENT20240619002',
-      userName: '李四',
-      userId: 'USER234567',
-      accountInfo: '小红书账号 - 美妆博主',
-      rentalDays: 7,
-      totalAmount: 499.00,
-      createTime: '2024-06-19 15:20:00',
-      startTime: '2024-06-19 16:00:00',
-      endTime: '2024-06-26 16:00:00',
-      status: '待付款',
-      imageUrl: '/images/xiaohongshu-logo.png'
-    },
-    {
-      id: '3',
-      orderNo: 'RENT20240618003',
-      userName: '王五',
-      userId: 'USER345678',
-      accountInfo: '微博账号 - 旅游达人',
-      rentalDays: 1,
-      totalAmount: 89.00,
-      createTime: '2024-06-18 09:15:00',
-      startTime: '2024-06-18 10:00:00',
-      endTime: '2024-06-19 10:00:00',
-      status: '租赁中',
-      imageUrl: '/images/0e92a4599d02a7.jpg'
-    },
-    {
-      id: '4',
-      orderNo: 'RENT20240617004',
-      userName: '赵六',
-      userId: 'USER456789',
-      accountInfo: '快手账号 - 搞笑视频创作者',
-      rentalDays: 5,
-      totalAmount: 299.00,
-      createTime: '2024-06-17 14:30:00',
-      startTime: '2024-06-17 15:00:00',
-      endTime: '2024-06-22 15:00:00',
-      status: '已完成',
-      imageUrl: '/images/kuaishou-logo.png'
-    },
-    {
-      id: '5',
-      orderNo: 'RENT20240616005',
-      userName: '钱七',
-      userId: 'USER567890',
-      accountInfo: '抖音账号 - 游戏主播',
-      rentalDays: 2,
-      totalAmount: 159.00,
-      createTime: '2024-06-16 11:20:00',
-      startTime: '2024-06-16 12:00:00',
-      endTime: '2024-06-18 12:00:00',
-      status: '已取消',
-      imageUrl: '/images/douyin-logo.png'
-    }
-  ]);
+  // 定义API响应接口
+  interface LeaseInfo {
+    id: string;
+    userId: string;
+    accountType: string;
+    accountLevel: string;
+    platform: string;
+    description: string;
+    pricePerDay: number;
+    depositAmount: number;
+    minLeaseDays: number;
+    maxLeaseDays: number;
+    status: string;
+    totalOrders: number;
+    completedOrders: number;
+    successRate: number;
+    createTime: string;
+  }
+
+  interface RentalOrder {
+    id: string;
+    leaseInfoId: string;
+    lessorId: string;
+    renterId: string;
+    orderNo: string;
+    leaseDays: number;
+    totalAmount: number;
+    depositAmount: number;
+    platformFee: number;
+    lessorIncome: number;
+    renterPay: number;
+    status: OrderStatus;
+    startTime: string;
+    endTime: string;
+    actualEndTime: string;
+    settled: boolean;
+    settleTime: string;
+    cancelReason: string;
+    disputeReason: string;
+    completionNotes: string;
+    createTime: string;
+    leaseInfo: LeaseInfo;
+    lessorName: string;
+    renterName: string;
+  }
+
+  interface ApiResponse {
+    code: number;
+    message: string;
+    data: {
+      list: RentalOrder[];
+      total: number;
+      page: number;
+      size: number;
+      pages: number;
+    };
+    success: boolean;
+    timestamp: number;
+  }
+
+  // 初始化订单状态为数组
+  const [orders, setOrders] = useState<RentalOrder[]>([]);
+
+  // 页面加载时获取订单数据
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch('/api/public/rental/myrenterorder', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            page: 1,
+            size: 20,
+            sortField: 'createTime',
+            sortOrder: 'DESC',
+            status: ''
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const result: ApiResponse = await response.json();
+
+        if (result.success) {
+          setOrders(result.data.list);
+        } else {
+          message.error(result.message || '获取订单失败');
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        message.error('获取订单失败，请稍后重试');
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
@@ -260,24 +288,19 @@ const RentalOrderPage = () => {
                   {/* 左侧图片区域 - 在移动设备上调整尺寸 */}
                   <div className="flex-shrink-0">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 overflow-hidden">
-                      {order.imageUrl ? (
-                        <img 
-                          src={order.imageUrl} 
-                          alt={order.accountInfo} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <Avatar size={32}>{order.accountInfo.charAt(0)}</Avatar>
-                        </div>
-                      )}
+                      {/* 根据平台显示不同的logo */}
+                    <img 
+                      src={`/images/${order.leaseInfo.platform.toLowerCase()}-logo.png`} 
+                      alt={order.leaseInfo.description} 
+                      className="w-full h-full object-cover"
+                    />
                     </div>
                   </div>
 
                   {/* 右侧信息区域 */}
                   <div className="flex-1">
-                    <div className="text-sm text-black line-clamp-2">{order.accountInfo}</div>
-                    <div className="text-sm text-black">租赁时长：{order.rentalDays} 天</div>
+                    <div className="text-sm text-black line-clamp-2">{order.leaseInfo.description}</div>
+                    <div className="text-sm text-black">租赁时长：{order.leaseDays} 天</div>
                     <div className="text-sm font-medium text-black">￥{order.totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
