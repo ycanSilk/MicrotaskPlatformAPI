@@ -114,8 +114,32 @@ export default function AdminControlPanel() {
         <FeatureCard
           title="角色管理"
           icon="🔑"
-          description="管理系统角色和权限"
+          description="管理系统角色"
           route="/admin/roleManagement"
+        />
+        <FeatureCard
+          title="创建角色"
+          icon="🔑"
+          description="管理系统角色"
+          route="/admin/roleManagement/createrole"
+        />
+        <FeatureCard
+          title="角色权限"
+          icon="🔑"
+          description="管理系统角色权限"
+          route="/admin/roleManagement/rolepermissions"
+        />
+        <FeatureCard
+          title="菜单管理"
+          icon="🔑"
+          description="管理系统菜单"
+          route="/admin/menuManagement"
+        />
+        <FeatureCard
+          title="创建菜单"
+          icon="🔑"
+          description="创建系统菜单"
+          route="/admin/menuManagement/createmenu"
         />      
       </FeatureSection>
     </div>

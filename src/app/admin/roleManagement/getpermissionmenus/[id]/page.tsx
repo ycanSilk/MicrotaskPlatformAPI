@@ -98,7 +98,7 @@ const PermissionDetailsPage: React.FC = () => {
       if (!menu.parentId || !menuMap.has(menu.parentId)) {
         tree.push(menu);
       } else {
-        const parent = menuMap.get(menu.parentId)!
+        const parent = menuMap.get(menu.parentId)!;
         if (!parent.children) parent.children = [];
         parent.children.push(menu);
       }

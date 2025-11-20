@@ -19,7 +19,8 @@
       "createuser": "/sys/user"
     },
     "role": {
-      "getrolelist": "/sys/role/list"
+      "getrolelist": "/sys/role/list",
+      "createrole": "/sys/role/"
     },
     "wallet": {
       "recharge": "/wallet/admin/recharge"
