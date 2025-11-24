@@ -13,20 +13,14 @@ export default function PublishTaskPage() {
     return searchParams?.get(key) || '';
   };
   
-  const taskId = getSearchParam('taskId').trim();
-  const taskTitle = getSearchParam('title').trim() || '中评任务发布页';
-  const taskIcon = getSearchParam('icon').trim() || '📝';
-  const taskPrice = parseFloat(getSearchParam('price').trim() || '4');
-  const taskDescription = getSearchParam('description').trim() || '任务描述';
-  
-  // 新的表单数据结构，包含评论和图片上传信息
-  // 添加默认信息填充以模拟补单操作
+  const taskPrice = 4
+
   const [formData, setFormData] = useState({
-    videoUrl: 'https://www.douyin.com/video/example', // 默认视频链接
+    videoUrl: '', // 默认视频链接
     quantity: 1, // 默认任务数量设为1
     comments: [
       {
-        content: '这款产品真的太好了，超出预期！质量做工都很棒，强烈推荐给大家！',
+        content: '',
         image: null as File | null
       }
     ],
@@ -290,39 +284,9 @@ export default function PublishTaskPage() {
               mentionUser2: ''
             }
           };
-          
-          // 详细记录每个字段的数据类型和值
-          console.log('===== 请求体字段验证与数据类型检查 =====');
-          console.log('title:', requestBody.title, '类型:', typeof requestBody.title);
-          console.log('description:', requestBody.description, '类型:', typeof requestBody.description);
-          console.log('platform:', requestBody.platform, '类型:', typeof requestBody.platform);
-          console.log('taskType:', requestBody.taskType, '类型:', typeof requestBody.taskType);
-          console.log('totalQuantity:', requestBody.totalQuantity, '类型:', typeof requestBody.totalQuantity);
-          console.log('unitPrice:', requestBody.unitPrice, '类型:', typeof requestBody.unitPrice);
-          console.log('deadline:', requestBody.deadline, '类型:', typeof requestBody.deadline);
-          console.log('requirements:', requestBody.requirements, '类型:', typeof requestBody.requirements);
-          
-          // 详细检查commentDetail字段
-          console.log('\n===== commentDetail字段验证 =====');
-          console.log('commentType:', requestBody.commentDetail.commentType, '类型:', typeof requestBody.commentDetail.commentType);
-          console.log('linkUrl1:', requestBody.commentDetail.linkUrl1, '类型:', typeof requestBody.commentDetail.linkUrl1);
-          console.log('unitPrice1:', requestBody.commentDetail.unitPrice1, '类型:', typeof requestBody.commentDetail.unitPrice1);
-          console.log('quantity1:', requestBody.commentDetail.quantity1, '类型:', typeof requestBody.commentDetail.quantity1);
-          console.log('commentText1:', requestBody.commentDetail.commentText1, '类型:', typeof requestBody.commentDetail.commentText1);
-          
-          console.log('\n===== 完整请求体 =====');
-          console.log('请求体构建完成，数据结构:', Object.keys(requestBody));
-          console.log('详细请求数据:', JSON.stringify(requestBody, null, 2));
-          console.log('请求体JSON字符串长度:', JSON.stringify(requestBody).length);
-    
-        // 调用后端API，使用正确的路由路径
-        console.log('开始调用后端API: /api/publisher/publishertasks/topcomment');
+
         const apiUrl = '/api/publisher/publishertasks/topcomment';
-        console.log('\n===== 准备发送API请求 =====');
-        console.log('API URL:', apiUrl);
-        console.log('请求方法:', 'POST');
-        console.log('是否包含credentials:', true);
-        
+
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -454,28 +418,7 @@ export default function PublishTaskPage() {
       }
     };
     
-    // 上传图片的函数已移除，图片处理在handleImageUpload中直接完成
-
     const totalCost = (taskPrice * formData.quantity).toFixed(2);
-
-    // 如果没有找到任务类型，返回错误页面
-    if (!taskId) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-2">❌</div>
-            <div className="text-lg font-medium text-gray-800 mb-2">任务信息不完整</div>
-            <Button 
-              onClick={() => router.push('/publisher/create')}
-              className="bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              返回选择任务
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
          <div className="px-4 py-3 space-y-4">

@@ -13,11 +13,8 @@ export default function PublishTaskPage() {
     return searchParams?.get(key) || '';
   };
   
-  const taskId = getSearchParam('taskId').trim();
-  const taskTitle = getSearchParam('title').trim() || '中评任务发布页';
-  const taskIcon = getSearchParam('icon').trim() || '📝';
-  const taskPrice = parseFloat(getSearchParam('price').trim() || '0');
-  const taskDescription = getSearchParam('description').trim() || '任务描述';
+  const taskPrice = 6
+
   
   // @用户相关状态 - 只用于中评
   const [mentionInput, setMentionInput] = useState('');
@@ -367,16 +364,11 @@ export default function PublishTaskPage() {
       // 创建FormData用于上传图片和其他数据
       const formDataToSend = new FormData();
       
-      console.log('===== 开始构建FormData =====');
-      
-      // 添加基本任务信息
-      formDataToSend.append('taskTitle', taskTitle || '组合任务');
       formDataToSend.append('taskPrice', taskPrice.toString());
       formDataToSend.append('videoUrl', formData.videoUrl);
       formDataToSend.append('quantity', quantity.toString());
       formDataToSend.append('deadline', formData.deadline); // 使用表单中选择的截止时间
       formDataToSend.append('mentions', JSON.stringify(mentions || []));
-      formDataToSend.append('taskId', taskId || '');
       
       // 明确指定上传路径参数 - 使用相对路径格式
       formDataToSend.append('uploadPath', 'public/uploads');
@@ -596,23 +588,7 @@ export default function PublishTaskPage() {
   // 价格计算：2元(1条中评) + 下评数量×2元
   const totalCost = (6 + formData.bottomQuantity * 3).toFixed(2);
 
-  // 如果没有找到任务类型，返回错误页面
-  if (!taskId) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl mb-2">❌</div>
-          <div className="text-lg font-medium text-gray-800 mb-2">任务信息不完整</div>
-          <Button 
-            onClick={() => router.push('/publisher/create')}
-            className="bg-blue-500 text-white p-4 rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            返回选择任务
-          </Button>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
