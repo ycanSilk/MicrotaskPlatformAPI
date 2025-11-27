@@ -11,45 +11,35 @@ const TASK_TYPES = [
     title: '上评评论',
     price: 4.0,
     description: '真人账号发布高质量评论',
-    requirements: '真人评论，评论内容真实有效。',
-    estimatedTime: '5分钟',
-    difficulty: '中等'
+    requirements: '真人评论，评论内容真实有效。'
   },
   {
     id: 'comment_middle',
     title: '中评评论',
     price: 2.0,
     description: '真人账号发布高质量评论',
-    requirements: '真人评论，评论内容真实有效。',
-    estimatedTime: '3分钟',
-    difficulty: '简单'
+    requirements: '真人评论，评论内容真实有效。'
   },
   {
     id: 'task_combination_top_middle',
     title: '上中评评论',
     price: 10.0,
     description: '组合评论 - 1条上评评论 + 3条中评评论（数量可自定义选择，支持@功能）',
-    requirements: '真人评论，评论内容真实有效。上评完成后需提交链接作为结算条件。',
-    estimatedTime: '10分钟',
-    difficulty: '中等'
+    requirements: '真人评论，评论内容真实有效。上评完成后需提交链接作为结算条件。'
   },
   {
     id: 'task_combination_middle_bottom',
     title: '中下评评论',
     price: 12,
     description: '组合评论 - 1条中评评论 + 2条下评评论（支持@功能）',
-    requirements: '真人评论，评论内容真实有效。下评完成后需提交链接作为结算条件。',
-    estimatedTime: '8分钟',
-    difficulty: '中等'
+    requirements: '真人评论，评论内容真实有效。下评完成后需提交链接作为结算条件。'
   },
   {
     id: 'search_keyword',
     title: '放大镜搜索词',
     price: 5.0,
     description: '抖音平台规则原因，本产品属于概率出放大镜，搜索词搜索次数越多，出现概率越大',
-    requirements: '在视频页面右上角搜索框中搜索指定内容，重复执行100次搜索操作',
-    estimatedTime: '15分钟',
-    difficulty: '特殊',
+    requirements: '在视频页面右上角搜索框中搜索指定内容，重复执行100次搜索操作'
   }
 ];
 
@@ -117,49 +107,15 @@ export default function CreateTask() {
     // 处理任务选择
     if (task.id === 'comment_top') {
       // 上评任务 - 跳转到上评任务发布页面
-      const params = new URLSearchParams({
-        taskId: task.id,
-        title: task.title,      
-        price: task.price.toString(),
-        description: task.description
-      });
-      router.push(`/publisher/create/publish-top-comment?${params.toString()}`);
+      router.push(`/publisher/create/publish-top-comment`);
     } else if (task.id === 'task_combination_top_middle') {
-      // 上中评任务 - 跳转到上中评任务发布页面
-      const params = new URLSearchParams({
-        taskId: task.id,
-        title: task.title,     
-        price: task.price.toString(),
-        description: task.description
-      });
-      router.push(`/publisher/create/task-combination-top-middle?${params.toString()}`);
+      router.push(`/publisher/create/task-combination-top-middle`);
     } else if (task.id === 'task_combination_middle_bottom') {
-      // 中下评任务 - 跳转到中下评任务发布页面
-      const params = new URLSearchParams({
-        taskId: task.id,
-        title: task.title,  
-        price: task.price.toString(),
-        description: task.description
-      });
-      router.push(`/publisher/create/task-combination-middle-bottom?${params.toString()}`);
+      router.push(`/publisher/create/task-combination-middle-bottom`);
     } else if (task.id === 'search_keyword') {
-      // 放大镜搜索词任务 - 跳转到专用发布页面
-      const params = new URLSearchParams({
-        taskId: task.id,
-        title: task.title,        
-        price: task.price.toString(),
-        description: task.description
-      });
-      router.push(`/publisher/create/search-keyword-task?${params.toString()}`);
+      router.push(`/publisher/create/search-keyword-task`);
     } else {
-      // 其他任务类型（包括中评任务）
-      const params = new URLSearchParams({
-        taskId: task.id,
-        title: task.title,       
-        price: task.price.toString(),
-        description: task.description
-      });
-      router.push(`/publisher/create/publish-middle-comment?${params.toString()}`);
+      router.push(`/publisher/create/publish-middle-comment`);
     }
   };
 
