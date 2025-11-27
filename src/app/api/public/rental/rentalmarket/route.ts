@@ -29,13 +29,13 @@ export async function POST(request: Request) {
   
   // 构建新的请求体，包含所需的参数
   const newRequestBody = {
-    page: requestData.page || 1,
+    page: requestData.page || 0,
     size: requestData.size || 20,
     sortField: requestData.sortField || "createTime",
     sortOrder: requestData.sortOrder || "DESC",
-    status: requestData.status || "",
-    platform: requestData.platform || 1,
-    accountType: requestData.accountType || 1,
+    status: requestData.status || "ACTIVE",
+    platform: requestData.platform || "",
+    accountType: requestData.accountType || "",
     minPrice: requestData.minPrice || 1,
     maxPrice: requestData.maxPrice || 999  
   };
@@ -58,9 +58,11 @@ export async function POST(request: Request) {
     // 获取原始响应数据
     const responseData = await response.json();
     console.log('这是出租市场API的日志输出:');
+    console.log('这是请求体:', newRequestBody);
     console.log('请求url', apiUrl);
     console.log('token:', token);
     console.log('返回的状态:', response.status);
+    console.log('返回的状态:', responseData.data.list);
     console.log('返回的原始数据', responseData);
     
     // 直接返回API的原始响应

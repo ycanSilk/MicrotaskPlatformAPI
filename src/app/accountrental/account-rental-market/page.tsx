@@ -80,10 +80,15 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
       try {
         // 构建请求参数
         const requestParams = {
-          page: 1,
-          size: 50, // 获取足够多的数据用于前端分页
+          page: 0,
+          size: 20,
           sortField: "createTime",
-          sortOrder: "DESC"
+          sortOrder: "DESC",
+          status: "ACTIVE",
+          platform: "",
+          accountType: "",
+          minPrice: 1,
+          maxPrice: 1000
         };
         
         // 调用后端API
@@ -100,9 +105,9 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
         }
         
         const result: RentalMarketResponse = await response.json();
-        
+        console.log('请求成功', result);
         // 检查API响应是否成功
-        if (result.success && result.data && result.data.list) {
+        if (result && result.success && result.data && result.data.list) {
           // 添加默认图片以确保UI渲染正常
           const accountsWithImages = result.data.list.map(account => ({
             ...account,
