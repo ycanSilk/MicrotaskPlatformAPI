@@ -104,7 +104,7 @@ const RentalRequestsPage = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ page: 1, size: 20 }), // 传递分页参数
+          body: JSON.stringify({ page: 0, size: 20 }), // 传递分页参数
         });
         
         if (!response.ok) {
@@ -112,7 +112,7 @@ const RentalRequestsPage = () => {
         }
         
         const responseData: ApiResponse<RentalListResponse> = await response.json();
-        
+        console.log('API响应数据:', responseData);
         if (!responseData.success) {
           throw new Error(responseData.message || '获取求租信息失败');
         }
@@ -260,7 +260,7 @@ const RentalRequestsPage = () => {
                   )}
                 </div>
                 <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{request.rentalDescription}</h3>
-                <div className="flex justify-between items-center text-sm text-gray-600 mb-2">
+                <div className="flex justify-between items-center text-sm mb-2">
                   <div>发布时间: {formatPublishTime(request.publishTime)}</div>
                   <div>出租天数: {request.rentalDays}天</div>
                 </div>

@@ -55,10 +55,9 @@ export async function POST(request: NextRequest) {
       message: data.message || '登录成功',
       data: data.data
     });
-    
+
     // 设置HttpOnly Cookie存储token
     if (data.data?.token) {
-      console.log('设置HttpOnly Cookie存储token');
       nextResponse.cookies.set({
         name: 'publisher_token',
         value: data.data.token,
@@ -69,7 +68,6 @@ export async function POST(request: NextRequest) {
         path: '/'
       });
     }
-    
     console.log('登录成功，返回响应');
     return nextResponse;
     

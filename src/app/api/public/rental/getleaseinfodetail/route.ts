@@ -18,24 +18,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
   }
   
-  // 解析请求体
-  let requestData;
-  try {
-    requestData = await request.json();
-  } catch (parseError) {
-    return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
-  }
-
-  // 从请求数据中获取orderId和reason参数
-  const {leaseInfoId} = requestData;
+  // 从headers中获取leaseInfoId
+  const leaseInfoId = request.headers.get('leaseInfoId');
+  console.log('从前端headers传递过来获取到的leaseInfoId:', leaseInfoId);
   
   if (!leaseInfoId) {
-    return NextResponse.json({ success: false, message: '缺少必要参数rentRequestId' }, { status: 400 });
+    return NextResponse.json({ success: false, message: '缺少必要参数leaseInfoId（从headers中获取）' }, { status: 400 });
   }
   
-  // 构造请求URL，将orderId和reason参数添加到URL中
-  const apiUrl = `http://localhost:8083/api/rental/rent/${leaseInfoId}`;
-  
+  // 构造请求URL，将leaseInfoId作为path参数添加到URL中
+  const apiUrl = `http://localhost:8083/api/rental/lease/${leaseInfoId}`;
+  console.log('这是get出租信息详情API的日志输出:');
+  console.log('请求url', apiUrl);
+  console.log('token:', token);
+  console.log('leaseInfoId:', leaseInfoId);
   // 直接调用外部API并返回原始响应
   try {
     const response = await fetch(apiUrl, {

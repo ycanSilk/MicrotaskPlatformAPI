@@ -61,14 +61,6 @@ export async function POST(request: Request) {
     const isSuccess = responseData.success === true && (responseData.code === 200 || !responseData.code);
     const statusCode = isSuccess ? 200 : 500;
     
-    if(response.ok){
-      console.log('这是审核通过API成功返回的日志输出');
-      console.log('请求url:', apiUrl);
-      console.log('请求参数:', requestParams);
-      console.log('请求头:', requestHeaders);
-      console.log('请求成功！响应数据:', responseData);
-    }
-
     // 8. 构建响应
     const restResponse = {
       code: 1,

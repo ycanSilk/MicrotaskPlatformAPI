@@ -316,7 +316,7 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
                         {account.images && account.images.length > 0 && (
                           <div className="mb-3">
                             <div 
-                              className="w-full h-40 bg-gray-100 rounded-lg overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity"
+                              className="w-full max-w-[300px] h-[200px] bg-gray-100 rounded-lg overflow-hidden relative cursor-pointer hover:opacity-90 transition-opacity mx-auto"
                               onClick={(e) => handleImageClick(e, account.images![0])}
                             >
                               <img 
@@ -339,7 +339,15 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="text-xl font-bold text-red-600">¥{account.pricePerDay}/天</div>
-                          <Button className="bg-blue-500 hover:bg-blue-600 text-white">查看详情</Button>
+                          <Button 
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAccountClick(account.id);
+                            }}
+                          >
+                            查看详情
+                          </Button>
                         </div>
                       </div>
                     ))}

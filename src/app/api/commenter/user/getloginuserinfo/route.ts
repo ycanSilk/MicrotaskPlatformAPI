@@ -71,9 +71,7 @@ export async function GET(request: Request) {
     });
     
     const responseData = await response.json();
-    console.log('请求URL:', apiUrl);
-    console.log('请求token:', token);
-    console.log('这是获取个人用户信息API返回的原始响应:', responseData);
+
 
     // 处理非成功响应
     if (!response.ok) {

@@ -18,19 +18,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
   }
   
-  // 解析请求体
-  let requestData;
-  try {
-    requestData = await request.json();
-  } catch (parseError) {
-    return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
-  }
-
-  // 从请求数据中获取orderId和reason参数
-  const {rentRequestId} = requestData;
+  // 从URL查询参数中获取rentRequestId
+  const url = new URL(request.url);
+  const rentRequestId = url.searchParams.get('rentRequestId');
   
   if (!rentRequestId) {
-    return NextResponse.json({ success: false, message: '缺少必要参数leaseInfoId' }, { status: 400 });
+    return NextResponse.json({ success: false, message: '缺少必要参数rentRequestId' }, { status: 400 });
   }
   
   // 构造请求URL，将orderId和reason参数添加到URL中
@@ -47,7 +40,17 @@ export async function GET(request: Request) {
     });
 
     // 获取原始响应数据
-    const responseData = await response.json();
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (jsonError) {
+      console.error('解析响应数据失败:', jsonError);
+      return NextResponse.json({ 
+        success: false, 
+        message: '解析响应数据失败' 
+      }, { status: 500 });
+    }
+    
     console.log('这是get求租信息详情API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
@@ -57,9 +60,10 @@ export async function GET(request: Request) {
     // 直接返回API的原始响应
     return NextResponse.json(responseData, { status: response.status });
   } catch (apiError) {
+    console.error('API调用失败:', apiError);
     return NextResponse.json({ 
       success: false, 
-      message: '获取交易记录失败，请稍后重试' 
+      message: '获取求租信息详情失败，请稍后重试' 
     }, { status: 500 });
   }
 }

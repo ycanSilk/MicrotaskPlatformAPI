@@ -39,7 +39,6 @@ export default function CommenterHallPage() {
           message?: string;
         }>('/api/commenter/user/getloginuserinfo', { withCredentials: true });
         const data = response.data;
-        console.log('API响应数据：', response);
 
         if (data.success && data.data?.userInfo) {
           // 构建符合User类型的用户信息对象

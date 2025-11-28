@@ -104,7 +104,6 @@ export async function POST(request: Request) {
     try {
       const responseText = await response.text();
       responseData = JSON.parse(responseText);  
-      console.log(responseData.data);
     } catch (jsonError) {
       console.error(formatLog(operation, `错误: API响应解析失败 - ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`));
       return NextResponse.json(
@@ -116,10 +115,7 @@ export async function POST(request: Request) {
     // 7. 判断请求是否成功
     const isSuccess = responseData.success === true && (responseData.code === 200 || !responseData.code);
     const statusCode = isSuccess ? 200 : 500;
-    
-    console.log("这是获取我发布的订单的API请求结果",responseData)
-    console.log("请求token Bearer",token)
-    console.log("请求url",apiUrl)
+
    
 
     // 8. 构建响应

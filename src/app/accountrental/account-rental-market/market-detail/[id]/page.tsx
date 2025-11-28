@@ -1,116 +1,222 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { AccountRentalInfo } from '../../../types';
 
+// 定义租赁信息数据类型，符合后端API返回格式
+export interface LeaseInfo {
+  id: string;
+  userId: string;
+  accountType: string;
+  accountLevel: string;
+  platform: string;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minLeaseDays: number;
+  maxLeaseDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
+  createTime: string;
+  // 图片相关字段，支持单张或多张图片
+  image?: string;
+  images?: string[];
+}
 
+// 定义API响应数据类型
+export interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+  success: boolean;
+  timestamp: number;
+}
 
+// 调用后端API获取租赁信息详情
+const fetchLeaseInfoDetail = async (leaseInfoId: string): Promise<LeaseInfo> => {
+  try {
+    // 调用本地API路由，将leaseInfoId通过headers传递给后端
+    console.log('正在发送请求，leaseInfoId通过headers传递:', leaseInfoId);
+    const response = await fetch(`/api/public/rental/getleaseinfodetail`,{
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'leaseInfoId': leaseInfoId
+        }
+      }
+    );
+    console.log('这是获取租赁信息详情的日志输出:', response.status);
+    console.log('请求url:', `/api/public/rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`);
+    console.log(await response.clone().json());
+    // 首先检查响应是否成功
+    if (!response.ok) {
+      // 尝试解析错误响应内容
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // 如果无法解析JSON，则使用HTTP状态码作为错误信息
+        throw new Error(`API请求失败: HTTP ${response.status}`);
+      }
+      // 如果错误响应包含message，则使用它
+      throw new Error(`API请求失败: ${errorData.message || `HTTP ${response.status}`}`);
+    }
 
+    // 成功时解析并返回数据
+    const result: ApiResponse<LeaseInfo> = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error('获取租赁信息详情失败:', error);
+    // 重新抛出错误，保持原有的错误处理流程
+    throw error;
+  }
+}
 
-// 模拟获取账号详情数据
-const fetchAccountDetail = async (accountId: string): Promise<AccountRentalInfo> => {
-  // 模拟API请求延迟
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // 返回完整的模拟数据，包含所有必需字段
-  return {
-    id: accountId,
-    platform: '抖音',
-    accountTitle: '美食探店达人',
-    followersRange: '50-100万',
-    engagementRate: '3.5%',
-    contentCategory: '美食',
-    region: '全国',
-    accountAge: '1年半',
-    accountScore: 4.8,
-    orderPrice: 800,
-    price: 800,
-    rentalDuration: 30,
-    minimumRentalHours: 4,
-    deliveryTime: 24,
-    maxConcurrentUsers: 1,
-    responseTime: 12,
-    includedFeatures: ['评论', '私信', '数据分析'],
-    description: '专业美食账号，主要发布餐厅探店和美食测评内容，互动率高',
-    rentalDescription: '抖音美食账号出租，专注餐厅探店和美食测评，互动率高',
-    advantages: ['粉丝粘性高', '互动率好', '内容质量稳定'],
-    restrictions: ['禁止发布违规内容', '禁止修改账号信息'],
-    isVerified: true,
-    rating: 4.8,
-    rentalCount: 12,
-    availableCount: 1,
-    publishTime: '2024-06-20T10:30:00Z',
-    status: '可用',
-    images: [
-              'images/0e92a4599d02a7.jpg'      
-            ],
-    publisherName: '美食工作室',
-    orderNumber: 'ORD202406201030001',
-    orderStatus: '待确认',
-    rentalDays: 30
-  };
-};
 
 // 客户端组件
 const AccountDetailPage = ({
   params
 }: {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }) => {
-  const accountId = params?.id || '';
+  // 使用React.use()解析params Promise
+  const { id } = use(params);
+  const leaseInfoId = id || '';
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [account, setAccount] = useState<AccountRentalInfo | null>(null);
+  const [leaseInfo, setLeaseInfo] = useState<LeaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   // 组件挂载时获取数据
   useEffect(() => {
-    const loadAccountData = async () => {
+    const loadLeaseInfoDetail = async () => {
+      if (!leaseInfoId) {
+        setError('租赁信息ID无效');
+        setLoading(false);
+        return;
+      }
+      
       try {
-        const data = await fetchAccountDetail(accountId);
-        setAccount(data);
+        setLoading(true);
+        const data = await fetchLeaseInfoDetail(leaseInfoId);
+        setLeaseInfo(data);
+        setError(null);
       } catch (error) {
-        console.error('获取账号详情失败:', error);
+        console.error('获取租赁信息详情失败:', error);
+        setError(error instanceof Error ? error.message : '获取租赁信息失败');
+        setLeaseInfo(null);
       } finally {
         setLoading(false);
       }
     };
     
-    if (accountId) {
-      loadAccountData();
-    }
-  }, [accountId]);
+    loadLeaseInfoDetail();
+  }, [leaseInfoId]);
   
-  if (!accountId) {
-    return notFound();
+  // 统一的页面布局组件 - 使用更简单的结构避免Hydration mismatch
+  const PageContainer = ({ children }: { children: React.ReactNode }) => (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">租赁信息详情</h1>
+      {children}
+    </div>
+  );
+
+  // 加载状态组件
+  const LoadingState = () => (
+    <PageContainer>
+      <div className="animate-pulse bg-gray-100 p-8 rounded-md">
+        <p className="text-gray-500">正在加载租赁信息...</p>
+      </div>
+    </PageContainer>
+  );
+
+  // 错误状态组件
+  const ErrorState = ({ message }: { message: string }) => {
+    // 分析错误类型，提供更友好的错误提示
+    const getFriendlyErrorMessage = () => {
+      if (message.includes('求租信息不存在')) {
+        return '很抱歉，您查找的租赁信息不存在或已被删除';
+      } else if (message.includes('认证')) {
+        return '登录状态已过期，请重新登录后再试';
+      } else if (message.includes('404')) {
+        return '找不到请求的页面，请检查链接是否正确';
+      } else if (message.includes('500')) {
+        return '服务器暂时无法处理请求，请稍后再试';
+      }
+      return message;
+    };
+
+    return (
+      <PageContainer>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-red-50 p-6 border-l-4 border-red-400">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">加载失败</h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>{getFriendlyErrorMessage()}</p>
+                </div>
+                <div className="mt-4">
+                  <Button variant="ghost" onClick={() => window.location.reload()} className="text-sm text-blue-600 hover:text-blue-500">
+                    重试
+                  </Button>
+                  <Button variant="ghost" onClick={() => window.history.back()} className="ml-3 text-sm text-gray-600 hover:text-gray-500">
+                    返回上一页
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageContainer>
+    );
+  };
+
+  // 无效ID状态组件
+  const InvalidIdState = () => (
+    <PageContainer>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-center py-10">
+            <div className="text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">无效的租赁信息ID</h3>
+              <p className="mt-1 text-sm text-gray-500">请检查您访问的链接是否正确</p>
+              <div className="mt-6">
+                <Button variant="ghost" onClick={() => window.history.back()} className="inline-flex text-sm text-blue-600 hover:text-blue-500">
+                  返回上一页
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PageContainer>
+  );
+
+  // 渲染相应的状态
+  if (!leaseInfoId) {
+    return <InvalidIdState />;
   }
-  
+
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl mb-2">🔄</div>
-          <div>加载中...</div>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
-  
-  if (!account) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-900 mb-2">获取账号详情失败</h2>
-          <p className="text-gray-500 mb-4">请稍后再试或返回首页</p>
-          <Button onClick={() => window.history.back()}>
-            返回
-          </Button>
-        </div>
-      </div>
-    );
+
+  if (!leaseInfo || error) {
+    return <ErrorState message={error || '未找到租赁信息'} />;
   }
 
     // 格式化发布时间
@@ -126,17 +232,17 @@ const AccountDetailPage = ({
     };
 
     // 根据订单状态返回对应的样式类名
-    const getOrderStatusClass = (status: string): string => {
-      switch (status) {
-        case '待确认':
+    const getOrderStatusClass = (leaseInfoStatus: string): string => {
+      switch (leaseInfoStatus) {
+        case 'ACTIVE':
           return 'bg-yellow-100 text-yellow-800';
-        case '已确认':
+        case 'CONFIRMED':
           return 'bg-green-100 text-green-800';
-        case '进行中':
+        case 'IN_PROGRESS':
           return 'bg-blue-100 text-blue-800';
-        case '已完成':
+        case 'COMPLETED':
           return 'bg-purple-100 text-purple-800';
-        case '已取消':
+        case 'CANCELLED':
           return 'bg-gray-100 text-gray-800';
         default:
           return 'bg-gray-100 text-gray-800';
@@ -146,12 +252,12 @@ const AccountDetailPage = ({
     return (
       <div className="min-h-screen bg-gray-50">
         {/* 主内容区域 */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 左侧主要信息 */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="p-6">
+                <div className="p-3">
                   {/* 订单基本信息 */}
                   <div className="mb-6">
                     <div>
@@ -159,40 +265,27 @@ const AccountDetailPage = ({
                     </div>
                   </div>
                   
-                  {/* 图片预览区域 */}
-                  {account.images && account.images.length > 0 && (
-                    <div className="mb-6">
-                      <h2 className="text-lg font-medium text-gray-800 mb-2">账号图片</h2>
-                      <div className="flex flex-wrap gap-2">
-                        {account.images.slice(0, 6).map((image, index) => (
-                          <div key={index} className="w-[85px] h-[85px] bg-gray-100 rounded-lg overflow-hidden">
-                            <img 
-                              src={`/${image}`} 
-                              alt={`账号图片${index + 1}`} 
-                              className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                              onClick={() => setSelectedImage(image)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
                   {/* 租赁描述 */}
                   <div className="mb-6">
                     <h2 className="text-lg font-medium text-gray-800 mb-2">账号描述</h2>
-                    <p className="text-gray-600 leading-relaxed">{account.rentalDescription}</p>
+                    <p className="text-gray-600 leading-relaxed">{leaseInfo.description}</p>
                   </div>
                   
-                  {/* 订单详情 */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-t border-gray-100 pt-4">
+                  {/* 租赁信息详情 */}
+                  <div className="grid grid-cols-3 gap-4 mb-6 border-t border-gray-100 pt-4">
                     <div>
-                      <div className="text-sm text-gray-500">订单号</div>
-                      <div className="text-gray-800 font-medium">{account.orderNumber}</div>
+                      <div className="text-sm ">平台</div>
+                      <div>{leaseInfo.platform}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-gray-500">发布时间</div>
-                      <div className="text-gray-800">{formatPublishTime(account.publishTime)}</div>
+                      <div className="text-sm">账号类型</div>
+                      <div>{leaseInfo.accountType}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm">租赁状态</div>
+                      <div className={`inline-block px-2 py-1 rounded-full text-sm font-medium ${getOrderStatusClass(leaseInfo.status)}`}>
+                        {leaseInfo.status}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -201,24 +294,23 @@ const AccountDetailPage = ({
             
             {/* 右侧价格和操作信息 */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+              <div className="bg-white rounded-lg shadow-sm p-3 sticky top-6">
                 {/* 价格信息 */}
                 <div className="mb-6">
                   <div className="flex items-end">
-                    <span className="text-3xl font-bold text-red-600">¥{account.price}</span>
-                    <span className="text-sm text-gray-500 ml-2 mb-1">（单价：¥{(account.rentalDays ? (account.price / account.rentalDays) : 0).toFixed(2)}/天）</span>
+                    <span className="text-3xl font-bold text-red-600">¥{leaseInfo.pricePerDay}/天</span>
                   </div>
                 </div>
                 
                 {/* 租赁信息 */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">出租天数</span>
-                    <span className="text-gray-800 font-medium">{account.rentalDays}天</span>
+                    <span>最低租期</span>
+                    <span>{leaseInfo.minLeaseDays}天</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">总价</span>
-                    <span className="text-gray-800 font-medium">¥{account.price}</span>
+                    <span>最高租期</span>
+                    <span>{leaseInfo.maxLeaseDays}天</span>
                   </div>
                 </div>
                 
@@ -237,6 +329,69 @@ const AccountDetailPage = ({
           </div>
         </div>
         
+        {/* 账号图片展示区域 */}
+        {leaseInfo && (
+          <div className="mt-3 bg-white p-3">
+            <h2 className="text-lg font-medium text-gray-800 mb-3">账号图片：</h2>
+            <div className="grid grid-cols-3 gap-4">
+              {/* 判断是否有图片，没有则显示默认图片 */}
+              {(!leaseInfo.image && (!leaseInfo.images || leaseInfo.images.length === 0)) ? (
+                <div 
+                  className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                  onClick={() => setSelectedImage('/images/0e92a4599d02a7.jpg')}
+                >
+                  <img 
+                    src="/images/0e92a4599d02a7.jpg" 
+                    alt="账号默认图片" 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                  />
+                </div>
+              ) : (
+                // 优先使用单张图片
+                leaseInfo.image ? (
+                  <div 
+                    className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                    onClick={() => setSelectedImage(leaseInfo.image!)}
+                  >
+                    <img 
+                      src={leaseInfo.image} 
+                      alt="账号图片" 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                      onError={(e) => {
+                        // 图片加载失败时显示默认图片
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/images/0e92a4599d02a7.jpg';
+                        target.alt = '账号默认图片';
+                      }}
+                    />
+                  </div>
+                ) : (
+                  // 多张图片展示
+                  leaseInfo.images?.map((img, index) => (
+                    <div 
+                      key={index} 
+                      className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                      onClick={() => setSelectedImage(img)}
+                    >
+                      <img 
+                        src={img} 
+                        alt={`账号图片 ${index + 1}`} 
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                        onError={(e) => {
+                          // 图片加载失败时显示默认图片
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/images/0e92a4599d02a7.jpg';
+                          target.alt = '账号默认图片';
+                        }}
+                      />
+                    </div>
+                  ))
+                )
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 图片预览模态框 */}
         {selectedImage && (
           <div 
@@ -245,15 +400,20 @@ const AccountDetailPage = ({
           >
             <div className="relative max-w-4xl max-h-[90vh] p-4" onClick={(e) => e.stopPropagation()}>
               <button 
-                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 z-10 hover:bg-opacity-70 transition-colors"
+                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full  z-10 w-8 h-8 hover:bg-opacity-70 transition-colors"
                 onClick={() => setSelectedImage(null)}
               >
                 ✕
               </button>
               <img 
-                src={`/${selectedImage}`} 
+                src={selectedImage} 
                 alt="预览图片" 
                 className="max-w-full max-h-[85vh] object-contain" 
+                onError={(e) => {
+                  // 预览图片加载失败时显示默认图片
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/public/images/0e92a4599d02a7.jpg';
+                }}
               />
             </div>
           </div>

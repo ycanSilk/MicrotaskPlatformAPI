@@ -16,12 +16,15 @@ export async function GET(request: Request) {
     if (token) break;
   }
   
-  // 暂时不处理用户ID解析，后续可以从JWT中解析或移除该功能
-  const userId: string | null = null;
+
+
+  // 从请求头获取用户ID
+
+   const userId = request.headers.get('X-User-Id') || '';
+
+    console.log('从请求头获取到的userId:', userId);
   
-  if (!token) {
-    return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
-  }
+  // token已在前面检查过
   
   // 解析请求体 - GET请求不需要请求体
   const requestData = {};
@@ -31,12 +34,14 @@ export async function GET(request: Request) {
   
   // 直接调用外部API并返回原始响应
   try {
+    console.log('从请求头获取到的userId:', userId);
     // 构造请求头，添加用户ID
     const headers: HeadersInit = {
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
     };
     // 只有当userId有值时才添加X-User-Id头
-    if (userId) {
+    if (userId && userId.trim() !== '') {
       headers['X-User-Id'] = userId;
     }
 
@@ -50,7 +55,8 @@ export async function GET(request: Request) {
     console.log('这是获取我的邀请码API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
-    console.log('返回的原始数据', responseData.data);
+    console.log('前端传递过来的请求的userId:', userId);
+    console.log('返回的原始数据', responseData);
     
     // 直接返回API的原始响应
     return NextResponse.json(responseData, { status: response.status });
