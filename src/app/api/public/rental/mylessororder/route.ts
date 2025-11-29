@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   
   // 构建新的请求体，包含所需的参数
   const newRequestBody = {
-    page: requestData.page || 1,
+    page: requestData.page || 0,
     size: requestData.size || 20,
     sortField: requestData.sortField || "createTime",
     sortOrder: requestData.sortOrder || "DESC",

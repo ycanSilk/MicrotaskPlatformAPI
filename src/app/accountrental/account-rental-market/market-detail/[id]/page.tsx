@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
 // 定义租赁信息数据类型，符合后端API返回格式
@@ -91,6 +91,152 @@ const AccountDetailPage = ({
   const [leaseInfo, setLeaseInfo] = useState<LeaseInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentPassword, setPaymentPassword] = useState('');
+  const [orderId, setOrderId] = useState('');
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState('');
+  const [leaseDays, setLeaseDays] = useState<number>(1);
+  
+  // 当leaseInfo加载完成后，设置默认租赁天数
+  useEffect(() => {
+    if (leaseInfo && leaseInfo.minLeaseDays) {
+      setLeaseDays(leaseInfo.minLeaseDays);
+    }
+  }, [leaseInfo?.minLeaseDays]);
+  
+  // 创建租赁订单
+  const createLeaseOrder = async (leaseInfoId: string, leaseDays: number) => {
+    try {
+      const response = await fetch('/api/public/rental/creatleaseorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          leaseInfoId,
+          leaseDays
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '创建订单失败');
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('创建租赁订单失败:', error);
+      throw error;
+    }
+  };
+
+  // 支付租赁订单
+  const payLeaseOrder = async (orderId: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/public/rental/paymentleaseorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ orderId })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '支付失败');
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('支付租赁订单失败:', error);
+      throw error;
+    }
+  };
+
+  // 处理立即租赁
+  const handleRentNow = async () => {
+    if (!leaseInfo || apiLoading) return;
+    
+    try {
+      setApiLoading(true);
+      setApiError('');
+      
+      console.log('开始创建租赁订单，租期:', leaseDays);
+      // 创建租赁订单，使用用户选择的租期
+      const result = await createLeaseOrder(leaseInfo.id, leaseDays);
+      
+      console.log('创建订单API响应:', result);
+      
+      // 根据API返回的数据结构，订单ID是orderNo字段
+      let orderNo = null;
+      if (result && result.success && result.data && result.data.orderNo) {
+        orderNo = result.data.orderNo;
+        console.log('获取到订单号orderNo:', orderNo);
+        // 保存订单号
+        setOrderId(orderNo);
+        // 显示支付密码模态框
+        console.log('设置显示支付模态框为true');
+        setShowPaymentModal(true);
+      } else {
+        // 更宽容地处理可能的不同响应格式
+        if (result && result.data && result.data.id) {
+          // 如果找不到orderNo但有id，使用id作为后备
+          orderNo = result.data.id;
+          console.log('使用id作为后备订单ID:', orderNo);
+          setOrderId(orderNo);
+          setShowPaymentModal(true);
+        } else {
+          throw new Error(result?.message || '创建订单失败，未找到订单号');
+        }
+      }
+    } catch (error) {
+      console.error('创建订单失败:', error);
+      setApiError(error instanceof Error ? error.message : '创建订单失败，请稍后重试');
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  // 处理取消支付
+  const handleCancelPayment = () => {
+    setShowPaymentModal(false);
+    setPaymentPassword('');
+    setOrderId('');
+    // 取消后跳转到租赁订单页面
+    window.location.href = '/accountrental/my-account-rental/rentalorder';
+  };
+
+  // 处理确认支付
+  const handleConfirmPayment = async () => {
+    if (!orderId || paymentPassword.length !== 6 || apiLoading) return;
+    
+    try {
+      setApiLoading(true);
+      setApiError('');
+      
+      // 支付订单
+      const result: boolean = await payLeaseOrder(orderId);
+      
+      console.log('支付结果:', result);
+      // 检查是否成功
+      if (result) {
+        // 支付成功，关闭模态框并显示成功提示
+        setShowPaymentModal(false);
+        alert('支付成功！正在跳转到订单页面...');
+        // 跳转到租赁订单页面
+        window.location.href = '/app/accountrental/my-account-rental/rentalorder';
+      } else {
+        throw new Error('支付失败');
+      }
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : '支付失败，请稍后重试');
+    } finally {
+      setApiLoading(false);
+    }
+  };
   
   // 组件挂载时获取数据
   useEffect(() => {
@@ -289,6 +435,143 @@ const AccountDetailPage = ({
                     </div>
                   </div>
                 </div>
+                {/* 账号图片展示区域 */}
+                {leaseInfo && (
+                  <div className="bg-white px-3">
+                    <h2 className="text-lg font-medium text-gray-800 mb-3">账号图片：</h2>
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* 判断是否有图片，没有则显示默认图片 */}
+                      {(!leaseInfo.image && (!leaseInfo.images || leaseInfo.images.length === 0)) ? (
+                        <div 
+                          className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                          onClick={() => setSelectedImage('/images/0e92a4599d02a7.jpg')}
+                        >
+                          <img 
+                            src="/images/0e92a4599d02a7.jpg" 
+                            alt="账号默认图片" 
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                          />
+                        </div>
+                      ) : (
+                        // 优先使用单张图片
+                        leaseInfo.image ? (
+                          <div 
+                            className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                            onClick={() => setSelectedImage(leaseInfo.image!)}
+                          >
+                            <img 
+                              src={leaseInfo.image} 
+                              alt="账号图片" 
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                              onError={(e) => {
+                                // 图片加载失败时显示默认图片
+                                const target = e.target as HTMLImageElement;
+                                target.src = '/images/0e92a4599d02a7.jpg';
+                                target.alt = '账号默认图片';
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          // 多张图片展示
+                          leaseInfo.images?.map((img, index) => (
+                            <div 
+                              key={index} 
+                              className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
+                              onClick={() => setSelectedImage(img)}
+                            >
+                              <img 
+                                src={img} 
+                                alt={`账号图片 ${index + 1}`} 
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                                onError={(e) => {
+                                  // 图片加载失败时显示默认图片
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = '/images/0e92a4599d02a7.jpg';
+                                  target.alt = '账号默认图片';
+                                }}
+                              />
+                            </div>
+                          ))
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 图片预览模态框 */}
+                {selectedImage && (
+                  <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" 
+                    onClick={() => setSelectedImage(null)}
+                  >
+                    <div className="relative max-w-4xl max-h-[90vh] p-4" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full  z-10 w-8 h-8 hover:bg-opacity-70 transition-colors"
+                        onClick={() => setSelectedImage(null)}
+                      >
+                        ✕
+                      </button>
+                      <img 
+                        src={selectedImage} 
+                        alt="预览图片" 
+                        className="max-w-full max-h-[85vh] object-contain" 
+                        onError={(e) => {
+                          // 预览图片加载失败时显示默认图片
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/public/images/0e92a4599d02a7.jpg';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* 支付密码模态框 */}
+                {showPaymentModal && (
+                  <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" 
+                    onClick={handleCancelPayment}
+                  >
+                    <div 
+                      className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h2 className="text-xl font-bold mb-4 text-center">支付确认</h2>
+                      
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">支付密码</label>
+                        <input
+                          type="password"
+                          placeholder="请输入支付密码"
+                          value={paymentPassword}
+                          onChange={(e) => setPaymentPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          maxLength={6}
+                        />
+                        {paymentPassword.length > 0 && paymentPassword.length !== 6 && (
+                          <p className="text-red-500 text-xs mt-1">支付密码为6位</p>
+                        )}
+                      </div>
+                      
+                      <div className="flex justify-between gap-3">
+                        <Button 
+                          variant="ghost" 
+                          className="flex-1" 
+                          onClick={handleCancelPayment}
+                          disabled={apiLoading}
+                        >
+                          取消
+                        </Button>
+                        <Button 
+                          className="flex-1 bg-blue-500 hover:bg-blue-600 text-white" 
+                          onClick={handleConfirmPayment}
+                          disabled={apiLoading || paymentPassword.length !== 6}
+                        >
+                          {apiLoading ? '支付中...' : '确认支付'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -301,7 +584,6 @@ const AccountDetailPage = ({
                     <span className="text-3xl font-bold text-red-600">¥{leaseInfo.pricePerDay}/天</span>
                   </div>
                 </div>
-                
                 {/* 租赁信息 */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm">
@@ -312,112 +594,55 @@ const AccountDetailPage = ({
                     <span>最高租期</span>
                     <span>{leaseInfo.maxLeaseDays}天</span>
                   </div>
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">租赁天数</label>
+                    <input
+                      type="number"
+                      value={leaseDays === leaseInfo.minLeaseDays ? '' : leaseDays}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 当输入框为空时，设置默认值为最小租赁天数
+                        if (value === '') {
+                          setLeaseDays(leaseInfo.minLeaseDays);
+                        } else {
+                          const numValue = parseInt(value);
+                          // 允许输入个位数，只要它在有效范围内
+                          if (!isNaN(numValue)) {
+                            setLeaseDays(Math.max(leaseInfo.minLeaseDays, Math.min(leaseInfo.maxLeaseDays, numValue)));
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">请输入{leaseInfo.minLeaseDays}-{leaseInfo.maxLeaseDays}天</p>
+                  </div>
                 </div>
-                
                 {/* 操作按钮 */}
                 <div className="space-y-3">
-                  <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
-                    立即租赁
+                  <Button 
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                    onClick={handleRentNow}
+                    disabled={apiLoading}
+                  >
+                    {apiLoading ? '处理中...' : '立即租赁'}
                   </Button>
                   
                   <Button variant="ghost" className="w-full">
                     联系发布者
                   </Button>
                 </div>
+                {/* API错误提示 */}
+                {apiError && (
+                  <div className="mt-3 bg-red-50 text-red-600 p-2 rounded text-sm">
+                    {apiError}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
         
-        {/* 账号图片展示区域 */}
-        {leaseInfo && (
-          <div className="mt-3 bg-white p-3">
-            <h2 className="text-lg font-medium text-gray-800 mb-3">账号图片：</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {/* 判断是否有图片，没有则显示默认图片 */}
-              {(!leaseInfo.image && (!leaseInfo.images || leaseInfo.images.length === 0)) ? (
-                <div 
-                  className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
-                  onClick={() => setSelectedImage('/images/0e92a4599d02a7.jpg')}
-                >
-                  <img 
-                    src="/images/0e92a4599d02a7.jpg" 
-                    alt="账号默认图片" 
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                  />
-                </div>
-              ) : (
-                // 优先使用单张图片
-                leaseInfo.image ? (
-                  <div 
-                    className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
-                    onClick={() => setSelectedImage(leaseInfo.image!)}
-                  >
-                    <img 
-                      src={leaseInfo.image} 
-                      alt="账号图片" 
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                      onError={(e) => {
-                        // 图片加载失败时显示默认图片
-                        const target = e.target as HTMLImageElement;
-                        target.src = '/images/0e92a4599d02a7.jpg';
-                        target.alt = '账号默认图片';
-                      }}
-                    />
-                  </div>
-                ) : (
-                  // 多张图片展示
-                  leaseInfo.images?.map((img, index) => (
-                    <div 
-                      key={index} 
-                      className="cursor-pointer overflow-hidden rounded-lg border border-gray-200 hover:border-blue-400 transition-colors w-[100px] h-[100px]"
-                      onClick={() => setSelectedImage(img)}
-                    >
-                      <img 
-                        src={img} 
-                        alt={`账号图片 ${index + 1}`} 
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
-                        onError={(e) => {
-                          // 图片加载失败时显示默认图片
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/images/0e92a4599d02a7.jpg';
-                          target.alt = '账号默认图片';
-                        }}
-                      />
-                    </div>
-                  ))
-                )
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 图片预览模态框 */}
-        {selectedImage && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80" 
-            onClick={() => setSelectedImage(null)}
-          >
-            <div className="relative max-w-4xl max-h-[90vh] p-4" onClick={(e) => e.stopPropagation()}>
-              <button 
-                className="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full  z-10 w-8 h-8 hover:bg-opacity-70 transition-colors"
-                onClick={() => setSelectedImage(null)}
-              >
-                ✕
-              </button>
-              <img 
-                src={selectedImage} 
-                alt="预览图片" 
-                className="max-w-full max-h-[85vh] object-contain" 
-                onError={(e) => {
-                  // 预览图片加载失败时显示默认图片
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/public/images/0e92a4599d02a7.jpg';
-                }}
-              />
-            </div>
-          </div>
-        )}
+      
       </div>
     );
 };

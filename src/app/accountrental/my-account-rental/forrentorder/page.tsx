@@ -1,132 +1,191 @@
 'use client';
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message } from 'antd';
+import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message, ConfigProvider } from 'antd';
+
 import Link from 'next/link';
 import { SearchOutlined, CopyOutlined } from '@ant-design/icons';
-import { ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
-
-dayjs.locale('zh-cn');
 import type { TabsProps } from 'antd';
 
-// 订单状态类型
-type OrderStatus = '待付款' | '租赁中' | '已完成' | '已取消';
+
+
+// 后端返回的订单状态类型
+type BackendOrderStatus = 'PENDING' | 'PAID' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'DISPUTED';
+
+// 前端显示的订单状态类型
+type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '争议中';
+
+// 租赁信息接口
+interface LeaseInfo {
+  id: string;
+  userId: string;
+  accountType: string;
+  accountLevel: string;
+  platform: string;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minLeaseDays: number;
+  maxLeaseDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
+  createTime: string;
+}
 
 // 订单接口
 interface RentalOrder {
   id: string;
+  leaseInfoId: string;
+  lessorId: string;
+  renterId: string;
   orderNo: string;
-  userName: string;
-  userId: string;
-  accountInfo: string;
   rentalDays: number;
   totalAmount: number;
-  createTime: string;
+  depositAmount: number;
+  platformFee: number;
+  lessorIncome: number;
+  leaseDays: number;
+  renterPay: number;
+  status: BackendOrderStatus;
   startTime: string;
   endTime: string;
-  status: OrderStatus;
+  actualEndTime: string;
+  settled: boolean;
+  settleTime: string;
+  cancelReason: string;
+  disputeReason: string;
+  completionNotes: string;
+  createTime: string;
+  leaseInfo: LeaseInfo;
+  lessorName: string;
+  renterName: string;
+  // 前端使用的额外字段
   imageUrl?: string;
+  displayStatus?: OrderStatus;
+  displayAccountInfo?: string;
 }
+
+// 状态映射关系
+const statusMap: Record<BackendOrderStatus, OrderStatus> = {
+  'PENDING': '待支付',
+  'PAID': '已支付',
+  'IN_PROGRESS': '进行中',
+  'COMPLETED': '已完成',
+  'CANCELED': '已取消',
+  'DISPUTED': '争议中'
+};
 
 // 获取状态对应的标签颜色
 const getStatusTagColor = (status: OrderStatus): string => {
   const statusColors = {
-    '待付款': 'orange',
-    '租赁中': 'green',
+    '待支付': 'orange',
+    '已支付': 'blue',
+    '进行中': 'green',
     '已完成': 'purple',
-    '已取消': 'red'
+    '已取消': 'red',
+    '争议中': 'yellow'
   };
   return statusColors[status];
 };
 
+// 获取平台对应的图片URL
+const getPlatformImageUrl = (platform: string): string => {
+  const platformImages: Record<string, string> = {
+    'douyin': '/images/douyin-logo.png',
+    'xiaohongshu': '/images/xiaohongshu-logo.png',
+    'kuaishou': '/images/kuaishou-logo.png'
+    // 可以添加更多平台图片映射
+  };
+  return platformImages[platform.toLowerCase()] || '/images/0e92a4599d02a7.jpg';
+};
+
 const RentalOrderPage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>('全部');
+  const [activeTab, setActiveTab] = useState<string>('待支付'); // 默认待支付激活
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
-  const [orders, setOrders] = useState<RentalOrder[]>([
-    {
-      id: '1',
-      orderNo: 'RENT20240620001',
-      userName: '张三',
-      userId: 'USER123456',
-      accountInfo: '抖音账号 - 美食达人',
-      rentalDays: 3,
-      totalAmount: 199.00,
-      createTime: '2024-06-20 10:30:00',
-      startTime: '2024-06-20 12:00:00',
-      endTime: '2024-06-23 12:00:00',
-      status: '待付款',
-      imageUrl: '/images/douyin-logo.png'
-    },
-    {
-      id: '2',
-      orderNo: 'RENT20240619002',
-      userName: '李四',
-      userId: 'USER234567',
-      accountInfo: '小红书账号 - 美妆博主',
-      rentalDays: 7,
-      totalAmount: 499.00,
-      createTime: '2024-06-19 15:20:00',
-      startTime: '2024-06-19 16:00:00',
-      endTime: '2024-06-26 16:00:00',
-      status: '待付款',
-      imageUrl: '/images/xiaohongshu-logo.png'
-    },
-    {
-      id: '3',
-      orderNo: 'RENT20240618003',
-      userName: '王五',
-      userId: 'USER345678',
-      accountInfo: '微博账号 - 旅游达人',
-      rentalDays: 1,
-      totalAmount: 89.00,
-      createTime: '2024-06-18 09:15:00',
-      startTime: '2024-06-18 10:00:00',
-      endTime: '2024-06-19 10:00:00',
-      status: '租赁中',
-      imageUrl: '/images/0e92a4599d02a7.jpg'
-    },
-    {
-      id: '4',
-      orderNo: 'RENT20240617004',
-      userName: '赵六',
-      userId: 'USER456789',
-      accountInfo: '测试测试测试测试测试测试测试测试测试测试',
-      rentalDays: 5,
-      totalAmount: 299.00,
-      createTime: '2024-06-17 14:30:00',
-      startTime: '2024-06-17 15:00:00',
-      endTime: '2024-06-22 15:00:00',
-      status: '已完成',
-      imageUrl: '/images/kuaishou-logo.png'
-    },
-    {
-      id: '5',
-      orderNo: 'RENT20240616005',
-      userName: '钱七',
-      userId: 'USER567890',
-      accountInfo: '抖音账号抖音账号抖音账号抖音账号抖音账号抖音账号抖音账号抖音账号',
-      rentalDays: 2,
-      totalAmount: 159.00,
-      createTime: '2024-06-16 11:20:00',
-      startTime: '2024-06-16 12:00:00',
-      endTime: '2024-06-18 12:00:00',
-      status: '已取消',
-      imageUrl: '/images/douyin-logo.png'
+  const [orders, setOrders] = useState<RentalOrder[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  // 取消订单模态框相关状态
+  const [cancelModalVisible, setCancelModalVisible] = useState<boolean>(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [apiLoading, setApiLoading] = useState<boolean>(false);
+  
+  // 预设取消原因选项
+  const cancelReasons = [
+    { label: '不想要了', value: '不想要了' },
+    { label: '其他', value: '其他' }
+  ];
+  
+  // 状态到后端状态的反向映射
+  const tabToBackendStatus: Record<string, string> = {
+    '待支付': 'PENDING',
+    '已支付': 'PAID',
+    '进行中': 'IN_PROGRESS',
+    '已完成': 'COMPLETED',
+    '已取消': 'CANCELED',
+    '争议中': 'DISPUTED'
+  };
+  
+  // 调用后端API获取订单数据
+  const fetchOrders = async (status: string = 'PENDING') => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/public/rental/myrenterorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          page: 0,
+          size: 20,
+          sortField: 'createTime',
+          sortOrder: 'DESC',
+          status: status
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('请求成功');
+        console.log('后端返回的订单数据:', data);
+        
+        // 检查响应数据格式，支持code为200的情况
+        if (data.code === 200 && data.data && data.data.list) {
+          // 处理订单数据，添加前端显示需要的字段
+          const processedOrders = data.data.list.map((order: RentalOrder) => ({
+            ...order,
+            displayStatus: statusMap[order.status],
+            displayAccountInfo: `${order.leaseInfo.platform} - ${order.leaseInfo.description}`,
+            imageUrl: getPlatformImageUrl(order.leaseInfo.platform)
+          }));
+          
+          setOrders(processedOrders);
+        }
+      }
+    } catch (error) {
+      console.error('获取订单失败:', error);
+      message.error('获取订单失败，请稍后重试');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+  
+  // 页面加载时获取订单数据，默认显示待支付状态
+  React.useEffect(() => {
+    fetchOrders('PENDING');
+  }, []);
 
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
-    { key: '全部', label: '全部', children: null },
-    { key: '待付款', label: '待付款', children: null },
-    { key: '租赁中', label: '租赁中', children: null },
+    { key: '待支付', label: '待支付', children: null },
+    { key: '已支付', label: '已支付', children: null },
+    { key: '进行中', label: '进行中', children: null },
     { key: '已完成', label: '已完成', children: null },
-    { key: '已取消', label: '已取消', children: null }
+    { key: '已取消', label: '已取消', children: null },
+    { key: '争议中', label: '争议中', children: null }
   ];
 
   // 复制订单号功能
@@ -141,6 +200,9 @@ const RentalOrderPage = () => {
   // 处理选项卡切换
   const handleTabChange = (key: string) => {
     setActiveTab(key);
+    // 获取对应的后端状态并调用API
+    const backendStatus = tabToBackendStatus[key] || '';
+    fetchOrders(backendStatus);
   };
 
   // 处理筛选按钮点击
@@ -164,13 +226,67 @@ const RentalOrderPage = () => {
   // 处理订单操作
   const handleOrderAction = (orderId: string, action: string) => {
     console.log(`订单 ${orderId} 执行操作: ${action}`);
-    alert(`订单 ${orderId} 执行 ${action} 操作`);
+    if (action === '去支付') {
+      alert(`订单 ${orderId} 执行 ${action} 操作`);
+    } else if (action === '取消订单') {
+      // 显示取消订单模态框
+      setSelectedOrderId(orderId);
+      setReason('');
+      setCancelModalVisible(true);
+    }
+  };
+  
+  // 关闭取消订单模态框
+  const handleCancelModalClose = () => {
+    setCancelModalVisible(false);
+    setSelectedOrderId('');
+    setReason('');
+  };
+  
+  // 确认取消订单
+  const handleConfirmCancelOrder = async () => {
+    if (!selectedOrderId || !reason) {
+      message.warning('请选择取消原因');
+      return;
+    }
+    
+    setApiLoading(true);
+    try {
+      const response = await fetch('/api/public/rental/cancelleaseorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderId: selectedOrderId,
+          reason: reason
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if ((data.code === 1 || data.code === 200)) {
+          message.success('订单已成功取消');
+          handleCancelModalClose();
+          // 重新获取当前标签页的订单数据
+          const backendStatus = tabToBackendStatus[activeTab] || '';
+          fetchOrders(backendStatus);
+        } else {
+          message.error(data.message || '取消订单失败');
+        }
+      } else {
+        message.error('网络请求失败，请稍后重试');
+      }
+    } catch (error) {
+      console.error('取消订单失败:', error);
+      message.error('取消订单失败，请稍后重试');
+    } finally {
+      setApiLoading(false);
+    }
   };
 
-  // 过滤订单
-  const filteredOrders = activeTab === '全部' 
-    ? orders 
-    : orders.filter(order => order.status === activeTab);
+  // 由于现在是通过API直接获取对应状态的订单，不需要前端过滤
+  const filteredOrders = orders;
 
   return (
     <div className="min-h-screen pt-3">
@@ -243,13 +359,13 @@ const RentalOrderPage = () => {
                         copyOrderNo(order.orderNo);
                       }}
                       size="small"
-                      className="ml-1"   
+                      className="ml-1 text-blue-500"   
                     >
                       复制
                     </Button>
                   </div>
                   <span className="text-sm text-red-500 border border-red-500 rounded-md px-2 bg-red-50">
-                    {order.status}
+                    {order.displayStatus}
                   </span>
                 </div>
 
@@ -261,12 +377,12 @@ const RentalOrderPage = () => {
                       {order.imageUrl ? (
                         <img 
                           src={order.imageUrl} 
-                          alt={order.accountInfo} 
+                          alt={order.displayAccountInfo} 
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <Avatar size={40}>{order.accountInfo.charAt(0)}</Avatar>
+                          <Avatar size={40}>{order.displayAccountInfo ? order.displayAccountInfo.charAt(0) : '订'}</Avatar>
                         </div>
                       )}
                     </div>
@@ -274,8 +390,8 @@ const RentalOrderPage = () => {
 
                   {/* 右侧信息区域 */}
                   <div className="flex-1  space-y-1">
-                      <div className="text-sm text-black line-clamp-2 overflow-hidden">{order.accountInfo}</div>
-                      <div className="text-sm">租赁时长：{order.rentalDays} 天</div>
+                      <div className="text-sm text-black line-clamp-2 overflow-hidden">{order.displayAccountInfo}</div>
+                      <div className="text-sm">租赁时长：{order.leaseDays} 天</div>
                       <div className="text-sm">￥{order.totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
@@ -295,27 +411,36 @@ const RentalOrderPage = () => {
                       客服
                     </Button>
 
-
                   <Space>
                     {/* 根据订单状态显示不同按钮 */}
-                    {order.status === '待付款' && (
-                      <Button
-                        danger
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (confirm('确定要取消该订单吗？')) {
-                            handleOrderAction(order.id, '取消订单');
-                          }
-                        }}
-                        size="small"
-                        style={{ borderColor: '#000' ,marginLeft:4 }}
-                      >
-                        取消订单
-                      </Button>
+                    {order.displayStatus === '待支付' && (
+                      <>
+                        <Button
+                          type="primary"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleOrderAction(order.id, '去支付');
+                          }}
+                          size="small"
+                          style={{ borderColor: '#000',marginLeft:'8px' }}
+                        >
+                          去支付
+                        </Button>
+                        <Button
+                          danger
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleOrderAction(order.id, '取消订单');                          
+                          }}
+                          size="small"
+                          style={{ borderColor: '#000' }}
+                        >
+                          取消订单
+                        </Button>
+                      </>
                     )}
-                    
-                    
                   </Space>
                 </div>
               </Card>
@@ -328,45 +453,81 @@ const RentalOrderPage = () => {
             <p className="text-sm text-black">暂无出租订单</p>
           </div>
         )}
-   
+      </div>
 
       {/* 筛选弹窗 */}
-      <Modal
-        title="订单筛选"
-        open={filterModalVisible}
-        onOk={handleFilterConfirm}
-        onCancel={() => setFilterModalVisible(false)}
-        footer={[
-          <Button key="reset" onClick={() => console.log('重置筛选条件')} size="small">
-            重置
-          </Button>,
-          <Button key="confirm" type="primary" onClick={handleFilterConfirm} size="small">
-            确定
-          </Button>
-        ]}
-      >
-        <ConfigProvider locale={zhCN}>
-          <div>
+        <Modal
+          title="订单筛选"
+          open={filterModalVisible}
+          onOk={handleFilterConfirm}
+          onCancel={() => setFilterModalVisible(false)}
+          footer={[
+            <Button key="reset" onClick={() => console.log('重置筛选条件')} size="small">
+              重置
+            </Button>,
+            <Button key="confirm" type="primary" onClick={handleFilterConfirm} size="small">
+              确定
+            </Button>
+          ]}
+        >
+          <ConfigProvider>
             <div>
-              <h4 className="text-sm text-black mb-2">时间区间</h4>
-              <Radio.Group className="w-full">
-                <Space direction="vertical" className="w-full">
-                  <Radio value="1">1个月内</Radio>
-                  <Radio value="3">3个月内</Radio>
-                  <Radio value="6">6个月内</Radio>
-                </Space>
-              </Radio.Group>
+              <div>
+                <h4 className="text-sm text-black mb-2">时间区间</h4>
+                <Radio.Group className="w-full">
+                  <Space direction="vertical" className="w-full">
+                    <Radio value="1">1个月内</Radio>
+                    <Radio value="3">3个月内</Radio>
+                    <Radio value="6">6个月内</Radio>
+                  </Space>
+                </Radio.Group>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <DatePicker className="flex-1" placeholder="起始时间" />
+                <span>-</span>
+                <DatePicker className="flex-1" placeholder="终止时间" />
+              </div>
             </div>
-            
-            <div className="flex items-center gap-4">
-              <DatePicker className="flex-1" placeholder="起始时间" />
-              <span>-</span>
-              <DatePicker className="flex-1" placeholder="终止时间" />
-            </div>
+          </ConfigProvider>
+        </Modal>
+        
+        {/* 取消订单模态框 */}
+        <Modal
+          title="取消订单"
+          open={cancelModalVisible}
+          onCancel={handleCancelModalClose}
+          footer={[
+            <Button key="close" onClick={handleCancelModalClose} size="small" disabled={apiLoading}>
+              关闭
+            </Button>,
+            <Button 
+              key="confirm" 
+              type="primary" 
+              danger 
+              onClick={handleConfirmCancelOrder} 
+              size="small" 
+              loading={apiLoading}
+            >
+              确认取消订单
+            </Button>
+          ]}
+        >
+          <div className="py-2">
+            <h4 className="text-sm text-black mb-3">请选择取消原因</h4>
+            <Radio.Group 
+              className="w-full" 
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            >
+              <Space direction="vertical" className="w-full">
+                {cancelReasons.map((item) => (
+                  <Radio key={item.value} value={item.value}>{item.label}</Radio>
+                ))}
+              </Space>
+            </Radio.Group>
           </div>
-        </ConfigProvider>
-      </Modal>
-    </div>
+        </Modal>
     </div>
   );
 };

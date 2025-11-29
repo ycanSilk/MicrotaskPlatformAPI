@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message } from 'antd';
+import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker } from 'antd';
 import Link from 'next/link';
-import {  SearchOutlined, CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined } from '@ant-design/icons';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
@@ -13,162 +13,190 @@ import 'dayjs/locale/zh-cn';
 dayjs.locale('zh-cn');
 import type { TabsProps } from 'antd';
 
-// 订单状态类型
-type OrderStatus = '待付款' | '租赁中' | '已完成' | '已取消';
+// 后端返回的订单状态类型
+type BackendOrderStatus = 'PENDING' | 'PAID' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'DISPUTED';
+
+// 前端显示的订单状态类型
+type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '争议中';
+
+// 租赁信息接口
+interface LeaseInfo {
+  id: string;
+  userId: string;
+  accountType: string;
+  accountLevel: string;
+  platform: string;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minRentalDays: number;
+  maxRentalDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
+  createTime: string;
+}
 
 // 订单接口
 interface RentalOrder {
   id: string;
+  leaseInfoId: string;
+  lessorId: string;
+  renterId: string;
   orderNo: string;
-  userName: string;
-  userId: string;
-  accountInfo: string;
   rentalDays: number;
   totalAmount: number;
-  createTime: string;
+  depositAmount: number;
+  platformFee: number;
+  lessorIncome: number;
+  renterPay: number;
+  status: BackendOrderStatus;
   startTime: string;
   endTime: string;
-  status: OrderStatus;
+  actualEndTime: string;
+  settled: boolean;
+  settleTime: string;
+  cancelReason: string;
+  disputeReason: string;
+  completionNotes: string;
+  createTime: string;
+  leaseInfo: LeaseInfo;
+  lessorName: string;
+  renterName: string;
+  // 前端使用的额外字段
   imageUrl?: string;
+  displayStatus?: OrderStatus;
+  displayAccountInfo?: string;
 }
+
+// 状态映射关系
+const statusMap: Record<BackendOrderStatus, OrderStatus> = {
+  'PENDING': '待支付',
+  'PAID': '已支付',
+  'IN_PROGRESS': '进行中',
+  'COMPLETED': '已完成',
+  'CANCELED': '已取消',
+  'DISPUTED': '争议中'
+};
 
 // 获取状态对应的标签颜色
 const getStatusTagColor = (status: OrderStatus): string => {
   const statusColors = {
-    '待付款': 'orange',
-    '租赁中': 'green',
+    '待支付': 'orange',
+    '已支付': 'blue',
+    '进行中': 'green',
     '已完成': 'purple',
-    '已取消': 'red'
+    '已取消': 'red',
+    '争议中': 'yellow'
   };
   return statusColors[status];
 };
 
+// 获取平台对应的图片URL
+const getPlatformImageUrl = (platform: string): string => {
+  const platformImages: Record<string, string> = {
+    'douyin': '/images/douyin-logo.png',
+    'xiaohongshu': '/images/xiaohongshu-logo.png',
+    'kuaishou': '/images/kuaishou-logo.png'
+    // 可以添加更多平台图片映射
+  };
+  return platformImages[platform.toLowerCase()] || '/images/0e92a4599d02a7.jpg';
+};
+
 const RentalOrderPage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>('全部');
+  const [activeTab, setActiveTab] = useState<string>('待支付'); // 默认待支付激活
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
-  // 定义API响应接口
-  interface LeaseInfo {
-    id: string;
-    userId: string;
-    accountType: string;
-    accountLevel: string;
-    platform: string;
-    description: string;
-    pricePerDay: number;
-    depositAmount: number;
-    minLeaseDays: number;
-    maxLeaseDays: number;
-    status: string;
-    totalOrders: number;
-    completedOrders: number;
-    successRate: number;
-    createTime: string;
-  }
-
-  interface RentalOrder {
-    id: string;
-    leaseInfoId: string;
-    lessorId: string;
-    renterId: string;
-    orderNo: string;
-    leaseDays: number;
-    totalAmount: number;
-    depositAmount: number;
-    platformFee: number;
-    lessorIncome: number;
-    renterPay: number;
-    status: OrderStatus;
-    startTime: string;
-    endTime: string;
-    actualEndTime: string;
-    settled: boolean;
-    settleTime: string;
-    cancelReason: string;
-    disputeReason: string;
-    completionNotes: string;
-    createTime: string;
-    leaseInfo: LeaseInfo;
-    lessorName: string;
-    renterName: string;
-  }
-
-  interface ApiResponse {
-    code: number;
-    message: string;
-    data: {
-      list: RentalOrder[];
-      total: number;
-      page: number;
-      size: number;
-      pages: number;
-    };
-    success: boolean;
-    timestamp: number;
-  }
-
-  // 初始化订单状态为数组
   const [orders, setOrders] = useState<RentalOrder[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  
+  // 状态到后端状态的反向映射
+  const tabToBackendStatus: Record<string, string> = {
+    '待支付': 'PENDING',
+    '已支付': 'PAID',
+    '进行中': 'IN_PROGRESS',
+    '已完成': 'COMPLETED',
+    '已取消': 'CANCELED',
+    '争议中': 'DISPUTED'
+  };
 
-  // 页面加载时获取订单数据
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch('/api/public/rental/myrenterorder', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            page: 1,
-            size: 20,
-            sortField: 'createTime',
-            sortOrder: 'DESC',
-            status: ''
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
+  // 调用后端API获取订单数据
+  const fetchOrders = async (status: string = 'PENDING') => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/public/rental/myrenterorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          page: 0,
+          size: 20,
+          sortField: 'createTime',
+          sortOrder: 'DESC',
+          status: status
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('请求成功');
+        console.log('后端返回的订单数据:', data);
+        
+        // 检查响应数据格式，支持code为1或200的情况
+        if ((data.code === 1 || data.code === 200) && data.data && data.data.list) {
+          // 处理订单数据，添加前端显示需要的字段
+          const processedOrders = data.data.list.map((order: RentalOrder) => ({
+            ...order,
+            displayStatus: statusMap[order.status],
+            displayAccountInfo: `${order.leaseInfo.platform} - ${order.leaseInfo.description}`,
+            imageUrl: getPlatformImageUrl(order.leaseInfo.platform)
+          }));
+          
+          setOrders(processedOrders);
         }
-
-        const result: ApiResponse = await response.json();
-
-        if (result.success) {
-          setOrders(result.data.list);
-        } else {
-          message.error(result.message || '获取订单失败');
-        }
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        message.error('获取订单失败，请稍后重试');
       }
-    };
-
-    fetchOrders();
+    } catch (error) {
+      console.error('获取订单失败:', error);
+      console.error('获取订单失败，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // 页面加载时获取订单数据，默认显示待支付状态
+  React.useEffect(() => {
+    fetchOrders('PENDING');
   }, []);
 
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
-    { key: '全部', label: '全部', children: null },
-    { key: '待付款', label: '待付款', children: null },
-    { key: '租赁中', label: '租赁中', children: null },
+    { key: '待支付', label: '待支付', children: null },
+    { key: '已支付', label: '已支付', children: null },
+    { key: '进行中', label: '进行中', children: null },
     { key: '已完成', label: '已完成', children: null },
-    { key: '已取消', label: '已取消', children: null }
+    { key: '已取消', label: '已取消', children: null },
+    { key: '争议中', label: '争议中', children: null }
   ];
 
   // 复制订单号功能
   const copyOrderNo = (orderNo: string) => {
     navigator.clipboard.writeText(orderNo).then(() => {
-      message.success('订单号已复制');
+      console.log('订单号已复制');
+      alert('订单号已复制');
     }).catch(() => {
-      message.error('复制失败，请手动复制');
+      console.error('复制失败，请手动复制');
+      alert('复制失败，请手动复制');
     });
   };
 
   // 处理选项卡切换
   const handleTabChange = (key: string) => {
     setActiveTab(key);
+    // 获取对应的后端状态并调用API
+    const backendStatus = tabToBackendStatus[key] || '';
+    fetchOrders(backendStatus);
   };
 
   // 处理筛选按钮点击
@@ -195,10 +223,8 @@ const RentalOrderPage = () => {
     alert(`订单 ${orderId} 执行 ${action} 操作`);
   };
 
-  // 过滤订单
-  const filteredOrders = activeTab === '全部' 
-    ? orders 
-    : orders.filter(order => order.status === activeTab);
+  // 由于现在是通过API直接获取对应状态的订单，不需要前端过滤
+  const filteredOrders = orders;
 
   return (
     <div className="min-h-screen bg-gray-100 px-3 pt-8">
@@ -261,9 +287,9 @@ const RentalOrderPage = () => {
             <Link href={`/accountrental/my-account-rental/rentalorder/rentalorder-detail/${order.id}`} key={order.id} className="block">
                 <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
                 {/* 订单头部信息 */}
-                <div className="flex justify-between items-center p-0">
-                  <div className="flex items-center">
-                    <span className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">订单编号：{order.orderNo}</span>
+                <div className="">
+                  <div className="flex items-center space-y-1">
+                    <span className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">订单号：{order.orderNo}</span>
                     <Button 
                       type="text" 
                       onClick={(e) => {
@@ -272,36 +298,40 @@ const RentalOrderPage = () => {
                         copyOrderNo(order.orderNo);
                       }}
                       size="small"
-                      className="ml-2"   
+                      className="ml-1"   
                     >
                       复制
                     </Button>
                   </div>
-                </div>
-                <div className='mb-1'> 
-                  <span className="text-sm text-red-500 border border-red-500 px-2 rounded-md bg-red-50">
-                    {order.status}
+                  <span className="text-sm text-red-500 border border-red-500 rounded-md px-2 bg-red-50">
+                    {order.displayStatus}
                   </span>
-                </div>       
-                {/* 订单详细信息 - 左右结构，响应式布局 */}
-                <div className="flex flex-row gap-2 p-0 items-center">
-                  {/* 左侧图片区域 - 在移动设备上调整尺寸 */}
+                </div>
+
+                {/* 订单详细信息 - 左右结构，同一行显示，垂直居中 */}
+                <div className="flex flex-row gap-2 p-1 items-center">
+                  {/* 左侧图片区域 */}
                   <div className="flex-shrink-0">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 overflow-hidden">
-                      {/* 根据平台显示不同的logo */}
-                    <img 
-                      src={`/images/${order.leaseInfo.platform.toLowerCase()}-logo.png`} 
-                      alt={order.leaseInfo.description} 
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-20 h-20 bg-gray-100 overflow-hidden">
+                      {order.imageUrl ? (
+                        <img 
+                          src={order.imageUrl} 
+                          alt={order.displayAccountInfo} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                          <Avatar size={40}>{order.displayAccountInfo ? order.displayAccountInfo.charAt(0) : '订'}</Avatar>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* 右侧信息区域 */}
-                  <div className="flex-1">
-                    <div className="text-sm text-black line-clamp-2">{order.leaseInfo.description}</div>
-                    <div className="text-sm text-black">租赁时长：{order.leaseDays} 天</div>
-                    <div className="text-sm font-medium text-black">￥{order.totalAmount.toFixed(2)}</div>
+                  <div className="flex-1 space-y-1">
+                      <div className="text-sm text-black line-clamp-2 overflow-hidden">{order.displayAccountInfo}</div>
+                      <div className="text-sm">租赁时长：{order.rentalDays} 天</div>
+                      <div className="text-sm">￥{order.totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
                 {/* 按钮区域 */}
@@ -321,7 +351,7 @@ const RentalOrderPage = () => {
                     </Button>
                     
                     {/* 根据订单状态显示不同按钮 */}
-                    {order.status === '待付款' && (
+                    {order.status === 'PENDING' && (
                       <>
                         <Button 
                           type="primary" 
@@ -353,7 +383,7 @@ const RentalOrderPage = () => {
                       </>
                     )}
 
-                    {order.status === '租赁中' && (
+                    {order.status === 'IN_PROGRESS' && (
                       <>
                         <Button 
                           type="default" 
@@ -369,6 +399,21 @@ const RentalOrderPage = () => {
                           延长租期
                         </Button>
                       </>
+                    )}
+                    
+                    {order.status === 'COMPLETED' && (
+                      <Button 
+                        type="primary" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleOrderAction(order.id, '再次租赁');
+                        }} 
+                        size="small"
+                        className="whitespace-nowrap"
+                      >
+                        再次租赁
+                      </Button>
                     )}
                   </Space>
                 </div>

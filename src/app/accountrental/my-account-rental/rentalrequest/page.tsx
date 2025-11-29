@@ -14,7 +14,7 @@ dayjs.locale('zh-cn');
 import type { TabsProps } from 'antd';
 
 // 求租信息状态类型
-type RentalRequestStatus = '已发布' | '已出租' | '已完成' | '已取消';
+type RentalRequestStatus = 'ACTIVE' | 'INACTIVE' | 'CANCELED' | 'MATCHED';
 
 // 顶级响应对象类型
 interface ApiResponse<T> {
@@ -46,19 +46,29 @@ interface RentalRequest {
   description: string;
   status: RentalRequestStatus;
   createTime: string;
-  requestNo: string;
   imageUrl?: string;
 }
 
-// 获取状态对应的标签颜色
-const getStatusTagColor = (status: RentalRequestStatus): string => {
-  const statusColors = {
-    '已发布': 'blue',
-    '已出租': 'orange',
-    '已完成': 'green',
-    '已取消': 'red'
+// 根据状态码获取对应的中文显示
+const getStatusDisplayText = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'ACTIVE': '已发布',
+    'INACTIVE': '不活跃',
+    'CANCELED': '已取消',
+    'MATCHED': '已出租'
   };
-  return statusColors[status];
+  return statusMap[status] || status;
+};
+
+// 根据中文状态获取对应的状态码
+const getStatusFromDisplayText = (displayText: string): string => {
+  const statusMap: Record<string, string> = {
+    '已发布': 'ACTIVE',
+    '不活跃': 'INACTIVE',
+    '已取消': 'CANCELED',
+    '已出租': 'MATCHED'
+  };
+  return statusMap[displayText] || displayText;
 };
 
 const RentalRequestPage = () => {
@@ -115,19 +125,19 @@ const RentalRequestPage = () => {
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
     { key: '全部', label: '全部', children: null },
-    { key: '待匹配', label: '待匹配', children: null },
-    { key: '已匹配', label: '已匹配', children: null },
-    { key: '已完成', label: '已完成', children: null },
+    { key: '已发布', label: '已发布', children: null },
+    { key: '已出租', label: '已出租', children: null },
+    { key: '不活跃', label: '不活跃', children: null },
     { key: '已取消', label: '已取消', children: null }
   ];
 
   // 复制求租编号功能
-  const copyRequestNo = (requestNo?: string) => {
-    if (!requestNo) {
+  const copyid = (id?: string) => {
+    if (!id) {
       message.error('求租编号不存在');
       return;
     }
-    navigator.clipboard.writeText(requestNo).then(() => {
+    navigator.clipboard.writeText(id).then(() => {
       message.success('求租编号已复制');
     }).catch(() => {
       message.error('复制失败，请手动复制');
@@ -166,7 +176,7 @@ const RentalRequestPage = () => {
   // 过滤求租信息
   const filteredRequests = activeTab === '全部' 
     ? requests 
-    : requests.filter(request => request.status === activeTab);
+    : requests.filter(request => request.status === getStatusFromDisplayText(activeTab));
 
   return (
     <div className="min-h-screen bg-gray-100 px-3 pt-8">
@@ -225,11 +235,11 @@ const RentalRequestPage = () => {
       {/* 求租列表 */}
       <div className="">
         {loading ? (
-          <div className="bg-white p-8 text-center">
+          <div className="bg-white p-3 text-center">
             <p className="text-sm text-black">加载中...</p>
           </div>
         ) : error ? (
-          <div className="bg-white p-8 text-center">
+          <div className="bg-white p-3 text-center">
             <p className="text-sm text-red-500">{error}</p>
           </div>
         ) : filteredRequests.map((request) => (
@@ -238,16 +248,16 @@ const RentalRequestPage = () => {
                 {/* 求租头部信息 */}
                 <div className="flex justify-between items-center p-0">
                   <div className="flex items-center">
-                    <span className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">求租编号：{request.requestNo || 'N/A'}</span>
+                    <span className="text-sm w-[270px] text-black whitespace-nowrap overflow-hidden text-ellipsis max-w-[calc(100%-60px)]">求租编号：{request.id || 'N/A'}</span>
                     <Button 
                       type="text" 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        copyRequestNo(request.requestNo);
+                        copyid(request.id);
                       }}
                       size="small"
-                      className="ml-2"
+                      className="ml-2 whitespace-nowrap text-blue-500"
                     >
                       复制
                     </Button>
@@ -255,7 +265,7 @@ const RentalRequestPage = () => {
                 </div>
                 <div className='mb-1'> 
                   <span className="text-sm text-red-500 border border-red-500 px-2 rounded-md bg-red-50">
-                    {request.status}
+                    {getStatusDisplayText(request.status)}
                   </span>
                 </div>
                 
@@ -303,7 +313,7 @@ const RentalRequestPage = () => {
                     </Button>
                     
                     {/* 根据状态显示不同按钮 */}
-                    {request.status === '已发布' && (
+                    {request.status === 'ACTIVE' && (
                       <>
                         <Button 
                           type="primary" 
@@ -335,7 +345,7 @@ const RentalRequestPage = () => {
                       </>
                     )}
 
-                    {request.status === '已出租' && (
+                    {request.status === 'MATCHED' && (
                       <>
                         <Button 
                           type="default" 

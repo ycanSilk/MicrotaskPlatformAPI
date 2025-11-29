@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeftOutlined, MessageOutlined } from '@ant-design/icons';
+import { MessageOutlined } from '@ant-design/icons';
 
-// 求租信息接口定义 - 匹配后端返回格式
+// 求租信息接口定义
 interface RentalRequest {
   id: string;
   userId: string;
@@ -16,17 +16,6 @@ interface RentalRequest {
   description: string;
   status: string;
   createTime: string;
-  accountRequirements: {
-      modifyNameAvatar: boolean;
-      modifyBio: boolean;
-      canComment: boolean;
-      canPostVideo: boolean;
-    };
-    loginMethod: {
-      scanCode: boolean;
-      phoneVerification: boolean;
-      noLogin: boolean;
-    };
 }
 
 // API响应数据接口
@@ -43,50 +32,26 @@ interface CopyStatus {
   [key: string]: boolean;
 }
 
-
-
-
-
-// 格式化日期时间
-const formatDateTime = (dateString: string) => {
-  return new Date(dateString).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-// 格式化日期
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-};
-
-const RentalRequestDetailPage = () => {
+const RentalRequestDetailPage: React.FC = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [request, setRequest] = useState<RentalRequest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>({});
 
-
   // 获取URL参数中的id
   const params = useParams<{ id: string }>();
-  const id = params.id || '';
+  const id = params?.id || '';
 
   // 获取求租信息详情
   useEffect(() => {
-    const fetchRentalRequestDetail = async () => {
+    const fetchRentalRequestDetail = async (): Promise<void> => {
       if (!id) {
         setError('缺少请求ID');
         setLoading(false);
         return;
       }
+      
       try {
         setLoading(true);
         const response = await fetch(`/api/public/rental/getrequestinfodetail?rentRequestId=${id}`, {
@@ -95,6 +60,10 @@ const RentalRequestDetailPage = () => {
             'Content-Type': 'application/json',
           },
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const apiResponse: ApiResponse = await response.json();
 
@@ -115,38 +84,37 @@ const RentalRequestDetailPage = () => {
   }, [id]);
 
   // 处理复制订单ID
-  const handleCopyOrderNumber = () => {
+  const handleCopyOrderNumber = (): void => {
     if (!request) return;
 
     navigator.clipboard.writeText(request.id);
     // 设置复制成功状态
-    setCopyStatus({ ...copyStatus, orderNumber: true });
+    setCopyStatus(prev => ({ ...prev, orderNumber: true }));
     // 2秒后恢复原状态
     setTimeout(() => {
-      setCopyStatus({ ...copyStatus, orderNumber: false });
+      setCopyStatus(prev => ({ ...prev, orderNumber: false }));
     }, 2000);
   };
 
   // 处理立即租赁
-  const handleRentNow = () => {
+  const handleRentNow = (): void => {
     if (!request) return;
     // 在实际项目中，应该跳转到租赁确认页
     console.log('立即租赁请求:', request.id);
-    // router.push(`/accountrental/account-rental-requests/rent/${request.id}`);
   };
 
   // 处理联系对方
-  const handleContact = () => {
+  const handleContact = (): void => {
     if (!request) return;
     console.log('联系对方请求:', request.id);
-    // 在实际项目中，应该打开聊天窗口或显示联系方式
   };
 
   // 返回上一页
-  const handleBack = () => {
+  const handleBack = (): void => {
     router.back();
   };
 
+  // 加载状态
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center">
@@ -155,6 +123,7 @@ const RentalRequestDetailPage = () => {
     );
   }
 
+  // 错误状态
   if (error || !request) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
@@ -173,14 +142,13 @@ const RentalRequestDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 主内容区域 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-blue-100">
-          {/* 卡片头部 - 平台和价格信息 */}
+          {/* 卡片头部 */}
           <div className="bg-blue-50 p-4 border-b border-blue-200">
             <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <h2>账号平台：{request.platform}</h2>
+              <div>
+                <h2 className="text-base font-medium">账号平台：{request.platform}</h2>
               </div>
               <div className="text-red-600">
                 ¥{request.expectedPricePerDay.toFixed(2)}/天
@@ -192,7 +160,7 @@ const RentalRequestDetailPage = () => {
           <div className="p-4 border-b border-gray-100">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center space-x-1">
-                <span className="">订单ID：</span>
+                <span>订单ID：</span>
                 <span className="w-[150px] overflow-hidden text-ellipsis whitespace-nowrap max-w-xs">{request.id}</span>
                 <button
                   onClick={handleCopyOrderNumber}
@@ -232,7 +200,7 @@ const RentalRequestDetailPage = () => {
           <div className="p-4 border-b border-gray-100">
             <h3 className="text-lg font-medium mb-3">求租信息描述</h3>
             <div className="bg-blue-50 p-4 rounded-md">
-              <p className=" leading-relaxed">{request.description && request.description.split('\n')[0]}</p>
+              <p className="leading-relaxed">{request.description?.split('\n')[0] || ''}</p>
             </div>
           </div>
 
@@ -241,34 +209,34 @@ const RentalRequestDetailPage = () => {
             <h3 className="text-lg font-medium mb-3">账号要求</h3>
             <div className="space-y-2">
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('修改抖音账号名称和头像') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('修改抖音账号名称和头像') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('修改抖音账号名称和头像') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('修改抖音账号名称和头像') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('修改抖音账号名称和头像') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('修改抖音账号名称和头像') ? '' : 'text-gray-500'}>
                   修改抖音账号名称和头像
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('修改账号简介') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('修改账号简介') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('修改账号简介') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('修改账号简介') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('修改账号简介') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('修改账号简介') ? '' : 'text-gray-500'}>
                   修改账号简介
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('支持发布评论') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('支持发布评论') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('支持发布评论') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('支持发布评论') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('支持发布评论') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('支持发布评论') ? '' : 'text-gray-500'}>
                   支持发布评论
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('支持发布视频') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('支持发布视频') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('支持发布视频') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('支持发布视频') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('支持发布视频') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('支持发布视频') ? '' : 'text-gray-500'}>
                   支持发布视频
                 </span>
               </div>
@@ -280,26 +248,26 @@ const RentalRequestDetailPage = () => {
             <h3 className="text-lg font-medium mb-3">登录方式</h3>
             <div className="space-y-2">
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('扫码登录') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('扫码登录') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('扫码登录') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('扫码登录') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('扫码登录') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('扫码登录') ? '' : 'text-gray-500'}>
                   扫码登录
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && (request.description.includes('手机号+短信验证登录') || request.description.includes('手机号') || request.description.includes('短信验证')) ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && (request.description.includes('手机号+短信验证登录') || request.description.includes('手机号') || request.description.includes('短信验证')) ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('手机号+短信验证登录') || request.description?.includes('手机号') || request.description?.includes('短信验证') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('手机号+短信验证登录') || request.description?.includes('手机号') || request.description?.includes('短信验证') ? '√' : 'X'}
                 </span>
-                <span className={request.description && (request.description.includes('手机号+短信验证登录') || request.description.includes('手机号') || request.description.includes('短信验证')) ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('手机号+短信验证登录') || request.description?.includes('手机号') || request.description?.includes('短信验证') ? '' : 'text-gray-500'}>
                   手机号+短信验证登录
                 </span>
               </div>
               <div className="flex items-center text-sm">
-                <span className={`mr-2 ${request.description && request.description.includes('不登录账号') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
-                  {request.description && request.description.includes('不登录账号') ? '√' : 'X'}
+                <span className={`mr-2 ${request.description?.includes('不登录账号') ? 'text-green-500 font-medium' : 'text-red-500'}`}>
+                  {request.description?.includes('不登录账号') ? '√' : 'X'}
                 </span>
-                <span className={request.description && request.description.includes('不登录账号') ? '' : 'text-gray-500'}>
+                <span className={request.description?.includes('不登录账号') ? '' : 'text-gray-500'}>
                   不登录账号，按照承租方要求完成租赁
                 </span>
               </div>
@@ -329,13 +297,12 @@ const RentalRequestDetailPage = () => {
                 onClick={handleRentNow}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium shadow-sm active:scale-95 transition-all"
               >
-                立即租赁
+                立即出租
               </button>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 };
