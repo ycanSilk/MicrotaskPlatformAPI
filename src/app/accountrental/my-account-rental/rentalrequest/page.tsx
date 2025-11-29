@@ -14,7 +14,7 @@ dayjs.locale('zh-cn');
 import type { TabsProps } from 'antd';
 
 // 求租信息状态类型
-type RentalRequestStatus = '待匹配' | '已匹配' | '已完成' | '已取消';
+type RentalRequestStatus = '已发布' | '已出租' | '已完成' | '已取消';
 
 // 顶级响应对象类型
 interface ApiResponse<T> {
@@ -53,8 +53,8 @@ interface RentalRequest {
 // 获取状态对应的标签颜色
 const getStatusTagColor = (status: RentalRequestStatus): string => {
   const statusColors = {
-    '待匹配': 'blue',
-    '已匹配': 'orange',
+    '已发布': 'blue',
+    '已出租': 'orange',
     '已完成': 'green',
     '已取消': 'red'
   };
@@ -82,11 +82,15 @@ const RentalRequestPage = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            page: 1,
+            page: 0,
             size: 20,
             sortField: 'createTime',
-            sortOrder: 'desc',
-            status: activeTab === '全部' ? '' : activeTab,
+            sortOrder: 'DESC',
+            status: 'ACTIVE',
+            platform: "",
+            accountType: "",
+            minPrice: 1,
+            maxPrice: 999
           }),
         });
         
@@ -229,12 +233,12 @@ const RentalRequestPage = () => {
             <p className="text-sm text-red-500">{error}</p>
           </div>
         ) : filteredRequests.map((request) => (
-            <Link href={`/accountrental/my-account-rental/rentalrequest/rentalrequest-detail/${request.id}`} key={request.id}>
-              <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
+            <Link href={`/accountrental/my-account-rental/rentalrequest/rentalrequest-detail/${request.id}`} key={request.id} className="block">
+                <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
                 {/* 求租头部信息 */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center p-0">
                   <div className="flex items-center">
-                    <span className="text-sm text-black">求租编号：{request.requestNo || 'N/A'}</span>
+                    <span className="text-sm text-black whitespace-nowrap overflow-hidden text-ellipsis">求租编号：{request.requestNo || 'N/A'}</span>
                     <Button 
                       type="text" 
                       onClick={(e) => {
@@ -249,41 +253,41 @@ const RentalRequestPage = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="mb-1">
+                <div className='mb-1'> 
                   <span className="text-sm text-red-500 border border-red-500 px-2 rounded-md bg-red-50">
                     {request.status}
                   </span>
                 </div>
-
-                {/* 求租详细信息 - 左右结构，同一行显示，垂直居中 */}
-                <div className="flex flex-row gap-2 py-2 px-1 items-center">
-                  {/* 左侧图片区域 */}
+                
+                {/* 求租详细信息 - 左右结构，响应式布局 */}
+                <div className="flex flex-row gap-2 p-0 items-center">
+                  {/* 左侧图片区域 - 在移动设备上调整尺寸 */}
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 bg-gray-100 overflow-hidden">
-                      {request.imageUrl ? (
-                        <img 
-                          src={request.imageUrl} 
-                          alt={request.accountType}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <Avatar size={40}>{request.accountType.charAt(0)}</Avatar>
-                        </div>
-                      )}
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 overflow-hidden">
+                      {/* 根据平台显示不同的logo */}
+                      <img 
+                        src={`/images/${request.platform.toLowerCase()}-logo.png`} 
+                        alt={request.description} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = '/images/0e92a4599d02a7.jpg';
+                        }}
+                      />
                     </div>
                   </div>
 
                   {/* 右侧信息区域 */}
                   <div className="flex-1">
-                      <div className="text-sm text-gray-600 line-clamp-2">{request.description}</div>
-                      <div>求租时长：{request.expectedLeaseDays} 天</div>
-                      <div>预算：¥{request.budgetDeposit}</div>
+                    <div className="text-sm text-black line-clamp-2">{request.description}</div>
+                    <div className="text-sm text-black">求租时长：{request.expectedLeaseDays} 天</div>
+                    <div className="text-sm font-medium text-black">￥{request.budgetDeposit.toFixed(2)}</div>
                   </div>
                 </div>
                 
                 {/* 按钮区域 */}
-                <div className="flex justify-end items-center mt-2 py-3 px-2">
+                <div className="flex justify-end items-center mt-1">
                   <Space>
                     <Button
                       type="default"
@@ -295,11 +299,11 @@ const RentalRequestPage = () => {
                       size="small"
                       style={{ borderColor: '#000' }}
                     >
-                      客服
+                      联系客服
                     </Button>
                     
                     {/* 根据状态显示不同按钮 */}
-                    {request.status === '待匹配' && (
+                    {request.status === '已发布' && (
                       <>
                         <Button 
                           type="primary" 
@@ -309,6 +313,7 @@ const RentalRequestPage = () => {
                             handleRequestAction(request.id, '编辑求租');
                           }} 
                           size="small"
+                          className="whitespace-nowrap"
                         >
                           编辑求租
                         </Button>
@@ -323,13 +328,14 @@ const RentalRequestPage = () => {
                           }}
                           size="small"
                           style={{ borderColor: '#000' }}
+                          className="whitespace-nowrap"
                         >
                           取消求租
                         </Button>
                       </>
                     )}
 
-                    {request.status === '已匹配' && (
+                    {request.status === '已出租' && (
                       <>
                         <Button 
                           type="default" 
@@ -340,6 +346,7 @@ const RentalRequestPage = () => {
                           }} 
                           size="small"
                           style={{ borderColor: '#000' }}
+                          className="whitespace-nowrap"
                         >
                           查看匹配账号
                         </Button>

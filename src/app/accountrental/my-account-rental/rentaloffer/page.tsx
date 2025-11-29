@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message } from 'antd';
 import Link from 'next/link';
-import { PhoneOutlined, SearchOutlined, CopyOutlined } from '@ant-design/icons';
+import { PhoneOutlined, CopyOutlined } from '@ant-design/icons';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
@@ -33,23 +33,21 @@ export interface RentalOfferData {
 // 出租信息接口
 export interface RentalOffer {
   id: string;
-  offerNo: string;
-  userName: string;
-  userId: string;
-  accountType: string;
-  accountName: string;
-  followersCount: string;
-  accountDescription: string;
-  rentalPrice: number;
-  createTime: string;
-  status: RentalOfferStatus;
-  imageUrl?: string;
-  rentalDuration: number;
-  // 可能的额外字段
-  platform?: string;
-  updateTime?: string;
-  startTime?: string;
-  endTime?: string;
+			userId: string;
+			accountType: string;
+			accountLevel: string;
+			platform: string;
+			description: string;
+			pricePerDay: number;
+			depositAmount: number;
+			minLeaseDays: number;
+			maxLeaseDays: number;
+			status: RentalOfferStatus;
+			totalOrders: number;
+			completedOrders: number;
+			successRate: number;
+			createTime: string;
+			imageUrl?: string; // 可选的图片URL字段
 }
 
 // 出租信息状态类型（API返回值）
@@ -87,7 +85,6 @@ const RentalOfferPage = () => {
   const tabItems: TabsProps['items'] = [
     { key: '全部', label: '全部', children: null },
     { key: 'ACTIVE', label: '已发布', children: null },
-    { key: 'INACTIVE', label: '不活跃', children: null },
     { key: 'CANCELED', label: '已取消', children: null },
     { key: 'RENTED', label: '已出租', children: null }
   ];
@@ -104,8 +101,11 @@ const RentalOfferPage = () => {
         },
         body: JSON.stringify({
           ...pagination,
+          page: 0,
+          size: 20,
+          status: "ACTIVE",
           sortField: 'createTime',
-          sortOrder: 'desc',
+          sortOrder: 'DESC',
         }),
       });
 
@@ -236,22 +236,20 @@ const RentalOfferPage = () => {
       <Link href={`/accountrental/my-account-rental/rentaloffer/rentaloffer-detail/${offer.id}`} key={offer.id}>
         <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
           {/* 出租头部信息 */}
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <span className="text-sm text-black">出租单号：{offer.offerNo}</span>
-              <Button 
-                type="text" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  copyOfferNo(offer.offerNo);
-                }}
-                size="small"
-                className="ml-2"
-              >
-                复制
-              </Button>
-            </div>
+          <div className="flex items-center">
+            <span className="text-sm text-black truncate mr-2">出租单号：{offer.id}</span>
+            <Button 
+              type="text" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                copyOfferNo(offer.id);
+              }}
+              size="small"
+              className="text-blue-500 whitespace-nowrap"
+            >
+              复制
+            </Button>
           </div>
           <div className='mb-1'>
             <span className="text-sm text-red-500">
@@ -266,22 +264,24 @@ const RentalOfferPage = () => {
                 {offer.imageUrl ? (
                   <img 
                     src={offer.imageUrl} 
-                    alt={offer.accountType}
-                    className="w-full h-full object-cover"
+                    alt="出租信息图片" 
+                    className="w-full h-full object-cover" 
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                    <Avatar size={40}>{offer.accountType.charAt(0)}</Avatar>
-                  </div>
+                  <img 
+                    src="/images/0e92a4599d02a7.jpg" 
+                    alt="默认图片" 
+                    className="w-full h-full object-cover" 
+                  />
                 )}
               </div>
             </div>
 
             {/* 右侧信息区域 */}
             <div className="flex-1">
-                <div className="text-sm text-gray-600 line-clamp-2">{offer.accountDescription}</div>
-                <div className="text-xs text-gray-500">租赁时长：{offer.rentalDuration} 天</div>
-                <div className="text-sm text-black">{offer.rentalPrice} 元/天</div>
+                <div className="">{offer.description}</div>
+                <div className="">可租赁时长：{offer.minLeaseDays}-{offer.maxLeaseDays} 天</div>
+                <div className="">{offer.pricePerDay} 元/天</div>
             </div>
           </div>
           
@@ -361,7 +361,7 @@ const RentalOfferPage = () => {
       {/* 选项卡区域 - 包含状态选项和筛选按钮 */}
       <div className="flex flex-row mb-2 items-center">
         {/* 左侧选项按钮区域 - 90%宽度，支持左右滑动 */}
-        <div className="w-[90%] p-2">
+        <div className="w-[84%] p-2">
           <div 
             className="flex overflow-x-auto whitespace-nowrap pb-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -396,7 +396,7 @@ const RentalOfferPage = () => {
         </div>
         
         {/* 右侧筛选按钮区域 - 10%宽度，垂直居中 */}
-        <div className="w-[10%] flex">
+        <div className="w-[15%] flex">
           <button 
             onClick={handleFilterClick} 
             className="text-sm text-blue-500 text-center p-1 pb-2"
