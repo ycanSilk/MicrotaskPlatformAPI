@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker } from 'antd';
+import { Card, Button, Space, Avatar, Tabs, Modal, Radio, DatePicker, message } from 'antd';
 import Link from 'next/link';
 import { CopyOutlined } from '@ant-design/icons';
 import { ConfigProvider } from 'antd';
@@ -110,6 +110,17 @@ const RentalOrderPage = () => {
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
   const [orders, setOrders] = useState<RentalOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  // 取消订单模态框相关状态
+  const [cancelModalVisible, setCancelModalVisible] = useState<boolean>(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
+  const [apiLoading, setApiLoading] = useState<boolean>(false);
+  
+  // 预设取消原因选项
+  const cancelReasons = [
+    { label: '不想要了', value: '不想要了' },
+    { label: '其他', value: '其他' }
+  ];
   
   // 状态到后端状态的反向映射
   const tabToBackendStatus: Record<string, string> = {
@@ -183,12 +194,62 @@ const RentalOrderPage = () => {
   // 复制订单号功能
   const copyOrderNo = (orderNo: string) => {
     navigator.clipboard.writeText(orderNo).then(() => {
-      console.log('订单号已复制');
-      alert('订单号已复制');
+      message.success('订单号已复制');
     }).catch(() => {
-      console.error('复制失败，请手动复制');
-      alert('复制失败，请手动复制');
+      message.error('复制失败，请手动复制');
     });
+  };
+
+  // 打开取消订单模态框
+  const handleCancelOrderClick = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setReason('');
+    setCancelModalVisible(true);
+  };
+
+  // 关闭取消订单模态框
+  const handleCancelModalClose = () => {
+    setCancelModalVisible(false);
+    setSelectedOrderId('');
+    setReason('');
+  };
+
+  // 提交取消订单请求
+  const handleSubmitCancelOrder = async () => {
+    if (!reason) {
+      message.warning('请选择取消原因');
+      return;
+    }
+
+    setApiLoading(true);
+    try {
+      // 与forrentorder页面相同的API调用实现
+      const response = await fetch('/api/cancelOrder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: selectedOrderId,
+          reason: reason
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        message.success('订单取消成功');
+        handleCancelModalClose();
+        // 重新获取订单列表
+        fetchOrders();
+      } else {
+        message.error(result.message || '取消订单失败');
+      }
+    } catch (error) {
+      console.error('取消订单失败:', error);
+      message.error('取消订单失败，请稍后重试');
+    } finally {
+      setApiLoading(false);
+    }
   };
 
   // 处理选项卡切换
@@ -370,9 +431,7 @@ const RentalOrderPage = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (confirm('确定要取消该订单吗？')) {
-                              handleOrderAction(order.id, '取消订单');
-                            }
+                            handleCancelOrderClick(order.id);
                           }}
                           size="small"
                           style={{ borderColor: '#000' }}
@@ -466,6 +525,40 @@ const RentalOrderPage = () => {
             </div>
           </div>
         </ConfigProvider>
+      </Modal>
+
+      {/* 取消订单模态框 */}
+      <Modal
+        title="取消订单"
+        open={cancelModalVisible}
+        onCancel={handleCancelModalClose}
+        footer={[
+          <Button key="cancel" onClick={handleCancelModalClose}>
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            loading={apiLoading}
+            onClick={handleSubmitCancelOrder}
+          >
+            确认取消
+          </Button>,
+        ]}
+      >
+        <div style={{ marginBottom: '16px' }}>
+          <p style={{ marginBottom: '12px' }}>请选择取消订单原因：</p>
+          <Radio.Group value={reason} onChange={(e) => setReason(e.target.value)}>
+            <Space direction="vertical">
+              {cancelReasons.map((item) => (
+                <Radio key={item.value} value={item.value}>
+                  {item.label}
+                </Radio>
+              ))}
+            </Space>
+          </Radio.Group>
+        </div>
+        <p style={{ color: '#ff4d4f', fontSize: '14px' }}>* 请谨慎操作，订单取消后无法恢复</p>
       </Modal>
     </div>
   );
