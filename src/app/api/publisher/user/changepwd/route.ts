@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 // 从Cookie中获取token的函数
 const getTokenFromCookie = async (): Promise<string | null> => {
   try {

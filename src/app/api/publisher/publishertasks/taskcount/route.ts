@@ -3,6 +3,9 @@ const config = require('../../apiconfig/config.json');
 // 导入公共的token工具模块
 import { formatLog, getTokenFromCookie, isValidToken } from '../../auth/token/tokenUtils';
 
+// 强制使用动态渲染，因为该路由需要访问cookies
+export const dynamic = 'force-dynamic';
+
 /**
  * 获取我发布的任务列表API路由
  * 功能：处理发布者获取已发布任务列表的请求，支持分页、排序和筛选

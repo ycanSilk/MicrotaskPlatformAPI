@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+
 // 导入配置文件
 const config = require('../../apiconfig/config.json');
-
-export async function GET(request: Request) {
+export const dynamic = 'force-dynamic';
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   // 从Cookie获取token
   const cookieStore = await cookies();
   const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
@@ -18,24 +19,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
   }
   
-  // 解析请求体
-  let requestData;
-  try {
-    requestData = await request.json();
-  } catch (parseError) {
-    return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
-  }
-
-  // 从请求数据中获取orderId和reason参数
-  const {orderId} = requestData;
+  // 从路径参数中获取orderId
+  const orderId = params.id;
   
   if (!orderId) {
-    return NextResponse.json({ success: false, message: '缺少必要参数leaseInfoId' }, { status: 400 });
+    return NextResponse.json({ success: false, message: '缺少必要参数orderId' }, { status: 400 });
   }
   
-  // 构造请求URL，将orderId和reason参数添加到URL中
+  // 构造请求URL，将orderId参数添加到URL中
   const apiUrl = `http://localhost:8083/api/rental/orders/${orderId}`;
   
+  console.log('前端传递过来的orderId:', orderId);
+
   // 直接调用外部API并返回原始响应
   try {
     const response = await fetch(apiUrl, {
@@ -45,10 +40,12 @@ export async function GET(request: Request) {
         'Authorization': `Bearer ${token}`
       }
     });
-
+    if(response.ok){
+      console.log('请求成功');
+    }
     // 获取原始响应数据
     const responseData = await response.json();
-    console.log('这是get求租信息详情API的日志输出:');
+    console.log('这是get求租订单详情API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
     console.log('返回的状态:', response.status);

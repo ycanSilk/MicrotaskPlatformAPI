@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 
 /**
  * 处理已接受任务列表请求

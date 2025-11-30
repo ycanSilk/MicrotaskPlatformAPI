@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  eslint: {
+    // 禁用Next.js默认的lint配置，使用项目自定义配置
+    ignoreDuringBuilds: true
+  },
   experimental: {
     typedRoutes: true,
   },

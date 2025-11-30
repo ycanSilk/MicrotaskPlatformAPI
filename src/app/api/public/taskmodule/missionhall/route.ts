@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 const config = require('../../apiconfig/config.json');
 import { getAllModuleTokens, isValidToken } from '../../token/tokenUtils';
+export const dynamic = 'force-dynamic';
 
 // 创建标准化响应的辅助函数
 function createStandardResponse(

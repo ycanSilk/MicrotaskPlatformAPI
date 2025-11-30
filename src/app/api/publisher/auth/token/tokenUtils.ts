@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 /**
  * 格式化日志输出
  * @param operation 操作名称

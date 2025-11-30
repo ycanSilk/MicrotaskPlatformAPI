@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
@@ -21,7 +21,6 @@ export interface LeaseInfo {
   completedOrders: number;
   successRate: number;
   createTime: string;
-  // 图片相关字段，支持单张或多张图片
   image?: string;
   images?: string[];
 }
@@ -80,12 +79,11 @@ const fetchLeaseInfoDetail = async (leaseInfoId: string): Promise<LeaseInfo> => 
 const AccountDetailPage = ({
   params
 }: {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }) => {
-  // 使用React.use()解析params Promise
-  const { id } = use(params);
+  const { id } = params;
   const leaseInfoId = id || '';
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [leaseInfo, setLeaseInfo] = useState<LeaseInfo | null>(null);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 const config = require('../../apiconfig/config.json');
-
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {

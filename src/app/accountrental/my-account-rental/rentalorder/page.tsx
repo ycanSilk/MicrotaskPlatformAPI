@@ -224,7 +224,7 @@ const RentalOrderPage = () => {
     setApiLoading(true);
     try {
       // 与forrentorder页面相同的API调用实现
-      const response = await fetch('/api/cancelOrder', {
+      const response = await fetch('/api/public/rental/cancelleaseorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

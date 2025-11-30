@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // 导入配置文件这是获取代理团队统计数据API的日志输出
 const config = require('../../apiconfig/config.json');
-
+export const dynamic = 'force-dynamic';
 // 主函数：处理POST请求
 export async function POST(request: Request) {
   // 从Cookie获取token

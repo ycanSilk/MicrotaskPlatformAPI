@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import Cookies from 'js-cookie';
 import type { User } from '@/types';
 
 // Tailwind CSS类名合并工具
@@ -101,13 +100,20 @@ export function getDifficultyStars(difficulty: number): string {
 // 保存用户信息到Cookie
 export function saveUserInfoToCookie(userInfo: User): void {
   try {
-    const cookieOptions = {
-      expires: 7, // 7天过期
-      secure: process.env.NODE_ENV === 'production', // 生产环境下使用HTTPS
-      sameSite: 'lax' as const, // 防止CSRF攻击
-      path: '/' 
-    };
-    Cookies.set('commenter_user_info', JSON.stringify(userInfo), cookieOptions);
+    if (typeof document === 'undefined') return;
+    
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 7); // 7天过期
+    
+    let cookieStr = `commenter_user_info=${encodeURIComponent(JSON.stringify(userInfo))}; expires=${expiryDate.toUTCString()}; path=/`;
+    
+    if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined' && window.location.protocol === 'https:') {
+      cookieStr += '; secure';
+    }
+    
+    cookieStr += '; SameSite=lax';
+    
+    document.cookie = cookieStr;
   } catch (error) {
     console.error('保存用户信息到Cookie失败:', error);
   }
@@ -116,9 +122,11 @@ export function saveUserInfoToCookie(userInfo: User): void {
 // 从Cookie获取用户信息
 export function getUserInfoFromCookie(): User | null {
   try {
-    const userInfoStr = Cookies.get('commenter_user_info');
-    if (userInfoStr) {
-      return JSON.parse(userInfoStr) as User;
+    if (typeof document === 'undefined') return null;
+    
+    const cookieMatch = document.cookie.match(/commenter_user_info=([^;]+)/);
+    if (cookieMatch && cookieMatch[1]) {
+      return JSON.parse(decodeURIComponent(cookieMatch[1])) as User;
     }
   } catch (error) {
     console.error('从Cookie获取用户信息失败:', error);
@@ -129,7 +137,9 @@ export function getUserInfoFromCookie(): User | null {
 // 从Cookie移除用户信息
 export function removeUserInfoFromCookie(): void {
   try {
-    Cookies.remove('commenter_user_info', { path: '/' });
+    if (typeof document === 'undefined') return;
+    
+    document.cookie = 'commenter_user_info=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   } catch (error) {
     console.error('从Cookie移除用户信息失败:', error);
   }

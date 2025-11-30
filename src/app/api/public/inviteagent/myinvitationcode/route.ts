@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 // 导入配置文件
 const config = require('../../apiconfig/config.json');
 
-
+export const dynamic = 'force-dynamic';
 // 主函数：处理POST请求
 export async function GET(request: Request) {
   // 从Cookie获取token

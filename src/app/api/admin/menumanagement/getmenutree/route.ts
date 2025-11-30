@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
 
+// 强制使用动态渲染，避免静态生成过程中访问cookies导致的错误
+export const dynamic = 'force-dynamic';
+
 // 定义菜单创建请求参数接口
 interface menuTree {
     id: string;

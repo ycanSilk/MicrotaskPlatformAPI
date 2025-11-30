@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 const config = require('../../apiconfig/config.json');
-
+export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   // 获取token
   const cookieStore = await cookies();

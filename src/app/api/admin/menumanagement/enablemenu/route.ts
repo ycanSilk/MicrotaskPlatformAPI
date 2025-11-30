@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // 导入配置文件
 import config from '../../apiconfig/config.json';
-
+export const dynamic = 'force-dynamic';
 // 主函数：处理POST请求
 export async function POST(request: Request) {
   console.log('API Route: /api/public/users/induser called');

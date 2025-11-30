@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 const config = require('../../apiconfig/config.json');
-
+export const dynamic = 'force-dynamic';
 /**
  * 验证支付密码的API路由
  * 功能：验证用户提供的支付密码是否与账户中存储的密码匹配

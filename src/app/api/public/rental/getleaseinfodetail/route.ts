@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // 导入配置文件
 const config = require('../../apiconfig/config.json');
-
+export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   // 从Cookie获取token
   const cookieStore = await cookies();

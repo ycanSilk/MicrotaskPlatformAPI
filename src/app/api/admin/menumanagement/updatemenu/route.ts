@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 // 定义菜单更新请求参数接口
 interface UpdateMenuRequest {
     menuName: string;

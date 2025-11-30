@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import config from '../../apiconfig/config.json';
 import { cookies } from 'next/headers';
-
+export const dynamic = 'force-dynamic';
 // 定义提交任务请求参数的接口
 interface SubmitTaskRequest {
   subtaskId: string;

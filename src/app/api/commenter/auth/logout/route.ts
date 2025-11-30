@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // 导入配置文件
 import config from '../../apiconfig/config.json';
-
+export const dynamic = 'force-dynamic';
 // 定义API响应类型接口
 interface ApiResponse {
   code: number;

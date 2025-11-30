@@ -3,59 +3,170 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Space, Avatar, message, Modal } from 'antd';
 import { PhoneOutlined, CopyOutlined } from '@ant-design/icons';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import type { RentalOrderDetail } from '@/types';
+
+// 定义租赁信息类型
+interface LeaseInfo {
+  id: string;
+  userId: string;
+  accountType: string;
+  accountLevel: string;
+  platform: string;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minLeaseDays: number;
+  maxLeaseDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
+  createTime: string;
+}
+
+// 定义订单数据类型
+interface OrderData {
+  id: string;
+  leaseInfoId: string;
+  lessorId: string;
+  renterId: string;
+  orderNo: string;
+  leaseDays: number;
+  totalAmount: number;
+  depositAmount: number;
+  platformFee: number;
+  lessorIncome: number;
+  renterPay: number;
+  status: string;
+  startTime: string;
+  endTime: string;
+  actualEndTime: string | null;
+  settled: boolean;
+  settleTime: string | null;
+  cancelReason: string | null;
+  disputeReason: string | null;
+  completionNotes: string | null;
+  createTime: string;
+  leaseInfo: LeaseInfo;
+  lessorName: string | null;
+  renterName: string | null;
+}
+
+// 定义API响应类型
+interface RentalOrderResponse {
+  code: number;
+  message: string;
+  data: OrderData;
+  success: boolean;
+  timestamp: number;
+}
 
 const RentalOrderDetailPage = () => {
   const router = useRouter();
-  const [orderDetail, setOrderDetail] = useState<RentalOrderDetail>({
-    id: 'ORD202410010001',
-    status: '已完成',
-    statusText: '订单已完成',
-    accountInfo: '租赁账号描速介绍租赁账号描速介绍租赁账号描速介绍租赁账号描速介绍租赁账号描速介绍',
-    imageUrl: '/images/1758380776810_96.jpg',
-    totalAmount: 199.00,
-    orderNumber: '339942699275',
-    paymentMethod: '支付宝',
-    paymentTime: '2024-10-16 18:47:00',
-    orderTime: '2024-10-16 18:46:56',
-    rentalDays: 3,
-    accountType: '抖音',
-    followers: 125000,
-    avgLikes: 5000
-  });
+  const params = useParams();
+  const orderId = params.id || '';
+  console.log('从url获取到orderId', orderId);
+  // 订单详情状态，初始化为null
+  const [orderDetail, setOrderDetail] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   
-  // 图片列表状态 - 模拟多个图片
-  const [imageList] = useState<string[]>([
-    '/images/1758380776810_96.jpg',
-    '/images/1758384598887_578.jpg',
-    '/images/1758596791656_544.jpg'
-  ]);
+  // 图片列表状态 - 将从API获取
+  const [imageList, setImageList] = useState<string[]>([]);
   
   // 图片预览状态
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string>('');
+  
+  // 页面加载时获取订单详情
+  useEffect(() => {
+    const fetchOrderDetail = async () => {
+      if (!orderId) {
+        message.error('订单ID不存在');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        // 通过Path传递orderId调用后端API
+        const response = await fetch(`api/public/rental/getorderdetail`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        console.log('这是get求租订单详情API的日志输出:');
+        console.log('请求url', '/api/public/rental/getorderdetail');
+        if(response.ok){
+          console.log('返回的状态:', response.status);
+        }
+        if (!response.ok) {
+          throw new Error('网络请求失败');
+        }
+        
+        const data: RentalOrderResponse = await response.json();
+        console.log('返回的原始数据', data);
+        if (data.success && data.code === 200) {
+          setOrderDetail(data.data);
+          // 设置默认图片列表（由于API没有提供图片，暂时使用模拟数据）
+          setImageList([
+            '/images/1758380776810_96.jpg',
+            '/images/1758384598887_578.jpg',
+            '/images/1758596791656_544.jpg'
+          ]);
+        } else {
+          message.error(data.message || '获取订单详情失败');
+        }
+      } catch (error) {
+        console.error('获取订单详情失败:', error);
+        message.error('获取订单详情失败，请稍后重试');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchOrderDetail();
+  }, [orderId]);
 
   // 获取订单状态样式
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case '已完成':
+      case 'COMPLETED':
         return 'text-green-600';
-      case '待付款':
+      case 'PENDING_PAYMENT':
         return 'text-red-500';
-      case '租赁中':
+      case 'RENTING':
         return 'text-blue-500';
-      case '已取消':
+      case 'CANCELED':
         return 'text-gray-500';
       default:
         return 'text-gray-600';
     }
   };
+  
+  // 获取订单状态文本
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '订单已完成';
+      case 'PENDING_PAYMENT':
+        return '待付款';
+      case 'RENTING':
+        return '租赁中';
+      case 'CANCELED':
+        return '订单已取消';
+      default:
+        return '未知状态';
+    }
+  };
 
   // 复制订单号
   const handleCopyOrderNumber = async () => {
+    if (!orderDetail) return;
+    
     try {
-      await navigator.clipboard.writeText(orderDetail.orderNumber);
+      await navigator.clipboard.writeText(orderDetail.orderNo);
       message.success('订单号已复制');
     } catch (err) {
       message.error('复制失败');
@@ -78,13 +189,27 @@ const RentalOrderDetailPage = () => {
     setPreviewVisible(true);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">加载中...</div>
+      </div>
+    );
+  }
+
+  if (!orderDetail) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-lg">无法获取订单详情</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-
-
       {/* 订单状态标题 */}
       <div className={`p-6 bg-white mb-2 ${getStatusStyle(orderDetail.status)}`}>
-        <h2 className="text-xl font-medium mb-1">{orderDetail.statusText}</h2>
+        <h2 className="text-xl font-medium mb-1">{getStatusText(orderDetail.status)}</h2>
       </div>
 
       {/* 内容区域 */}
@@ -94,10 +219,10 @@ const RentalOrderDetailPage = () => {
           <div className="flex flex-col gap-4">
             {/* 租赁描述信息 */}
             <div>
-              <h3 className="text-base font-medium mb-2">{orderDetail.accountInfo}</h3>
+              <h3 className="text-base font-medium mb-2">{orderDetail.leaseInfo?.description || '暂无描述'}</h3>
               <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                <div>账号类型：{orderDetail.accountType}</div>
-                <div>租赁时长：{orderDetail.rentalDays} 天</div>
+                <div>账号类型：{orderDetail.leaseInfo?.platform === 'DOUYIN' ? '抖音' : orderDetail.leaseInfo?.platform || '未知'}</div>
+                <div>租赁时长：{orderDetail.leaseDays} 天</div>
               </div>
             </div>
 
@@ -135,7 +260,7 @@ const RentalOrderDetailPage = () => {
             <div className="flex justify-between items-center">
               <span className="text-gray-600">订单编号</span>
               <div className="flex items-center gap-2">
-                <span>{orderDetail.orderNumber}</span>
+                <span>{orderDetail.orderNo}</span>
                 <Button 
                   type="text" 
                   icon={<CopyOutlined />} 
@@ -148,19 +273,31 @@ const RentalOrderDetailPage = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">支付方式</span>
-              <span>{orderDetail.paymentMethod}</span>
+              <span className="text-gray-600">平台服务费</span>
+              <span>¥{orderDetail.platformFee.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">支付时间</span>
-              <span>{orderDetail.paymentTime}</span>
+              <span className="text-gray-600">租赁开始时间</span>
+              <span>{orderDetail.startTime}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">租赁结束时间</span>
+              <span>{orderDetail.endTime}</span>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-gray-600">下单时间</span>
-              <span>{orderDetail.orderTime}</span>
+              <span>{orderDetail.createTime}</span>
             </div>
+            
+            {orderDetail.status === 'CANCELED' && orderDetail.cancelReason && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">取消原因</span>
+                <span>{orderDetail.cancelReason}</span>
+              </div>
+            )}
           </div>
         </Card>
 

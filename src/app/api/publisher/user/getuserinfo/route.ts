@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // 导入配置文件
 import config from '../../apiconfig/config.json';
-
+export const dynamic = 'force-dynamic';
 // 格式化日志
 const formatLog = (operation: string, message: string): string => {
   const timestamp = new Date().toISOString();

@@ -748,7 +748,7 @@ const RentalRequestDetailPage = () => {
         {/* 如果已租出，显示租赁信息 */}
         {offerDetail.status === '已租出' && offerDetail.rentalInfo && (
           <>
-            <Divider orientation="left" orientationMargin={0} className="my-4">
+            <Divider className="my-4">
               <span className="text-base">当前租赁信息</span>
             </Divider>
             <table className="w-full border-collapse">

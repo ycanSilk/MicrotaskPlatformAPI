@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { ModuleType, commenterTokenManager, publisherTokenManager, adminTokenManager, publicTokenManager } from './tokenManager';
-
+export const dynamic = 'force-dynamic';
 /**
  * 格式化日志输出
  * @param operation 操作名称

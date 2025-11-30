@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 // 导入配置文件
 import config from '../../apiconfig/config.json';
 
+// 强制使用动态渲染，避免静态生成过程中访问cookies导致的错误
+export const dynamic = 'force-dynamic';
+
 // 定义用户信息类型接口
 interface UserInfo {
   id: string;
