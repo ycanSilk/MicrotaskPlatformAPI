@@ -18,12 +18,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
   }
   
-  // 从headers中获取leaseInfoId
-  const leaseInfoId = request.headers.get('leaseInfoId');
-  console.log('从前端headers传递过来获取到的leaseInfoId:', leaseInfoId);
+  // 从查询参数中获取leaseInfoId
+  const url = new URL(request.url);
+  const leaseInfoId = url.searchParams.get('leaseInfoId');
+  console.log('从查询参数获取到的leaseInfoId:', leaseInfoId);
+  console.log('完整的URL:', request.url);
+  console.log('查询参数:', url.searchParams.toString());
   
-  if (!leaseInfoId) {
-    return NextResponse.json({ success: false, message: '缺少必要参数leaseInfoId（从headers中获取）' }, { status: 400 });
+  if (!leaseInfoId || leaseInfoId.trim() === '') {
+    return NextResponse.json({ success: false, message: '缺少必要参数leaseInfoId' }, { status: 400 });
   }
   
   // 构造请求URL，将leaseInfoId作为path参数添加到URL中

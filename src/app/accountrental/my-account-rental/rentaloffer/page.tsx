@@ -74,26 +74,37 @@ const getStatusTagColor = (status: RentalOfferStatus): string => {
 
 const RentalOfferPage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>('全部');
+  const [activeTab, setActiveTab] = useState<string>('ACTIVE'); // 默认激活"已发布"选项卡
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<RentalOfferData | null>(null);
   const [pagination, setPagination] = useState({ page: 1, size: 20 });
 
-  // 选项卡配置
+  // 选项卡配置 - 确保顺序正确，默认激活第一个(已发布)
   const tabItems: TabsProps['items'] = [
-    { key: '全部', label: '全部', children: null },
     { key: 'ACTIVE', label: '已发布', children: null },
     { key: 'CANCELED', label: '已取消', children: null },
     { key: 'RENTED', label: '已出租', children: null }
   ];
 
-  // 调用API获取出租信息
+  // 选项卡key到API status参数的映射
+  const tabStatusMap: Record<string, string> = {
+    'ACTIVE': 'ACTIVE',
+    'CANCELED': 'CANCELED', // 根据需求，已取消对应小写cancelled
+    'RENTED': 'RENTED' // 根据需求，已出租对应小写rented
+  };
+
+  // 调用API获取出租信息 - 根据当前选中的选项卡传递不同的status参数
   const fetchRentalOffers = async () => {
     setLoading(true);
     setError(null);
     try {
+      // 获取当前选项卡对应的status参数
+      const currentStatus = tabStatusMap[activeTab] || 'ACTIVE';
+      
+      console.log(`获取出租信息 - status: ${currentStatus}`);
+      
       const response = await fetch('/api/public/rental/mypublishrentalinfolist', {
         method: 'POST',
         headers: {
@@ -103,34 +114,39 @@ const RentalOfferPage = () => {
           ...pagination,
           page: 0,
           size: 20,
-          status: "ACTIVE",
+          status: currentStatus, // 使用当前选项卡对应的status
           sortField: 'createTime',
           sortOrder: 'DESC',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`网络请求失败: ${response.status} ${response.statusText}`);
       }
 
       const responseData = await response.json() as RentalOfferApiResponse;
 
       if (responseData.success) {
         setData(responseData.data);
+       
       } else {
-        setError(responseData.message || 'Failed to fetch data');
+        const errorMsg = responseData.message || '获取出租信息失败';
+        setError(errorMsg);
+        message.error(errorMsg);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMsg = err instanceof Error ? err.message : '网络异常，请稍后重试';
+      setError(errorMsg);
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // 页面加载时调用API
+  // 页面加载时和选项卡切换时调用API
   React.useEffect(() => {
     fetchRentalOffers();
-  }, [pagination]);
+  }, [pagination, activeTab]); // 添加activeTab作为依赖项
 
   // 复制出租编号功能
   const copyOfferNo = (offerNo: string) => {
@@ -163,9 +179,11 @@ const RentalOfferPage = () => {
     return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  // 处理选项卡切换
+  // 处理选项卡切换 - 切换时会自动触发API调用（通过useEffect依赖）
   const handleTabChange = (key: string) => {
     setActiveTab(key);
+    // 重置筛选和错误状态
+    setError(null);
   };
 
   // 处理筛选按钮点击
@@ -192,18 +210,15 @@ const RentalOfferPage = () => {
     alert(`出租 ${offerId} 执行 ${action} 操作`);
   };
 
-  // 过滤出租信息
+  // 由于API已经根据status返回了对应的数据，不需要在前端再次过滤
   const filteredOffers = data?.list || [];
-  const filteredByStatus = activeTab === '全部' 
-    ? filteredOffers 
-    : filteredOffers.filter(offer => offer.status === activeTab);
 
   // 辅助函数：渲染出租列表
   const renderRentalList = () => {
     if (loading) {
       return (
         <div className="bg-white p-8 text-center">
-          <p className="text-sm text-black">加载中...</p>
+          <p className="text-sm text-black">正在加载数据，请稍候...</p>
         </div>
       );
     }
@@ -211,28 +226,38 @@ const RentalOfferPage = () => {
     if (error) {
       return (
         <div className="bg-white p-8 text-center">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500 mb-4">{error}</p>
           <Button 
             type="primary" 
             onClick={fetchRentalOffers} 
             size="small" 
             className="mt-2"
           >
-            重试
+            重新加载
           </Button>
         </div>
       );
     }
 
-    if (filteredByStatus.length === 0) {
+    if (filteredOffers.length === 0) {
       return (
         <div className="bg-white p-8 text-center">
-          <p className="text-sm text-black">暂无出租信息</p>
+          <p className="text-sm text-gray-500">暂无{statusTextMap[activeTab as RentalOfferStatus]}的出租信息</p>
+          {activeTab !== 'ACTIVE' && (
+            <Button 
+              type="default" 
+              onClick={() => setActiveTab('ACTIVE')} 
+              size="small" 
+              className="mt-2"
+            >
+              查看已发布的出租信息
+            </Button>
+          )}
         </div>
       );
     }
 
-    return filteredByStatus.map((offer) => (
+    return filteredOffers.map((offer) => (
       <Link href={`/accountrental/my-account-rental/rentaloffer/rentaloffer-detail/${offer.id}`} key={offer.id}>
         <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
           {/* 出租头部信息 */}
@@ -443,17 +468,7 @@ const RentalOfferPage = () => {
               </Radio.Group>
             </div>
             
-            <div className="mt-4">
-              <h4 className="text-sm text-black mb-2">账号类型</h4>
-              <Radio.Group className="w-full">
-                <Space direction="vertical" className="w-full">
-                  <Radio value="抖音">抖音</Radio>
-                  <Radio value="小红书">小红书</Radio>
-                  <Radio value="微博">微博</Radio>
-                  <Radio value="快手">快手</Radio>
-                </Space>
-              </Radio.Group>
-            </div>
+
             
             <div className="flex items-center gap-4 mt-4">
               <DatePicker className="flex-1" placeholder="起始时间" />

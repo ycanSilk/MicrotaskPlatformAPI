@@ -1,38 +1,34 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { Button, Space, Divider, Modal, message } from 'antd';
-import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 
 // 出租信息状态类型
-type RentalOfferStatus = '待审核' | '已上架' | '已租出' | '已下架' | '审核不通过';
+type RentalOfferStatus = '已上架' | '已租出' | '已取消';
 
-// 账号要求接口
-interface AccountRequirements {
-  canChangeName: boolean;
-  canIntroduction: boolean;
-  canPostComments: boolean;
-  canPostVideos: boolean;
-  canUnbanAccount: boolean;
-}
-
-// 出租信息接口
-interface RentalOffer {
+// 租赁详情接口定义
+interface LeaseInfoDetail {
   id: string;
-  offerNo: string;
-  userName: string;
   userId: string;
   accountType: string;
-  accountName: string;
-  accountDescription: string;
-  rentalPrice: number;
-  rentalUnit: string;
-  rentalDuration: string; // 新增租赁时长字段
+  accountLevel: string;
+  platform: string;
+  description: string;
+  pricePerDay: number;
+  depositAmount: number;
+  minLeaseDays: number;
+  maxLeaseDays: number;
+  status: string;
+  totalOrders: number;
+  completedOrders: number;
+  successRate: number;
   createTime: string;
-  status: RentalOfferStatus;
-  imageUrl?: string;
-  // 租赁信息（如果已租出）
+  // 扩展字段以支持UI展示
+  offerNo?: string;
+  userName?: string;
+  accountName?: string;
   rentalInfo?: {
     rentalOrderNo: string;
     tenantName: string;
@@ -40,544 +36,232 @@ interface RentalOffer {
     endDate: string;
     amount: number;
   };
-  // 审核失败原因
   rejectReason?: string;
-  // 账号数据展示图片
   dataImages?: string[];
-  // 账号要求
-  accountRequirements?: AccountRequirements;
-  // 登录方式
-  loginMethods?: string[];
-  // 联系信息
   contactPhone?: string;
   contactQQ?: string;
   contactEmail?: string;
 }
 
-
-
-
-// 编辑表单状态类型
-interface EditFormData {
-  accountName: string;
-  accountDescription: string;
-  rentalPrice: string;
-  rentalDuration: string;
-  dataImages: string[];
-  accountRequirements: AccountRequirements;
-  loginMethods: string[];
-  contactPhone?: string;
-  contactQQ?: string;
-  contactEmail?: string;
+// API响应接口定义
+interface ApiResponse {
+  code: number;
+  message: string;
+  data: LeaseInfoDetail;
+  success: boolean;
+  timestamp: number;
 }
 
-const RentalOfferDetailPage = () => {
+const RentalRequestDetailPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const offerId = searchParams?.get('id') || '1'; // 默认ID为1
-  const [offerDetail, setOfferDetail] = useState<RentalOffer | null>(null);
-  const [isEditing, setIsEditing] = useState<boolean>(false); // 新增：是否处于编辑状态
+  const params = useParams();
+  const id = params?.id as string || '';
+  const [leaseDetail, setLeaseDetail] = useState<LeaseInfoDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [offShelfModalVisible, setOffShelfModalVisible] = useState<boolean>(false);
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string>('');
-  const [editForm, setEditForm] = useState<EditFormData>({
-    accountName: '',
-    accountDescription: '',
-    rentalPrice: '',
-    rentalDuration: '',
-    dataImages: [],
-    accountRequirements: {
-      canChangeName: false,
-      canIntroduction: false,
-      canPostComments: false,
-      canPostVideos: false,
-      canUnbanAccount: false
-    },
-    loginMethods: [],
-    contactPhone: '',
-    contactQQ: '',
-    contactEmail: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  
-  // 模拟从API获取出租详情
-  useEffect(() => {
-    // 这里应该是实际API调用，这里使用模拟数据
-    const mockOffers: RentalOffer[] = [
-      {
-        id: '1',
-        offerNo: 'OFFER20240620001',
-        userName: '张三',
-        userId: 'USER123456',
-        accountType: '抖音',
-        accountName: '美食达人小C',
-        accountDescription: '专注美食领域，以制作精致的餐厅探店和美食测评视频为主，互动率高，粉丝粘性强。主要内容包括热门餐厅探店、美食制作教程、特色小吃推荐等。账号粉丝主要为20-35岁的年轻人群，对美食有较高的热情和消费能力。',
-        rentalPrice: 50,
-        rentalUnit: '天',
-        rentalDuration: '3', // 新增租赁时长
-        createTime: '2024-06-20 10:30:00',
-        status: '已上架',
-        imageUrl: '/images/douyin-logo.png',
-        dataImages: [
-          '/images/1758384598887_578.jpg',
-          '/images/1758380776810_96.jpg'
-        ],
-        accountRequirements: {
-          canChangeName: true,
-          canIntroduction: true,
-          canPostComments: true,
-          canPostVideos: false,
-          canUnbanAccount: true
-        },
-        loginMethods: ['scan', 'phone_sms'],
-        contactPhone: '13812346789',
-        contactQQ: '2345678',
-        contactEmail: 'example@qq.com'
-      },
-      {
-        id: '2',
-        offerNo: 'OFFER20240619002',
-        userName: '李四',
-        userId: 'USER234567',
-        accountType: '抖音',
-        accountName: '美妆博主小D',
-        accountDescription: '专业美妆博主，擅长口红试色和妆容教程，粉丝多为年轻女性，互动积极。主要分享美妆技巧、产品测评、妆容教程等内容，内容风格清新自然，推荐产品性价比高，深受粉丝信赖。',
-        rentalPrice: 600,
-        rentalUnit: '天',
-        rentalDuration: '可租赁1-14天', // 新增租赁时长
-        createTime: '2024-06-19 15:20:00',
-        status: '已租出',
-        imageUrl: '/images/douyin-logo.png',
-        rentalInfo: {
-          rentalOrderNo: 'RENT20240621001',
-          tenantName: '王五',
-          startDate: '2024-06-25',
-          endDate: '2024-06-28',
-          amount: 2400
-        },
-        dataImages: [
-         '/images/1758384598887_578.jpg',
-          '/images/1758380776810_96.jpg'
-        ]
-      },
-      {
-        id: '5',
-        offerNo: 'OFFER20240616005',
-        userName: '钱七',
-        userId: 'USER567890',
-        accountType: '抖音',
-        accountName: '游戏主播阿强',
-        accountDescription: '人气游戏主播，技术出众，解说专业，擅长多款热门游戏，粉丝活跃度高。每天固定直播时间4小时以上，直播间互动热烈，打赏收入稳定。',
-        rentalPrice: 1500,
-        rentalUnit: '小时',
-        rentalDuration: '每次至少2小时，最长8小时', // 新增租赁时长
-        createTime: '2024-06-16 11:20:00',
-        status: '审核不通过',
-        imageUrl: '/images/douyin-logo.png',
-        rejectReason: '请提供账号所有权证明文件和近期直播数据截图。账号信息需与实名认证信息一致。',
-        rentalInfo: {
-          rentalOrderNo: 'RENT20240621001',
-          tenantName: '王五',
-          startDate: '2024-06-25',
-          endDate: '2024-06-28',
-          amount: 2400
-        },
-        dataImages: [
-         '/images/1758384598887_578.jpg',
-          '/images/1758380776810_96.jpg'
-        ]
-      }
-    ];
+  // 新增状态：取消原因和确认操作加载状态
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
 
-    // 查找匹配的出租信息
-    const foundOffer = mockOffers.find(offer => offer.id === offerId) || mockOffers[0];
-    // 确保账号类型为抖音
-    const offerWithDouyinType = {
-      ...foundOffer,
-      accountType: '抖音',
-      imageUrl: '/images/douyin-logo.png'
+  // 从API获取出租详情
+  const fetchLeaseInfoDetail = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('前端要传递的订单id:', id);
+      console.log('id类型:', typeof id);
+      console.log('id是否为空:', id === '');
+      // 调用后端API
+      const apiUrl = `/api/public/rental/getleaseinfodetail?leaseInfoId=${id}`;
+      console.log('前端请求的完整URL:', apiUrl);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data: ApiResponse = await response.json();
+      console.log('后端返回的原始数据:', data);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      if (data.success && data.code === 200 && data.data) {
+        // 转换API数据为前端需要的格式
+        const formattedData = {
+          ...data.data,
+          // 添加UI展示需要的字段映射
+          accountName: data.data.accountType,
+          accountDescription: data.data.description,
+          rentalPrice: data.data.pricePerDay,
+          rentalUnit: '天',
+          rentalDuration: `可租赁${data.data.minLeaseDays}-${data.data.maxLeaseDays}天`,
+          status: mapStatusToChinese(data.data.status)
+        };
+        setLeaseDetail(formattedData);
+      } else {
+        const errorMessage = data.message || '获取出租信息失败';
+        message.error(errorMessage);
+        setError(errorMessage);
+      }
+    } catch (error) {
+      console.error('获取出租信息异常:', error);
+      const errorMessage = '获取出租信息异常，请稍后重试';
+      message.error(errorMessage);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 将API状态转换为中文显示
+  const mapStatusToChinese = (status: string): RentalOfferStatus => {
+    const statusMap: Record<string, RentalOfferStatus> = {
+      'ACTIVE': '已上架',
+      'CANCELED': '已取消',
+      'RENTED': '已租出'
     };
-    setOfferDetail(offerWithDouyinType);
-    
-    // 初始化编辑表单数据
-    setEditForm({
-      accountName: offerWithDouyinType.accountName,
-      accountDescription: offerWithDouyinType.accountDescription,
-      rentalPrice: offerWithDouyinType.rentalPrice.toString(),
-      rentalDuration: offerWithDouyinType.rentalDuration || '',
-      dataImages: offerWithDouyinType.dataImages || [],
-      accountRequirements: offerWithDouyinType.accountRequirements || {
-        canChangeName: false,
-        canIntroduction: false,
-        canPostComments: false,
-        canPostVideos: false,
-        canUnbanAccount: false
-      },
-      loginMethods: offerWithDouyinType.loginMethods || [],
-      contactPhone: offerWithDouyinType.contactPhone || '',
-      contactQQ: offerWithDouyinType.contactQQ || '',
-      contactEmail: offerWithDouyinType.contactEmail || ''
-    });
-  }, [offerId]);
+    return statusMap[status] || '待审核';
+  };
+
+  useEffect(() => {
+    fetchLeaseInfoDetail();
+  }, [id]);
 
   // 处理返回列表
   const handleBackToList = () => {
     router.push('/accountrental/my-account-rental/rentaloffer');
   };
 
-  // 表单验证
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!editForm.accountName.trim()) {
-      newErrors.accountName = '请输入账号名称';
-    }
-    
-    if (!editForm.accountDescription.trim()) {
-      newErrors.accountDescription = '请输入账号描述';
-    }
-    
-    if (!editForm.rentalPrice || parseFloat(editForm.rentalPrice) <= 0) {
-      newErrors.rentalPrice = '请输入有效的价格';
-    }
-    
-    if (!editForm.rentalDuration.trim()) {
-      newErrors.rentalDuration = '请输入租赁时长';
-    }
-    
-    // 手机号必填验证
-    if (!editForm.contactPhone || !editForm.contactPhone.trim()) {
-      newErrors.contactPhone = '请输入手机号';
-    }
-    
-    // 联系信息验证（格式验证）
-    validateContactInfo(newErrors);
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  
-  // 联系信息验证函数
-  const validateContactInfo = (errors: Record<string, string>) => {
-    // 手机号验证：中国大陆手机号规则（已在validateForm中验证必填）
-    if (editForm.contactPhone && editForm.contactPhone.trim()) {
-      if (!/^1[3-9]\d{9}$/.test(editForm.contactPhone)) {
-        errors.contactPhone = '请输入有效的中国大陆手机号（11位数字）';
-      }
-    }
-    
-    // QQ号验证：5-13位数字，不能以0开头（选填）
-    if (editForm.contactQQ && editForm.contactQQ.trim()) {
-      if (!/^[1-9]\d{4,13}$/.test(editForm.contactQQ)) {
-        errors.contactQQ = '请输入有效的QQ号（5-13位数字，不能以0开头）';
-      }
-    }
-    
-    // 邮箱验证：标准邮箱格式，支持常见域名（选填）
-    if (editForm.contactEmail && editForm.contactEmail.trim()) {
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(editForm.contactEmail)) {
-        errors.contactEmail = '请输入有效的邮箱地址（如example@domain.com）';
-      } else if (editForm.contactEmail.length > 100) {
-        errors.contactEmail = '邮箱地址长度不能超过100个字符';
-      }
-    }
-  };
-  
-  // 单个字段实时验证
-  const validateField = (fieldName: string) => {
-    const newErrors = { ...errors };
-    
-    switch (fieldName) {
-      case 'contactPhone':
-        if (!editForm.contactPhone || !editForm.contactPhone.trim()) {
-          newErrors.contactPhone = '请输入手机号';
-        } else if (!/^1[3-9]\d{9}$/.test(editForm.contactPhone)) {
-          newErrors.contactPhone = '请输入有效的中国大陆手机号（11位数字）';
-        } else {
-          delete newErrors.contactPhone;
-        }
-        break;
-      case 'contactQQ':
-        if (editForm.contactQQ) {
-          if (!/^[1-9]\d{4,13}$/.test(editForm.contactQQ)) {
-            newErrors.contactQQ = '请输入有效的QQ号（5-13位数字，不能以0开头）';
-          } else {
-            delete newErrors.contactQQ;
-          }
-        } else {
-          delete newErrors.contactQQ;
-        }
-        break;
-      case 'contactEmail':
-        if (editForm.contactEmail) {
-          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-          if (!emailRegex.test(editForm.contactEmail)) {
-            newErrors.contactEmail = '请输入有效的邮箱地址（如example@domain.com）';
-          } else if (editForm.contactEmail.length > 100) {
-            newErrors.contactEmail = '邮箱地址长度不能超过100个字符';
-          } else {
-            delete newErrors.contactEmail;
-          }
-        } else {
-          delete newErrors.contactEmail;
-        }
-        break;
-    }
-    
-    setErrors(newErrors);
-  };
-
-  // 处理表单输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
-    
-    // 对联系信息字段进行实时验证
-    if (['contactPhone', 'contactQQ', 'contactEmail'].includes(name)) {
-      validateField(name);
-    } else if (errors[name]) {
-      // 清除其他字段的错误
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-  
-  // 处理账号要求变化
-  const handleAccountRequirementChange = (key: keyof AccountRequirements, value: boolean) => {
-    setEditForm(prev => ({
-      ...prev,
-      accountRequirements: {
-        ...prev.accountRequirements,
-        [key]: value
-      }
-    }));
-  };
-  
-  // 处理登录方式变化
-  const handleLoginMethodChange = (method: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      loginMethods: prev.loginMethods.includes(method)
-        ? prev.loginMethods.filter(m => m !== method)
-        : [...prev.loginMethods, method]
-    }));
-  };
-
-  // 处理图片选择
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedImageFile(e.target.files[0]);
-      // 这里应该上传图片到服务器，这里简化处理
-      const imageUrl = URL.createObjectURL(e.target.files[0]);
-      setEditForm(prev => ({
-        ...prev,
-        dataImages: [...prev.dataImages, imageUrl]
-      }));
-      // 清空input，允许选择相同文件
-      e.target.value = '';
-    }
-  };
-
-  // 处理删除图片
-  const handleDeleteImage = (index: number) => {
-    setEditForm(prev => ({
-      ...prev,
-      dataImages: prev.dataImages.filter((_, i) => i !== index)
-    }));
-  };
-
-  // 开始编辑
-  const handleStartEdit = () => {
-    if (offerDetail) {
-      setEditForm({
-        accountName: offerDetail.accountName,
-        accountDescription: offerDetail.accountDescription,
-        rentalPrice: offerDetail.rentalPrice.toString(),
-        rentalDuration: offerDetail.rentalDuration || '',
-        dataImages: offerDetail.dataImages || [],
-        accountRequirements: { ...(offerDetail.accountRequirements || {
-          canChangeName: false,
-          canIntroduction: false,
-          canPostComments: false,
-          canPostVideos: false,
-          canUnbanAccount: false
-        }) },
-        loginMethods: [...(offerDetail.loginMethods || [])],
-        contactPhone: offerDetail.contactPhone || '',
-        contactQQ: offerDetail.contactQQ || '',
-        contactEmail: offerDetail.contactEmail || ''
-      });
-    }
-    setIsEditing(true);
-  };
-
-  // 取消编辑
-  const handleCancelEdit = () => {
-    if (offerDetail) {
-      setEditForm({
-        accountName: offerDetail.accountName,
-        accountDescription: offerDetail.accountDescription,
-        rentalPrice: offerDetail.rentalPrice.toString(),
-        rentalDuration: offerDetail.rentalDuration || '',
-        dataImages: offerDetail.dataImages || [],
-        accountRequirements: { ...(offerDetail.accountRequirements || {
-          canChangeName: false,
-          canIntroduction: false,
-          canPostComments: false,
-          canPostVideos: false,
-          canUnbanAccount: false
-        }) },
-        loginMethods: [...(offerDetail.loginMethods || [])],
-        contactPhone: offerDetail.contactPhone || '',
-        contactQQ: offerDetail.contactQQ || '',
-        contactEmail: offerDetail.contactEmail || ''
-      });
-    }
-    setErrors({});
-    setIsEditing(false);
-  };
-
-  // 保存编辑
-  const handleSaveEdit = () => {
-    // 表单验证
-    const newErrors: Record<string, string> = {};
-    
-    if (!editForm.accountName.trim()) {
-      newErrors.accountName = '账号名称不能为空';
-    }
-    
-    if (!editForm.accountDescription.trim()) {
-      newErrors.accountDescription = '账号描述不能为空';
-    }
-    
-    if (!editForm.rentalPrice.trim()) {
-      newErrors.rentalPrice = '租金不能为空';
-    } else if (isNaN(Number(editForm.rentalPrice)) || Number(editForm.rentalPrice) <= 0) {
-      newErrors.rentalPrice = '请输入有效的租金金额';
-    }
-    
-    if (!editForm.rentalDuration.trim()) {
-      newErrors.rentalDuration = '租赁时长不能为空';
-    }
-    
-    if (editForm.dataImages.length === 0) {
-      newErrors.dataImages = '请至少上传一张账号数据图片';
-    }
-    
-    if (editForm.loginMethods.length === 0) {
-      newErrors.loginMethods = '请至少选择一种登录方式';
-    }
-    
-    // 联系信息验证
-    validateContactInfo(newErrors);
-    
-    // 检查账号要求是否至少选择一项
-    const hasAnyRequirement = Object.values(editForm.accountRequirements).some(Boolean);
-    if (!hasAnyRequirement) {
-      newErrors.accountRequirements = '请至少选择一项账号支持';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
-    if (offerDetail) {
-      // 模拟API请求保存数据
-      const updatedOffer: RentalOffer = {
-        ...offerDetail,
-        accountName: editForm.accountName,
-        accountDescription: editForm.accountDescription,
-        rentalPrice: Number(editForm.rentalPrice),
-        rentalDuration: editForm.rentalDuration,
-        dataImages: editForm.dataImages,
-        accountRequirements: editForm.accountRequirements,
-        loginMethods: editForm.loginMethods,
-        contactPhone: editForm.contactPhone,
-        contactQQ: editForm.contactQQ,
-        contactEmail: editForm.contactEmail,
-        status: '待审核' // 编辑后自动变为待审核状态
-      };
-      
-      // 更新本地状态
-      setOfferDetail(updatedOffer);
-      setIsEditing(false);
-      message.success('出租信息已更新，等待审核');
-    }
-  };
-
-  // 处理编辑出租（修复引用问题）
-  const handleEditOffer = () => {
-    handleStartEdit();
-  };
-
-  // 处理下架
+  // 下架确认
   const handleOffShelf = () => {
+    // 重置取消原因
+    setCancelReason('');
     setOffShelfModalVisible(true);
   };
 
-  // 处理确认下架
-  const handleConfirmOffShelf = () => {
-    console.log('下架出租信息:', offerId);
-    setOffShelfModalVisible(false);
-    
-    // 如果有租赁信息，先取消订单
-    if (offerDetail && offerDetail.rentalInfo) {
-      console.log('取消租赁订单:', offerDetail.rentalInfo.rentalOrderNo);
-      message.info('租赁订单已取消');
-    }
-    
-    // 更新本地状态模拟下架成功
-    if (offerDetail) {
-      setOfferDetail({
-        ...offerDetail,
-        status: '已下架',
-        rentalInfo: undefined,
-        dataImages: []
+  // 调用后端取消API的函数
+  const callCancelRentRequestAPI = async (leaseInfoId: string, reason: string): Promise<boolean> => {
+    try {
+      console.log('调用取消租赁API，参数:', { leaseInfoId, reason });
+      // 调用后端API
+      const response = await fetch('/api/public/rental/cancelleasrentaleinfo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ leaseInfoId: id, reason })
       });
-      message.success('出租信息已下架，相关数据已清理');
+      
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP错误，状态码: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('取消租赁请求API响应:', data);
+      
+      if (data.success) {
+        return true;
+      } else {
+        throw new Error(data.message || '操作失败');
+      }
+    } catch (error) {
+      console.error('调用取消API失败:', error);
+      throw error;
     }
   };
 
-  // 处理重新上架
-  const handleReList = () => {
-    console.log('重新上架出租信息:', offerId);
-    if (offerDetail) {
-      setOfferDetail({
-        ...offerDetail,
-        status: '待审核'
-      });
-      message.success('出租信息已提交重新审核');
+  // 确认下架
+  const handleConfirmOffShelf = async () => {
+    // 验证参数
+    if (!cancelReason || !id) {
+      message.error('参数不完整');
+      return;
+    }
+    
+    try {
+      setConfirmLoading(true);
+      // 调用后端API
+      await callCancelRentRequestAPI(id, cancelReason);
+      
+      // 成功响应
+      message.success('下架成功');
+      
+      // 更新状态
+      if (leaseDetail) {
+        setLeaseDetail({
+          ...leaseDetail,
+          status: '已取消'
+        });
+      }
+      
+      // 关闭弹窗
+      setOffShelfModalVisible(false);
+    } catch (error) {
+      console.error('下架失败:', error);
+      message.error(error instanceof Error ? error.message : '下架失败，请稍后重试');
+    } finally {
+      setConfirmLoading(false);
     }
   };
 
-  // 处理查看订单
+  // 重新上架
+  const handleReList = async () => {
+    try {
+      // 这里应该是实际的API调用，这里使用模拟数据
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 模拟成功响应
+      message.success('重新上架成功');
+      
+      // 更新状态
+      if (leaseDetail) {
+        setLeaseDetail({
+          ...leaseDetail,
+          status: '已上架'
+        });
+      }
+    } catch (error) {
+      console.error('重新上架失败:', error);
+      message.error('重新上架失败，请稍后重试');
+    }
+  };
+
+  // 查看订单
   const handleViewOrder = () => {
-    message.info('查看租赁订单详情');
+    if (leaseDetail?.rentalInfo?.rentalOrderNo) {
+      router.push(`/accountrental/my-account-rental/rentalorder/rentalorder-detail?id=${leaseDetail.rentalInfo.rentalOrderNo}`);
+    }
   };
 
-  // 处理图片点击查看大图
+  // 处理图片点击（预览）
   const handleImageClick = (imageUrl: string) => {
     setPreviewImage(imageUrl);
     setPreviewVisible(true);
   };
 
-  if (!offerDetail) {
+  // 显示加载状态
+  if (loading) {
     return <div className="p-8 text-center">加载中...</div>;
   }
+  
+  // 显示错误状态
+  if (error) {
+    return <div className="p-8 text-center text-red-500">{error}</div>;
+  }
+  
+  // 如果没有数据
+  if (!leaseDetail) {
+    return <div className="p-8 text-center">未找到出租信息</div>;
+  }
 
-  // 获取状态对应的样式类
-  const getStatusClass = () => {
-    const statusClasses = {
-      '待审核': 'bg-orange-100 text-orange-700',
-      '已上架': 'bg-green-100 text-green-700',
-      '已租出': 'bg-purple-100 text-purple-700',
-      '已下架': 'bg-gray-100 text-gray-700',
-      '审核不通过': 'bg-red-100 text-red-700'
-    };
-    return statusClasses[offerDetail.status] || 'bg-gray-100 text-gray-700';
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -586,548 +270,217 @@ const RentalOfferDetailPage = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {/* 基本信息区域 */}
           <div className="p-5">
+            {/* 基本信息头部 */}
+            <div className="space-y-4 mb-6">
+              <div className="mb-4">
+                <span className="text-gray-600">账号平台：</span>
+                <span>{leaseDetail.platform || 'N/A'}</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">账号等级：</span>
+                <span>{leaseDetail.accountLevel || 'N/A'}</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">账号描述：</span>
+                <span>{leaseDetail.description || 'N/A'}</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">租赁价格：</span>
+                <span>{leaseDetail.pricePerDay || 0}元/天</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">押金金额：</span>
+                <span>{leaseDetail.depositAmount || 0}元</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">最短租赁天数：</span>
+                <span>{leaseDetail.minLeaseDays || 1}天</span>
+              </div>
+              
+              <div className="mb-4">
+                <span className="text-gray-600">最长租赁天数：</span>
+                <span>{leaseDetail.maxLeaseDays || 30}天</span>
+              </div>
+              
+              <div className="flex items-center mb-4">
+                <span className="text-gray-600 mr-2">状态：</span>
+                <span className='px-2 py-1 rounded-full text-sm'>
+                  {leaseDetail.status}
+                </span>
+              </div>
+            </div>
+
             {/* 表单区域 - 根据编辑状态显示可编辑或只读内容 */}
             <div className="space-y-6">
               {/* 账号描述 */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">账号描述</label>
-                {isEditing ? (
-                  <textarea
-                    name="accountDescription"
-                    value={editForm.accountDescription}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className={`w-full px-3 py-2 border rounded-md resize-none ${errors.accountDescription ? 'border-red-500' : 'border-gray-300'}`}
-                    placeholder="请输入账号描述"
-                  />
-                ) : (
-                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 whitespace-pre-wrap line-clamp-3">{offerDetail.accountDescription}</div>
-                )}
-                {errors.accountDescription && (
-                  <p className="mt-1 text-sm text-red-600">{errors.accountDescription}</p>
-                )}
+                <label className="block text-sm font-medium text-gray-700">账号信息</label>
+                <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 whitespace-pre-wrap line-clamp-3">{leaseDetail.description || '暂无描述'}</div>
               </div>
-
-              {/* 租赁价格 */}
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">价格（元/天）：</label>
-                {isEditing ? (
-                  <div className="flex items-center">
-                    <input
-                        type="number"
-                        name="rentalPrice"
-                        value={editForm.rentalPrice}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border rounded-md ${errors.rentalPrice ? 'border-red-500' : 'border-gray-300'} `}
-                        placeholder="请输入租赁价格"
-                        min="0"
-                        step="0.01"
-                      />
-                  </div>
-                ) : (
-                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200">{offerDetail.rentalPrice} </div>
-                )}
-                {errors.rentalPrice && (
-                  <p className="mt-1 text-sm text-red-600">{errors.rentalPrice}</p>
-                )}
-              </div>
-
-              {/* 租赁时长 */}
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">租赁时长（天）：</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="rentalDuration"
-                    value={editForm.rentalDuration}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-md ${errors.rentalDuration ? 'border-red-500' : 'border-gray-300'} `}
-                    placeholder="例如：可租赁1-7天，每次至少2小时等"
-                  />
-                ) : (
-                  <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200">{offerDetail.rentalDuration}</div>
-                )}
-                {errors.rentalDuration && (
-                  <p className="mt-1 text-sm text-red-600">{errors.rentalDuration}</p>
-                )}
-               
-              </div>
-
-              {/* 发布时间 */}
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">发布时间</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200">{offerDetail.createTime}</div>
-              </div>
-
-              {/* 联系信息 */}
+            </div>
+            {/* 图片展示区域 */}
+            {leaseDetail.dataImages && leaseDetail.dataImages.length > 0 && (
               <div className="mt-6">
-                <div className="text-base font-medium mb-3">联系方式</div>
-                <div className="space-y-4">
-                  {/* 手机号 */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">手机号：</label>
-                    {isEditing ? (
-                      <div>
-                        <input
-                          type="tel"
-                          name="contactPhone"
-                          value={editForm.contactPhone || ''}
-                          onChange={handleInputChange}
-                          onBlur={() => validateField('contactPhone')}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.contactPhone ? 'border-red-500' : 'border-gray-300'} `}
-                          placeholder="请输入手机号"
-                          maxLength={11}
-                          pattern="1[3-9]\d{9}"
-                        />
-                      </div>
-                    ) : (
-                      <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200">
-                        {offerDetail.contactPhone || ''}
-                      </div>
-                    )}
-                    {errors.contactPhone && (
-                      <p className="mt-1 text-sm text-red-600">{errors.contactPhone}</p>
-                    )}
-                  </div>
-                  
-                  {/* QQ号 */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">QQ号：</label>
-                    {isEditing ? (
-                      <div>
-                        <input
-                          type="text"
-                          name="contactQQ"
-                          value={editForm.contactQQ || ''}
-                          onChange={handleInputChange}
-                          onBlur={() => validateField('contactQQ')}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.contactQQ ? 'border-red-500' : 'border-gray-300'} `}
-                          placeholder="请输入QQ号（选填）"
-                          maxLength={13}
-                        />
-                      </div>
-                    ) : (
-                      <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 h-10">
-                        {offerDetail.contactQQ || ''}
-                      </div>
-                    )}
-                    {errors.contactQQ && (
-                      <p className="mt-1 text-sm text-red-600">{errors.contactQQ}</p>
-                    )}
-                  </div>
-                  
-                  {/* 邮箱 */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">邮箱：</label>
-                    {isEditing ? (
-                      <div>
-                        <input
-                          type="email"
-                          name="contactEmail"
-                          value={editForm.contactEmail || ''}
-                          onChange={handleInputChange}
-                          onBlur={() => validateField('contactEmail')}
-                          className={`w-full px-3 py-2 border rounded-md ${errors.contactEmail ? 'border-red-500' : 'border-gray-300'} `}
-                          placeholder="请输入邮箱地址（选填）"
-                          maxLength={100}
-                        />
-                      </div>
-                    ) : (
-                      <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 h-10">
-                        {offerDetail.contactEmail || ''}
-                      </div>
-                    )}
-                    {errors.contactEmail && (
-                      <p className="mt-1 text-sm text-red-600">{errors.contactEmail}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-        {/* 如果已租出，显示租赁信息 */}
-        {offerDetail.status === '已租出' && offerDetail.rentalInfo && (
-          <>
-            <Divider className="my-4">
-              <span className="text-base">当前租赁信息</span>
-            </Divider>
-            <table className="w-full border-collapse">
-              <tbody>
-                <tr className="border border-gray-200">
-                  <td className="w-1/4 p-3 bg-gray-50 border-r border-gray-200 font-medium">租赁订单号</td>
-                  <td className="p-3 border border-gray-200">{offerDetail.rentalInfo.rentalOrderNo}</td>
-                </tr>
-                <tr className="border border-gray-200">
-                  <td className="w-1/4 p-3 bg-gray-50 border-r border-gray-200 font-medium">租户名称</td>
-                  <td className="p-3 border border-gray-200">{offerDetail.rentalInfo.tenantName}</td>
-                </tr>
-                <tr className="border border-gray-200">
-                  <td className="w-1/4 p-3 bg-gray-50 border-r border-gray-200 font-medium">租赁开始时间</td>
-                  <td className="p-3 border border-gray-200">{offerDetail.rentalInfo.startDate}</td>
-                </tr>
-                <tr className="border border-gray-200">
-                  <td className="w-1/4 p-3 bg-gray-50 border-r border-gray-200 font-medium">租赁结束时间</td>
-                  <td className="p-3 border border-gray-200">{offerDetail.rentalInfo.endDate}</td>
-                </tr>
-                <tr className="border border-gray-200">
-                  <td className="w-1/4 p-3 bg-gray-50 border-r border-gray-200 font-medium">租赁金额</td>
-                  <td className="p-3 border border-gray-200">¥{offerDetail.rentalInfo.amount}</td>
-                </tr>
-              </tbody>
-            </table>
-          </>
-        )}
-
-          {/* 账号要求 */}
-            <div className="mt-4">
-              <div className="text-base font-medium mb-3">账号支持</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* 账号要求 - 查看模式 */}
-                {!isEditing ? (
-                  <>
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${offerDetail.accountRequirements?.canChangeName ? 'text-green-500' : 'text-red-400'}`}>
-                        {offerDetail.accountRequirements?.canChangeName ? '✓' : '✗'}
-                      </span>
-                      <span>修改抖音账号名称和头像</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${offerDetail.accountRequirements?.canIntroduction ? 'text-green-500' : 'text-red-400'}`}>
-                        {offerDetail.accountRequirements?.canIntroduction ? '✓' : '✗'}
-                      </span>
-                      <span>修改账号简介</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${offerDetail.accountRequirements?.canPostComments ? 'text-green-500' : 'text-red-400'}`}>
-                        {offerDetail.accountRequirements?.canPostComments ? '✓' : '✗'}
-                      </span>
-                      <span>支持发布评论</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${offerDetail.accountRequirements?.canPostVideos ? 'text-green-500' : 'text-red-400'}`}>
-                        {offerDetail.accountRequirements?.canPostVideos ? '✓' : '✗'}
-                      </span>
-                      <span>支持发布视频</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${offerDetail.accountRequirements?.canUnbanAccount ? 'text-green-500' : 'text-red-400'}`}>
-                        {offerDetail.accountRequirements?.canUnbanAccount ? '✓' : '✗'}
-                      </span>
-                      <span>支持账号解封</span>
-                    </div>
-                  </>
-                ) : (
-                  /* 账号要求 - 编辑模式 */
-                  <>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.accountRequirements.canChangeName}
-                        onChange={(e) => handleAccountRequirementChange('canChangeName', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">修改抖音账号名称和头像</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.accountRequirements.canIntroduction}
-                        onChange={(e) => handleAccountRequirementChange('canIntroduction', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">修改账号简介</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.accountRequirements.canPostComments}
-                        onChange={(e) => handleAccountRequirementChange('canPostComments', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">支持发布评论</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.accountRequirements.canPostVideos}
-                        onChange={(e) => handleAccountRequirementChange('canPostVideos', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">支持发布视频</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editForm.accountRequirements.canUnbanAccount}
-                        onChange={(e) => handleAccountRequirementChange('canUnbanAccount', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">支持账号解封</span>
-                    </label>
-                    <div className='text-sm text-gray-600 md:col-span-2'>支持勾选选项越多，出租概率越大。</div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* 登录方式 */}
-            <div className="mt-4">
-              <div className="text-base font-medium mb-3">登录方式</div>
-              {!isEditing ? (
-                /* 登录方式 - 查看模式 */
-                <div className="flex flex-wrap gap-2">
-                  {(offerDetail.loginMethods || []).map(method => {
-                    const methodText = {
-                      'scan': '扫码登录',
-                      'phone_sms': '手机号+短信验证登录',
-                      'no_login': '不登录账号，按照承租方要求完成租赁'
-                    }[method] || method;
-                    return (
-                      <span key={method} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {methodText}
-                      </span>
-                    );
-                  })}
-                  {(!offerDetail.loginMethods || offerDetail.loginMethods.length === 0) && (
-                    <span className="text-gray-500 text-sm"></span>
-                  )}
-                </div>
-              ) : (
-                /* 登录方式 - 编辑模式 */
-                <div>
-                  <div className="space-y-1">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        value="scan"
-                        checked={editForm.loginMethods.includes('scan')}
-                        onChange={() => handleLoginMethodChange('scan')}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">扫码登录</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        value="phone_sms"
-                        checked={editForm.loginMethods.includes('phone_sms')}
-                        onChange={() => handleLoginMethodChange('phone_sms')}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">手机号+短信验证登录</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        value="no_login"
-                        checked={editForm.loginMethods.includes('no_login')}
-                        onChange={() => handleLoginMethodChange('no_login')}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm">不登录账号，按照承租方要求完成租赁</span>
-                    </label>
-                  </div>
-                  <div className='text-sm text-gray-600 mt-1'>请至少选择一种登录方式。支持多种登录方式可以提高账号出租概率。</div>
-                </div>
-              )}
-            </div>
-
-            {/* 图片上传与展示 - 仅在编辑模式下显示上传功能 */}
-            {offerDetail.dataImages && offerDetail.dataImages.length > 0 && (
-              <div className="space-y-1 mt-4">
-                <label className="block text-sm font-medium text-gray-700">账号图片</label>
-                <div className="flex flex-wrap gap-3">
-                  {editForm.dataImages.map((src, index) => (
-                    <div key={index} className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">账号数据图片</label>
+                <div className="grid grid-cols-3 gap-4">
+                  {leaseDetail.dataImages.map((image, index) => (
+                    <div 
+                      key={index} 
+                      className="relative cursor-pointer overflow-hidden rounded-md border border-gray-200"
+                      onClick={() => handleImageClick(image)}
+                    >
                       <img 
-                        src={src} 
-                        alt={`账号数据截图 ${index + 1}`} 
-                        className="w-24 h-24 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => handleImageClick(src)}
+                        src={image} 
+                        alt={`账号数据 ${index + 1}`} 
+                        className="h-40 w-full object-cover"
                       />
-                      {isEditing && (
-                        <button
-                          type="button"
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteImage(index);
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
                     </div>
                   ))}
-                  {isEditing && (
-                    <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors">
-                      <label htmlFor="imageUpload">
-                        <input
-                          id="imageUpload"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageSelect}
-                          className="hidden"
-                        />
-                        <span className="text-sm text-gray-500">上传图片</span>
-                      </label>
-                    </div>
-                  )}
                 </div>
-                {isEditing && (
-                  <p className="text-xs text-gray-500">点击图片可预览大图，编辑模式下可删除图片</p>
-                )}
               </div>
             )}
-          </div>
 
-          {/* 如果已租出，显示租赁信息 */}
-          {offerDetail.status === '已租出' && offerDetail.rentalInfo && (
-            <div className="border-t border-gray-100 p-5">
-              <div className="text-base font-medium mb-4">当前租赁信息</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-500">租赁订单号</div>
-                  <div className="font-medium">{offerDetail.rentalInfo.rentalOrderNo}</div>
+            {/* 联系方式区域 */}
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">联系方式</h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-gray-600 mr-2">手机号：</span>
+                  <span>{leaseDetail.contactPhone || '未设置'}</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-500">租户名称</div>
-                  <div className="font-medium">{offerDetail.rentalInfo.tenantName}</div>
+                <div>
+                  <span className="text-gray-600 mr-2">QQ号：</span>
+                  <span>{leaseDetail.contactQQ || '未设置'}</span>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-500">租赁开始时间</div>
-                  <div className="font-medium">{offerDetail.rentalInfo.startDate}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-500">租赁结束时间</div>
-                  <div className="font-medium">{offerDetail.rentalInfo.endDate}</div>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <div className="text-sm text-gray-500">租赁金额</div>
-                  <div className="font-medium text-lg text-blue-600">¥{offerDetail.rentalInfo.amount}</div>
+                <div>
+                  <span className="text-gray-600 mr-2">邮箱：</span>
+                  <span>{leaseDetail.contactEmail || '未设置'}</span>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* 如果审核不通过，显示失败原因 */}
-          {offerDetail.status === '审核不通过' && offerDetail.rejectReason && (
-            <div className="border-t border-gray-100 p-5 bg-red-50">
-              <div className="text-base font-medium text-red-700 mb-3">审核失败原因</div>
-              <div className="bg-white p-4 rounded-md border border-red-200">
-                <p className="text-gray-700 whitespace-pre-wrap">{offerDetail.rejectReason}</p>
+            {/* 租赁信息区域 - 仅在已租出状态下显示 */}
+            {leaseDetail.status === '已租出' && leaseDetail.rentalInfo && (
+              <div className="mt-8 bg-yellow-50 p-4 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">租赁信息</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">租户名称</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">开始时间</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">结束时间</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">租赁金额</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap">{leaseDetail.rentalInfo.tenantName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{leaseDetail.rentalInfo.startDate}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{leaseDetail.rentalInfo.endDate}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{leaseDetail.rentalInfo.amount}元</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* 操作按钮区域 */}
-        <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-5">
-            <div className="flex flex-wrap gap-3 justify-end">
-              {isEditing ? (
-                // 编辑模式下显示保存和取消按钮
-                <>
-                  <Button 
-                    onClick={handleCancelEdit}
-                    icon={<CloseOutlined />}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    取消
-                  </Button>
-                  <Button 
-                    onClick={handleSaveEdit}
-                    icon={<CheckOutlined />}
-                    className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    保存
-                  </Button>
-                </>
-              ) : (
-                // 非编辑模式下显示相应操作按钮
-                <>
-                  {(offerDetail.status === '已上架' || offerDetail.status === '待审核') && (
-                    <>
-                      <Button 
-                        onClick={handleStartEdit}
-                        icon={<EditOutlined />}
-                        className="px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50"
-                      >
-                        编辑
-                      </Button>
-                      <Button 
-                        onClick={handleOffShelf}
-                        icon={<DeleteOutlined />}
-                        className="px-4 py-2 bg-red-600 text-white hover:bg-red-700"
-                      >
-                        下架
-                      </Button>
-                    </>
-                  )}
+            {/* 审核不通过原因 - 仅在审核不通过状态下显示 */}
+            {leaseDetail.status === '审核不通过' && leaseDetail.rejectReason && (
+              <div className="mt-6 bg-red-50 p-4 rounded-lg">
+                <h3 className="text-lg font-medium text-red-900 mb-2">审核不通过原因</h3>
+                <p className="text-red-800">{leaseDetail.rejectReason}</p>
+              </div>
+            )}
 
-                  {offerDetail.status === '已下架' && (
-                    <Button 
-                      onClick={handleReList}
-                      className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      重新上架
-                    </Button>
+            {/* 操作按钮区域 */}
+              <div className="mt-8 flex justify-between items-center">
+                <Space>
+                  <Button type="primary" onClick={handleBackToList} icon={<ArrowLeftOutlined />}>返回列表</Button>
+                </Space>
+                
+                <Space>
+                  {leaseDetail.status === '已上架' && (
+                    <Button danger onClick={handleOffShelf}>下架</Button>
                   )}
-
-                  {offerDetail.status === '已租出' && (
-                    <Button 
-                      onClick={handleViewOrder}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      查看订单
-                    </Button>
+                  
+                  {leaseDetail.status === '已下架' && (
+                    <Button type="primary" onClick={handleReList}>重新上架</Button>
                   )}
-                </>
-              )}
-            </div>
+                  
+                  {leaseDetail.status === '已租出' && leaseDetail.rentalInfo?.rentalOrderNo && (
+                    <Button type="primary" onClick={handleViewOrder}>查看订单</Button>
+                  )}
+                </Space>
+              </div>
           </div>
         </div>
       </div>
 
       {/* 下架确认弹窗 */}
       <Modal
-        title="下架出租"
+        title="确认下架"
         open={offShelfModalVisible}
         onOk={handleConfirmOffShelf}
         onCancel={() => setOffShelfModalVisible(false)}
-        width={400}
-        footer={[
-          <Button key="cancel" onClick={() => setOffShelfModalVisible(false)}>
-            取消
-          </Button>,
-          <Button key="confirm" danger onClick={handleConfirmOffShelf}>
-            确认下架
-          </Button>
-        ]}
+        okText="确认下架"
+        cancelText="取消"
+        okType="danger"
+        okButtonProps={{ disabled: !cancelReason, loading: confirmLoading }}
       >
-        <div className="py-4">
-          <p className="text-center">确定要下架该出租信息吗？下架后可重新上架。</p>
+        <p className="mb-4">请选择下架原因：</p>
+        <div className="space-y-3">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="cancelReason"
+              value="信息错误"
+              checked={cancelReason === '信息错误'}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="mr-2"
+            />
+            <span>信息错误</span>
+          </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="cancelReason"
+              value="其他"
+              checked={cancelReason === '其他'}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="mr-2"
+            />
+            <span>其他</span>
+          </label>
         </div>
+        {!cancelReason && (
+          <div className="mt-2 text-red-500 text-sm">请选择下架原因</div>
+        )}
       </Modal>
 
       {/* 图片预览Modal */}
       <Modal
-        title="图片预览"
-        open={previewVisible}
+        visible={previewVisible}
         footer={null}
         onCancel={() => setPreviewVisible(false)}
         width={800}
       >
-        <div className="flex justify-center items-center p-2">
+        {previewImage && (
           <img 
-            src={previewImage} 
             alt="预览图片" 
-            className="w-full h-auto max-h-[70vh] object-contain" 
+            style={{ width: '100%' }} 
+            src={previewImage} 
           />
-        </div>
+        )}
       </Modal>
     </div>
   );
 };
 
-export default RentalOfferDetailPage;
+export default RentalRequestDetailPage;

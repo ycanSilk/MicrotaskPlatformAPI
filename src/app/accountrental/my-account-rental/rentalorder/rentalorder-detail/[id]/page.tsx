@@ -63,10 +63,7 @@ interface RentalOrderResponse {
 }
 
 const RentalOrderDetailPage = () => {
-  const router = useRouter();
-  const params = useParams();
-  const orderId = params.id || '';
-  console.log('从url获取到orderId', orderId);
+
   // 订单详情状态，初始化为null
   const [orderDetail, setOrderDetail] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -78,33 +75,28 @@ const RentalOrderDetailPage = () => {
   const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string>('');
   
-  // 页面加载时获取订单详情
+// 获取URL参数中的id
+  const params = useParams<{ id: string }>();
+  const id = params?.id || '';
+
+  // 获取求租信息详情
   useEffect(() => {
-    const fetchOrderDetail = async () => {
-      if (!orderId) {
-        message.error('订单ID不存在');
-        setLoading(false);
+    const fetchRentalRequestDetail = async (): Promise<void> => {
+      if (!id) {
+        console.log('缺少订单ID');
+        setLoading(false);  
         return;
       }
-      
+      console.log('订单ID:', id);
       try {
         setLoading(true);
-        // 通过Path传递orderId调用后端API
-        const response = await fetch(`api/public/rental/getorderdetail`, {
+        const response = await fetch(`/api/public/rental/getorderdetail?orderRequestId=${id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
         });
-        console.log('这是get求租订单详情API的日志输出:');
-        console.log('请求url', '/api/public/rental/getorderdetail');
-        if(response.ok){
-          console.log('返回的状态:', response.status);
-        }
-        if (!response.ok) {
-          throw new Error('网络请求失败');
-        }
-        
+
         const data: RentalOrderResponse = await response.json();
         console.log('返回的原始数据', data);
         if (data.success && data.code === 200) {
@@ -126,33 +118,19 @@ const RentalOrderDetailPage = () => {
       }
     };
     
-    fetchOrderDetail();
-  }, [orderId]);
+    fetchRentalRequestDetail();
+  }, [id]);
 
-  // 获取订单状态样式
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return 'text-green-600';
-      case 'PENDING_PAYMENT':
-        return 'text-red-500';
-      case 'RENTING':
-        return 'text-blue-500';
-      case 'CANCELED':
-        return 'text-gray-500';
-      default:
-        return 'text-gray-600';
-    }
-  };
+  
   
   // 获取订单状态文本
   const getStatusText = (status: string) => {
     switch (status) {
       case 'COMPLETED':
         return '订单已完成';
-      case 'PENDING_PAYMENT':
-        return '待付款';
-      case 'RENTING':
+      case 'PENDING':
+        return '待付款订单';
+      case 'IN_PROGRESS':
         return '租赁中';
       case 'CANCELED':
         return '订单已取消';
@@ -178,10 +156,7 @@ const RentalOrderDetailPage = () => {
     message.info('正在连接客服...');
   };
 
-  // 返回订单列表
-  const handleBackToList = () => {
-    router.push('/accountrental/my-account-rental/rentalorder');
-  };
+
   
   // 处理图片点击查看大图
   const handleImageClick = (imageUrl: string) => {
@@ -206,29 +181,28 @@ const RentalOrderDetailPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 text-black">
       {/* 订单状态标题 */}
-      <div className={`p-6 bg-white mb-2 ${getStatusStyle(orderDetail.status)}`}>
-        <h2 className="text-xl font-medium mb-1">{getStatusText(orderDetail.status)}</h2>
+      <div className="p-3 bg-white">
+        <h2 className="text-xl">{getStatusText(orderDetail.status)}</h2>
       </div>
 
       {/* 内容区域 */}
-      <div className="max-w-2xl mx-auto p-4">
+      <div className="max-w-2xl mx-auto p-3">
         {/* 订单描述和图片 */}
         <Card className="mb-4 border-0 shadow-sm">
-          <div className="flex flex-col gap-4">
-            {/* 租赁描述信息 */}
-            <div>
-              <h3 className="text-base font-medium mb-2">{orderDetail.leaseInfo?.description || '暂无描述'}</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="">
+
+              <div className="">详情信息：{orderDetail.leaseInfo?.description || '暂无描述'}</div>
+              <div className="grid grid-cols-1">
                 <div>账号类型：{orderDetail.leaseInfo?.platform === 'DOUYIN' ? '抖音' : orderDetail.leaseInfo?.platform || '未知'}</div>
                 <div>租赁时长：{orderDetail.leaseDays} 天</div>
               </div>
-            </div>
+          
 
             {/* 图片展示区域 */}
             <div>
-              <h4 className="text-sm text-gray-500 mb-2">账号预览</h4>
+              <h4 className='mb-1'>账号预览</h4>
               <div className="flex flex-wrap gap-3">
                 {imageList.map((imageUrl, index) => (
                   <div 
@@ -253,19 +227,19 @@ const RentalOrderDetailPage = () => {
         <Card className="mb-4 border-0 shadow-sm">
           <div className="space-y-3">
             <div className="flex justify-between items-center pb-2 border-b">
-              <span className="text-gray-600">实付金额</span>
+              <span className="">实付金额</span>
               <span className="text-lg font-medium text-black">¥{orderDetail.totalAmount.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">订单编号</span>
+              <span className="">订单编号</span>
               <div className="flex items-center gap-2">
                 <span>{orderDetail.orderNo}</span>
                 <Button 
                   type="text" 
-                  icon={<CopyOutlined />} 
                   size="small" 
                   onClick={handleCopyOrderNumber}
+                  className=" text-blue-500 items-right"
                 >
                   复制
                 </Button>
@@ -273,28 +247,28 @@ const RentalOrderDetailPage = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">平台服务费</span>
+              <span className="">平台服务费</span>
               <span>¥{orderDetail.platformFee.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">租赁开始时间</span>
+              <span className="">租赁开始时间</span>
               <span>{orderDetail.startTime}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">租赁结束时间</span>
+              <span className="">租赁结束时间</span>
               <span>{orderDetail.endTime}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">下单时间</span>
+              <span className="">下单时间</span>
               <span>{orderDetail.createTime}</span>
             </div>
             
             {orderDetail.status === 'CANCELED' && orderDetail.cancelReason && (
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">取消原因</span>
+                <span className="">取消原因</span>
                 <span>{orderDetail.cancelReason}</span>
               </div>
             )}

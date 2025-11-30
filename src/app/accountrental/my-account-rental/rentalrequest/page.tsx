@@ -53,7 +53,6 @@ interface RentalRequest {
 const getStatusDisplayText = (status: string): string => {
   const statusMap: Record<string, string> = {
     'ACTIVE': '已发布',
-    'INACTIVE': '不活跃',
     'CANCELED': '已取消',
     'MATCHED': '已出租'
   };
@@ -64,7 +63,6 @@ const getStatusDisplayText = (status: string): string => {
 const getStatusFromDisplayText = (displayText: string): string => {
   const statusMap: Record<string, string> = {
     '已发布': 'ACTIVE',
-    '不活跃': 'INACTIVE',
     '已取消': 'CANCELED',
     '已出租': 'MATCHED'
   };
@@ -73,7 +71,7 @@ const getStatusFromDisplayText = (displayText: string): string => {
 
 const RentalRequestPage = () => {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<string>('全部');
+  const [activeTab, setActiveTab] = useState<string>('已发布');
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false);
   const [requests, setRequests] = useState<RentalRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -124,10 +122,8 @@ const RentalRequestPage = () => {
 
   // 选项卡配置
   const tabItems: TabsProps['items'] = [
-    { key: '全部', label: '全部', children: null },
     { key: '已发布', label: '已发布', children: null },
     { key: '已出租', label: '已出租', children: null },
-    { key: '不活跃', label: '不活跃', children: null },
     { key: '已取消', label: '已取消', children: null }
   ];
 
@@ -174,7 +170,7 @@ const RentalRequestPage = () => {
   };
 
   // 过滤求租信息
-  const filteredRequests = activeTab === '全部' 
+  const filteredRequests = activeTab === '已发布' 
     ? requests 
     : requests.filter(request => request.status === getStatusFromDisplayText(activeTab));
 
@@ -183,7 +179,7 @@ const RentalRequestPage = () => {
       {/* 选项卡区域 - 包含状态选项和筛选按钮 */}
       <div className="flex flex-row mb-2 items-center">
         {/* 左侧选项按钮区域 - 90%宽度，支持左右滑动 */}
-        <div className="w-[90%] p-2">
+        <div className="w-[85%] p-2">
           <div 
             className="flex overflow-x-auto whitespace-nowrap pb-2"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -218,13 +214,12 @@ const RentalRequestPage = () => {
         </div>
         
         {/* 右侧筛选按钮区域 - 10%宽度，垂直居中 */}
-        <div className="w-[10%] flex">
+        <div className="w-[15%] flex">
           <button 
             onClick={handleFilterClick} 
-            className="text-sm text-blue-500 text-center p-1 pb-2"
+            className="text-sm text-blue-500 text-center p-1 border border-blue-500 bg-white"
             style={{
               fontSize: '14px',
-              outline: 'none'
             }}
           >
             筛选
@@ -333,14 +328,14 @@ const RentalRequestPage = () => {
                             e.preventDefault();
                             e.stopPropagation();
                             if (confirm('确定要取消该求租信息吗？')) {
-                              handleRequestAction(request.id, '取消求租');
+                              handleRequestAction(request.id, '下架');
                             }
                           }}
                           size="small"
                           style={{ borderColor: '#000' }}
                           className="whitespace-nowrap"
                         >
-                          取消求租
+                          下架
                         </Button>
                       </>
                     )}
@@ -404,17 +399,7 @@ const RentalRequestPage = () => {
               </Radio.Group>
             </div>
             
-            <div className="mt-4">
-              <h4 className="text-sm text-black mb-2">账号类型</h4>
-              <Radio.Group className="w-full">
-                <Space direction="vertical" className="w-full">
-                  <Radio value="抖音">抖音</Radio>
-                  <Radio value="小红书">小红书</Radio>
-                  <Radio value="微博">微博</Radio>
-                  <Radio value="快手">快手</Radio>
-                </Space>
-              </Radio.Group>
-            </div>
+           
             
             <div className="flex items-center gap-4 mt-4">
               <DatePicker className="flex-1" placeholder="起始时间" />

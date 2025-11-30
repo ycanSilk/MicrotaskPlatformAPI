@@ -234,7 +234,7 @@ export default function ResetPasswordPage() {
           
           {success ? (
             <Alert
-              message="密码修改成功"
+              title="密码修改成功"
               description="您的密码已成功修改，即将跳转回个人中心..."
               type="success"
               showIcon

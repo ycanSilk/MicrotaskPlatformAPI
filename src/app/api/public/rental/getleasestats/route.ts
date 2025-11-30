@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
     // 获取原始响应数据
     const responseData = await response.json();
-    console.log('这是get求租信息详情API的日志输出:');
+    console.log('这是get租赁统计API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
     console.log('返回的状态:', response.status);
