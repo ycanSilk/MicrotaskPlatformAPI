@@ -10,7 +10,7 @@ export interface RentalPublishData {
   userId: string;
   platform: string;
   accountType: string;
-  expectedPricePerDay: number;
+  pricePerDay: number;
   budgetDeposit: number;
   expectedLeaseDays: number;
   description: string;
@@ -30,17 +30,12 @@ export interface RentalPublishResponse {
 // 定义抖音账号租赁表单类型
 interface DouyinAccountRentalForm {
   // 基础信息
-  accountTitle: string;
-  region: string;
-  accountAge: string;
+  description: string;
   accountImages: File[];
   accountVideo?: File | null;
-  
-  // 商品信息
   price: number;
-  rentalDuration: number;
-  
-  // 账号要求
+  minLeaseDays: number;
+  maxLeaseDays: number;
   accountRequirements: {
     canChangeName: boolean;
     canIntroduction: boolean;
@@ -48,33 +43,22 @@ interface DouyinAccountRentalForm {
     canPostVideos: boolean;
     canUnbanAccount: boolean;
   };
-  
-  // 登录方式 (多选)
   loginMethods: string[]; // ['scan', 'phone_sms', 'no_login'] 支持多选
-  
-  // 联系方式
   phone: string;
   qq?: string;
   email?: string;
-
 }
 
 
 export default function DouyinAccountRentalPage() {
   const router = useRouter();
   const [formData, setFormData] = useState<DouyinAccountRentalForm>({
-    // 基础信息
-    accountTitle: '',
-    region: 'national',
-    accountAge: '3-6',
+    description: '',
     accountImages: [],
     accountVideo: null,
-    
-    // 商品信息
-    price: 50, // 默认价格改为50元/天
-    rentalDuration: 1, // 默认1天
-    
-    // 账号要求
+    price: 50,
+    minLeaseDays: 1, 
+    maxLeaseDays: 30,
     accountRequirements: {
       canChangeName: false,
       canIntroduction: false,
@@ -82,11 +66,7 @@ export default function DouyinAccountRentalPage() {
       canPostVideos: false,
       canUnbanAccount: false,
     },
-    
-    // 登录方式
     loginMethods: ['scan'], // 默认选择扫码登录
-    
-    // 联系方式
     phone: '',
     qq: '',
     email: ''
@@ -119,10 +99,10 @@ export default function DouyinAccountRentalPage() {
     const newErrors: Record<string, string> = {};
     
     // 基础信息验证
-    if (!formData.accountTitle.trim()) {
-      newErrors.accountTitle = '请输入账号标题';
-    } else if (formData.accountTitle.length < 5 || formData.accountTitle.length > 300) {
-      newErrors.accountTitle = '账号标题长度需在5-300个字符之间';
+    if (!formData.description.trim()) {
+      newErrors.description = '请输入账号标题';
+    } else if (formData.description.length < 5 || formData.description.length > 300) {
+      newErrors.description = '账号标题长度需在5-300个字符之间';
     }
     
     if (formData.accountImages.length === 0) {
@@ -134,8 +114,12 @@ export default function DouyinAccountRentalPage() {
       newErrors.price = '价格必须大于0';
     }
     
-    if (formData.rentalDuration <= 0) {
-      newErrors.rentalDuration = '租赁时长必须大于0';
+    if (formData.minLeaseDays <= 0) {
+      newErrors.minLeaseDays = '最低出租天数必须大于0';
+    }
+    
+    if (formData.maxLeaseDays <= formData.minLeaseDays) {
+      newErrors.maxLeaseDays = '最高出租天数必须大于最低出租天数';
     }
     
     // 登录方式验证
@@ -276,30 +260,13 @@ export default function DouyinAccountRentalPage() {
     try {
       // 构建后端API所需的请求参数
       const requestData = {
-        platform: 'douyin', // 固定为抖音平台
-        accountType: formData.accountRequirements.canPostVideos ? 'content_creator' : 'basic',
-        expectedPricePerDay: formData.price,
-        budgetDeposit: Math.round(formData.price * 2), // 保证金设为价格的2倍
-        expectedLeaseDays: formData.rentalDuration,
-        minLeaseDays: 1, // 最小租赁天数设为1
-        maxLeaseDays: 30, // 最大租赁天数设为30
-        description: formData.accountTitle,
-        status: 'active',
-        // 添加登录方式和账号要求信息到描述中
-        additionalInfo: {
-          loginMethods: formData.loginMethods,
-          accountRequirements: formData.accountRequirements,
-          region: formData.region,
-          accountAge: formData.accountAge,
-          contact: {
-            phone: formData.phone,
-            qq: formData.qq,
-            email: formData.email
-          },
-          // 添加账号图片信息（文件名或占位符）
-          imagesCount: formData.accountImages.length,
-          hasVideo: !!formData.accountVideo
-        }
+        platform: 'DOUYIN', // 固定为抖音平台
+        accountType: 'Forrent', // 固定为抖音平台
+        pricePerDay: formData.price || 50,
+        budgetDeposit: formData.price*2 || 100, // 保证金设为价格的2倍
+        minLeaseDays: formData.minLeaseDays || 1, // 最小租赁天数设为1
+        maxLeaseDays: formData.maxLeaseDays || 30, // 最大租赁天数设为30
+        description: formData.description
       };
       
       console.log('提交的API请求数据:', requestData);
@@ -336,10 +303,7 @@ export default function DouyinAccountRentalPage() {
     }
   };
 
-    // 计算总价
-    const calculateTotalPrice = () => {
-      return (formData.price * formData.rentalDuration).toFixed(2);
-    };
+
 
     // 不再需要加载状态渲染
 
@@ -361,17 +325,17 @@ export default function DouyinAccountRentalPage() {
             <div className="space-y-1">
               {/* 账号标题 - 修改为多行文本框 */}
               <div className="space-y-1">
-                <Label htmlFor="accountTitle" required>账号信息</Label>
+                <Label htmlFor="description" required>账号信息</Label>
                 <Textarea
-                  id="accountTitle"
-                  value={formData.accountTitle}
-                  onChange={(e) => handleInputChange('accountTitle', e.target.value)}
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="填写抖音账号出租的详细信息，保信息真实有效，账号无异常,及时响应"
-                  className={`${errors.accountTitle ? 'border-red-500' : ''} resize-none`}
+                  className={`${errors.description ? 'border-red-500' : ''} resize-none`}
                   style={{ height: 150,width: '100%' }}
                 />
-                {errors.accountTitle && (
-                  <p className="text-red-500 text-sm">{errors.accountTitle}</p>
+                {errors.description && (
+                  <p className="text-red-500 text-sm">{errors.description}</p>
                 )}
               </div>
               
@@ -459,19 +423,35 @@ export default function DouyinAccountRentalPage() {
                 )}
               </div>
               
-              {/* 租赁时长 */}
+              {/* 最低出租天数 */}
               <div className="space-y-1">
-                <Label required>出租时长 (天)</Label>
+                <Label required>最低出租天数 (天)</Label>
                 <input
                   type="number"
-                  value={formData.rentalDuration || ''}
-                  onChange={(e) => handleInputChange('rentalDuration', e.target.value === '' ? '' : parseInt(e.target.value) || 1)}
-                  onBlur={() => handleBlur('rentalDuration', 1)}
-                  className={`input ${errors.rentalDuration ? 'border-red-500' : ''}`}
+                  value={formData.minLeaseDays || ''}
+                  onChange={(e) => handleInputChange('minLeaseDays', e.target.value === '' ? '' : parseInt(e.target.value) || 1)}
+                  onBlur={() => handleBlur('minLeaseDays', 1)}
+                  className={`input ${errors.minLeaseDays ? 'border-red-500' : ''}`}
                   step="1"
                 />
-                {errors.rentalDuration && (
-                  <p className="text-red-500 text-sm">{errors.rentalDuration}</p>
+                {errors.minLeaseDays && (
+                  <p className="text-red-500 text-sm">{errors.minLeaseDays}</p>
+                )}
+              </div>
+
+              {/* 最高出租天数 */}
+              <div className="space-y-1">
+                <Label required>最高出租天数 (天)</Label>
+                <input
+                  type="number"
+                  value={formData.maxLeaseDays || ''}
+                  onChange={(e) => handleInputChange('maxLeaseDays', e.target.value === '' ? '' : parseInt(e.target.value) || 30)}
+                  onBlur={() => handleBlur('maxLeaseDays', 30)}
+                  className={`input ${errors.maxLeaseDays ? 'border-red-500' : ''}`}
+                  step="1"
+                />
+                {errors.maxLeaseDays && (
+                  <p className="text-red-500 text-sm">{errors.maxLeaseDays}</p>
                 )}
               </div>
               
@@ -642,7 +622,7 @@ export default function DouyinAccountRentalPage() {
                   发布中...
                 </>
               ) : (
-                `发布出租${calculateTotalPrice()}元）`
+                `发布出租`
               )}
             </Button>
           </div>

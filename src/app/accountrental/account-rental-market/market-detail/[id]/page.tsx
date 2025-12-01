@@ -39,11 +39,10 @@ const fetchLeaseInfoDetail = async (leaseInfoId: string): Promise<LeaseInfo> => 
   try {
     // 调用本地API路由，将leaseInfoId通过headers传递给后端
     console.log('正在发送请求，leaseInfoId通过headers传递:', leaseInfoId);
-    const response = await fetch(`/api/public/rental/getleaseinfodetail`,{
+    const response = await fetch(`/api/public/rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`,{
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'leaseInfoId': leaseInfoId
+          'Content-Type': 'application/json'
         }
       }
     );
@@ -94,11 +93,12 @@ const AccountDetailPage = ({
   const [orderId, setOrderId] = useState('');
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState('');
-  const [leaseDays, setLeaseDays] = useState<number>(1);
+  const [leaseDays, setLeaseDays] = useState<number>(0);
   
-  // 当leaseInfo加载完成后，设置默认租赁天数
+  // 当leaseInfo加载完成后，可以根据需要设置默认租赁天数，但允许用户修改为0
   useEffect(() => {
     if (leaseInfo && leaseInfo.minLeaseDays) {
+      // 保持默认值为最小租赁天数，但用户可以修改为0
       setLeaseDays(leaseInfo.minLeaseDays);
     }
   }, [leaseInfo?.minLeaseDays]);
@@ -204,7 +204,7 @@ const AccountDetailPage = ({
     setPaymentPassword('');
     setOrderId('');
     // 取消后跳转到租赁订单页面
-    window.location.href = '/accountrental/my-account-rental/rentalorder';
+    window.location.href = '/accountrental/my-account-rental/myrentedorder';
   };
 
   // 处理确认支付
@@ -596,23 +596,24 @@ const AccountDetailPage = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">租赁天数</label>
                     <input
                       type="number"
-                      value={leaseDays === leaseInfo.minLeaseDays ? '' : leaseDays}
+                      value={leaseDays === 0 ? '' : leaseDays}
                       onChange={(e) => {
                         const value = e.target.value;
-                        // 当输入框为空时，设置默认值为最小租赁天数
+                        // 当输入框为空时，设置默认值为0
                         if (value === '') {
-                          setLeaseDays(leaseInfo.minLeaseDays);
+                          setLeaseDays(0);
                         } else {
                           const numValue = parseInt(value);
-                          // 允许输入个位数，只要它在有效范围内
+                          // 允许输入0和正整数，只要它在有效范围内
                           if (!isNaN(numValue)) {
-                            setLeaseDays(Math.max(leaseInfo.minLeaseDays, Math.min(leaseInfo.maxLeaseDays, numValue)));
+                            setLeaseDays(Math.max(0, Math.min(leaseInfo.maxLeaseDays, numValue)));
                           }
                         }
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min="0"
                     />
-                    <p className="text-xs text-gray-500 mt-1">请输入{leaseInfo.minLeaseDays}-{leaseInfo.maxLeaseDays}天</p>
+                    <p className="text-xs text-gray-500 mt-1">请输入0-{leaseInfo.maxLeaseDays}天</p>
                   </div>
                 </div>
                 {/* 操作按钮 */}

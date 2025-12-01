@@ -13,7 +13,7 @@ import type { TabsProps } from 'antd';
 type BackendOrderStatus = 'PENDING' | 'PAID' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'DISPUTED';
 
 // 前端显示的订单状态类型
-type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '争议中';
+type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '售后中';
 
 // 租赁信息接口
 interface LeaseInfo {
@@ -74,7 +74,7 @@ const statusMap: Record<BackendOrderStatus, OrderStatus> = {
   'IN_PROGRESS': '进行中',
   'COMPLETED': '已完成',
   'CANCELED': '已取消',
-  'DISPUTED': '争议中'
+  'DISPUTED': '售后中'
 };
 
 // 获取状态对应的标签颜色
@@ -85,7 +85,7 @@ const getStatusTagColor = (status: OrderStatus): string => {
     '进行中': 'green',
     '已完成': 'purple',
     '已取消': 'red',
-    '争议中': 'yellow'
+    '售后中': 'yellow'
   };
   return statusColors[status];
 };
@@ -112,6 +112,8 @@ const RentalOrderPage = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [apiLoading, setApiLoading] = useState<boolean>(false);
+  // 租赁成功提示框状态
+  const [startLeaseSuccessModalVisible, setStartLeaseSuccessModalVisible] = useState<boolean>(false);
   
   // 预设取消原因选项
   const cancelReasons = [
@@ -126,14 +128,14 @@ const RentalOrderPage = () => {
     '进行中': 'IN_PROGRESS',
     '已完成': 'COMPLETED',
     '已取消': 'CANCELED',
-    '争议中': 'DISPUTED'
+    '售后中': 'DISPUTED'
   };
   
   // 调用后端API获取订单数据
   const fetchOrders = async (status: string = 'PENDING') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/public/rental/myrenterorder', {
+      const response = await fetch('/api/public/rental/myrentalorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -185,7 +187,7 @@ const RentalOrderPage = () => {
     { key: '进行中', label: '进行中', children: null },
     { key: '已完成', label: '已完成', children: null },
     { key: '已取消', label: '已取消', children: null },
-    { key: '争议中', label: '争议中', children: null }
+    { key: '售后', label: '售后', children: null }
   ];
 
   // 复制订单号功能
@@ -243,6 +245,38 @@ const RentalOrderPage = () => {
     setReason('');
   };
   
+  // 处理开始租赁
+  const handleStartLease = async (orderId: string) => {
+    setApiLoading(true);
+    try {
+      const response = await fetch(`/api/public/rental/startleaseorder?orderId=${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('开始租赁API返回数据:', data);
+        // 检查响应是否成功（根据后端API的返回格式判断）
+        if (data.code === 1 || data.code === 200 || data.success) {
+          // 显示租赁成功提示框
+          setStartLeaseSuccessModalVisible(true);
+        } else {
+          message.error(data.message || '开始租赁失败');
+        }
+      } else {
+        message.error('网络请求失败，请稍后重试');
+      }
+    } catch (error) {
+      console.error('开始租赁失败:', error);
+      message.error('开始租赁失败，请稍后重试');
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
   // 确认取消订单
   const handleConfirmCancelOrder = async () => {
     if (!selectedOrderId || !reason) {
@@ -345,7 +379,7 @@ const RentalOrderPage = () => {
       {/* 订单列表 */}
       <div className="">
         {filteredOrders.map((order) => (
-            <Link href={`/accountrental/my-account-rental/forrentorder/forrentorder-detail/${order.id}`} key={order.id}>
+            <Link href={`/accountrental/my-account-rental/myrentalorder/myrentalorder-detail/${order.id}`} key={order.id}>
               <Card className="rounded-md mb-3 hover:shadow-md">
                 {/* 订单头部信息 */}
                 <div className="">
@@ -399,14 +433,14 @@ const RentalOrderPage = () => {
                 <div className="flex justify-end items-center py-3 px-2">
                   {/* 客服按钮移至右侧 */}
                     <Button
-                      type="default"
+                      type="primary"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleContactService(order.id);
                       }}
                       size="small"
-                      style={{ borderColor: '#000' }}
+                      className="text-white mr-2"
                     >
                       客服
                     </Button>
@@ -415,31 +449,21 @@ const RentalOrderPage = () => {
                     {/* 根据订单状态显示不同按钮 */}
                     {order.displayStatus === '待支付' && (
                       <>
-                        <Button
-                          type="primary"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleOrderAction(order.id, '去支付');
-                          }}
-                          size="small"
-                          style={{ borderColor: '#000',marginLeft:'8px' }}
-                        >
-                          去支付
-                        </Button>
-                        <Button
-                          danger
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleOrderAction(order.id, '取消订单');                          
-                          }}
-                          size="small"
-                          style={{ borderColor: '#000' }}
-                        >
-                          取消订单
-                        </Button>
+   
                       </>
+                    )}
+                    {order.displayStatus === '已支付' && (
+                      <Button
+                        type="primary"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleStartLease(order.id);
+                        }}
+                        size="small"
+                      >
+                        开始租赁
+                      </Button>
                     )}
                   </Space>
                 </div>
@@ -526,6 +550,32 @@ const RentalOrderPage = () => {
                 ))}
               </Space>
             </Radio.Group>
+          </div>
+        </Modal>
+        
+        {/* 租赁成功提示框 */}
+        <Modal
+          title="租赁成功"
+          open={startLeaseSuccessModalVisible}
+          footer={[
+            <Button 
+              key="confirm" 
+              type="primary" 
+              onClick={() => {
+                // 关闭提示框
+                setStartLeaseSuccessModalVisible(false);
+                // 切换到进行中选项卡
+                handleTabChange('进行中');
+              }} 
+              size="small"
+            >
+              确认
+            </Button>
+          ]}
+          closable={false} // 禁用右上角关闭按钮
+        >
+          <div className="py-2">
+            <p className="text-center text-black">订单开始租赁成功！</p>
           </div>
         </Modal>
     </div>

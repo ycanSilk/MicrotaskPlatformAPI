@@ -34,8 +34,8 @@
       "mypublishrentalinfolist": "/rental/lease/my",
       "myrequestrentalinfolist": "/rental/rent/my",
       "creatleaseorder": "/rental/orders/create",
-      "myrenterorder": "/rental/orders/my/renter",
-      "mylessororder": "/rental/orders/my/lessor",
+      "myrentalorder": "/rental/orders/my/lessor",
+      "myrentedorder": "/rental/orders/my/renter",
       "getleasestats": "/api/rental/stats"
     },
     "user": {

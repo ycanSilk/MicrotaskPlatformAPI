@@ -19,20 +19,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: '认证失败，请先登录' }, { status: 401 });
   }
   
-  // 解析请求体
-  let requestData;
-  try {
-    requestData = await request.json();
-  } catch (parseError) {
-    return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
-  }
-  
-  // 从请求数据中获取orderId和reason参数
-  const {orderId} = requestData;
-  
+  // 从URL查询参数中获取orderId
+  const url = new URL(request.url);
+  const orderId = url.searchParams.get('orderId');
+  console.log('orderId:', orderId);
   if (!orderId) {
+    console.log('缺少必要参数orderId');
     return NextResponse.json({ success: false, message: '缺少必要参数orderId' }, { status: 400 });
   }
+
+
   
   // 构造请求URL，将orderId和reason参数添加到URL中
   const apiUrl = `http://localhost:8083/api/rental/orders/${orderId}/start`;

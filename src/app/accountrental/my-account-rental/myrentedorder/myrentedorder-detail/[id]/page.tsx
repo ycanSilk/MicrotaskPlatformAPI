@@ -127,13 +127,17 @@ const RentalOrderDetailPage = () => {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return '订单已完成';
+        return '已完成订单';
       case 'PENDING':
-        return '待付款订单';
+        return '待支付订单';
+      case 'PAID':
+        return '已支付订单';
       case 'IN_PROGRESS':
-        return '租赁中';
+        return '进行中订单';
       case 'CANCELED':
-        return '订单已取消';
+        return '已取消订单';
+      case 'DISPUTED':
+        return '售后中订单';
       default:
         return '未知状态';
     }

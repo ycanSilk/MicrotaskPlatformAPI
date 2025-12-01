@@ -33,11 +33,11 @@ export async function POST(request: Request) {
     size: requestData.size || 20,
     sortField: requestData.sortField || "createTime",
     sortOrder: requestData.sortOrder || "DESC",
-    status: requestData.status || ""
+    status: requestData.status || "PENDING"
   };
   
   // 简化API URL构建，直接拼接baseUrl和endpoint
-  const apiUrl = `${config.baseUrl}${config.endpoints.rental.myrenterorder}`;
+  const apiUrl = `${config.baseUrl}${config.endpoints.rental.myrentalorder}`;
   
   // 直接调用外部API并返回原始响应
   try {
