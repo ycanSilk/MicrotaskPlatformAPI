@@ -64,8 +64,11 @@ export default function PublisherFinancePage() {
 
   // 获取用户信息和财务数据
   useEffect(() => {
-    const userIdFromParams = params?.id as string || '';
-    setUserId(userIdFromParams);
+    // 如果URL参数中有ID，则设置为初始值
+    if (params?.id) {
+      const userIdFromParams = params.id as string;
+      setUserId(userIdFromParams);
+    }
     
     // 初始化空余额数据
     const newBalance: BalanceData = {
@@ -104,14 +107,17 @@ export default function PublisherFinancePage() {
       const remark = rechargeRemark;
 
       // 调用后端充值API
-      const response = await fetch('/api/publish/walletmanagement/recharge', {
+      const response = await fetch('/api/admin/wallet/recharge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId, amount, remark }),
       });
-
+      console.log('前端请求的后端APIurl:/api/admin/wallet/recharge');
+      console.log('targetUserId:', targetUserId);
+      console.log('amount:', amount);
+      console.log('remark:', remark);
       const result = await response.json();
 
       if (result.success) {

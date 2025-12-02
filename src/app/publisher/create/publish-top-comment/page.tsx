@@ -100,7 +100,6 @@ export default function PublishTaskPage() {
   // AI优化评论功能
   const handleAIOptimizeComments = () => {
     // 模拟AI优化评论的逻辑
-    // 实际项目中可能需要调用AI API
     setFormData(prevData => ({
       ...prevData,
       comments: prevData.comments.map(comment => ({
@@ -187,183 +186,101 @@ export default function PublishTaskPage() {
 
   // 发布任务
   const handlePublish = async () => {
-        console.log('========== 开始处理发布任务请求 ==========');
-        // 防止重复提交
-        if (isPublishing) {
-          console.log('警告: 防止重复提交，发布功能已被禁用');
-          return;
-        }
-        
-        console.log('发布前表单数据检查开始');
-        
-        // 表单验证 - 全面检查所有必填字段
-        if (!formData.videoUrl.trim()) {
-          console.log('验证失败: 视频链接为空');
-          setAlertConfig({
-            title: '验证失败',
-            message: '请输入抖音视频链接',
-            icon: 'error',
-            buttonText: '确定',
-            onButtonClick: () => {}
-          });
-          setShowAlertModal(true);
-          return;
-        }
+    // 防止重复提交
+    if (isPublishing) {
+      return;
+    }
+    
+    // 表单验证
+    if (!formData.videoUrl.trim()) {
+      showAlert('验证失败', '请输入抖音视频链接', 'error');
+      return;
+    }
+    
+    // 验证评论内容
+    const validComments = formData.comments.filter(comment => comment.content.trim() !== '');
+    if (validComments.length === 0) {
+      showAlert('验证失败', '请输入评论内容', 'error');
+      return;
+    }
+    
+    // 验证任务数量
+    if (!formData.quantity || formData.quantity < 1) {
+      showAlert('验证失败', '请设置有效的任务数量', 'error');
+      return;
+    }
+    
+    try {
+      // 设置加载状态
+      setIsPublishing(true);
       
-        // 验证评论内容
-        const validComments = formData.comments.filter(comment => comment.content.trim() !== '');
-        console.log(`评论内容验证: 有效评论数量=${validComments.length}, 总评论数量=${formData.comments.length}`);
-        if (validComments.length === 0) {
-          console.log('验证失败: 没有有效的评论内容');
-          setAlertConfig({
-            title: '验证失败',
-            message: '请输入评论内容',
-            icon: 'error',
-            buttonText: '确定',
-            onButtonClick: () => {}
-          });
-          setShowAlertModal(true);
-          return;
-        }
+      // 构建请求体
+      const futureDate = new Date(Date.now() + parseInt(formData.deadline) * 60 * 60 * 1000);
+      // 格式化deadline为'YYYY-MM-DD HH:mm:ss'格式
+      const formattedDeadline = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}-${String(futureDate.getDate()).padStart(2, '0')} ${String(futureDate.getHours()).padStart(2, '0')}:${String(futureDate.getMinutes()).padStart(2, '0')}:${String(futureDate.getSeconds()).padStart(2, '0')}`;
       
-        // 验证任务数量
-        console.log(`任务数量验证: quantity=${formData.quantity}`);
-        if (!formData.quantity || formData.quantity < 1) {
-          console.log('验证失败: 任务数量无效');
-          setAlertConfig({
-            title: '验证失败',
-            message: '请设置有效的任务数量',
-            icon: 'error',
-            buttonText: '确定',
-            onButtonClick: () => {}
-          });
-          setShowAlertModal(true);
-          return;
-        }
-        
-        console.log('表单验证通过，准备构建请求数据');
+      // 创建标题和描述
+      const taskTitle = `评论任务 - ${new Date().toLocaleDateString()}`;
+      const taskDescription = `任务数量: ${formData.quantity}，单价: ¥${taskPrice}`;
       
-        try {
-          // 设置加载状态
-          setIsPublishing(true);
-          console.log('设置发布状态为正在发布');
+      const requestBody = {
+        title: '上坪评论',
+        description: '这里是任务描述信息',
+        platform: 'DOUYIN',
+        taskType: 'COMMENT',
+        totalQuantity: formData.quantity,
+        unitPrice: taskPrice,
+        deadline: formattedDeadline,
+        requirements: '这里是任务要求信息',
+        commentDetail: {
+          commentType: 'SINGLE',
+          linkUrl1: formData.videoUrl.trim(),
+          unitPrice1: taskPrice,
+          quantity1: formData.quantity,
+          commentText1: formData.comments[0]?.content.trim() || '',
+          commentImages1: formData.comments[0]?.image ? '/images/0e92a4599d02a7.jpg' : '',
+          mentionUser1: ''
           
-          // 不再需要从localStorage获取token，因为后端会从cookie自动获取
-          // 前端只需要确保请求发送时携带了cookie（默认行为）
-          console.log('使用credentials: include确保cookie传递');
-      
-          console.log('准备构建请求体，详细检查每个字段的数据类型和格式');
-          
-          // 构建请求体，按照后端API要求的完整格式
-          const futureDate = new Date(Date.now() + parseInt(formData.deadline) * 60 * 60 * 1000);
-          // 格式化deadline为'YYYY-MM-DD HH:mm:ss'格式
-          const formattedDeadline = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}-${String(futureDate.getDate()).padStart(2, '0')} ${String(futureDate.getHours()).padStart(2, '0')}:${String(futureDate.getMinutes()).padStart(2, '0')}:${String(futureDate.getSeconds()).padStart(2, '0')}`;
-          
-          const requestBody = {
-            title: '测试中评',
-            description: '这是一条中评评论任务',
-            platform: 'DOUYIN',
-            taskType: 'COMMENT',
-            totalQuantity: formData.quantity,
-            unitPrice: taskPrice,
-            deadline: formattedDeadline,
-            requirements: '按照要求发布评论',
-            commentDetail: {
-              commentType: 'SINGLE',
-              linkUrl1: formData.videoUrl.trim(),
-              unitPrice1: taskPrice,
-              quantity1: formData.quantity,
-              commentText1: formData.comments[0]?.content.trim() || '',
-              commentImages1: formData.comments[0]?.image ? '/images/0e92a4599d02a7.jpg' : '', // 使用示例图片路径
-              mentionUser1: '超哥超车', // 默认提及用户
-              linkUrl2: '',
-              unitPrice2: 0,
-              quantity2: 0,
-              commentText2: '',
-              commentImages2: '',
-              mentionUser2: ''
-            }
-          };
+        }
+      };
 
-        const apiUrl = '/api/publisher/publishertasks/topcomment';
+      const apiUrl = '/api/publisher/publishertasks/topcomment';
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // 不再需要手动添加Authorization头，token会通过cookie自动传递
-          },
-          body: JSON.stringify(requestBody),
-          // 确保请求携带credentials
-          credentials: 'include'
-        });
-        
-        console.log('\n===== API响应接收 =====');
-        console.log('响应状态码:', response.status);
-        console.log('响应状态文本:', response.statusText);
-        console.log('响应类型:', response.type);
-        console.log('是否来自同一源:', response.type === 'basic');
-        
-        console.log(`API调用完成，响应状态码: ${response.status}, 响应状态: ${response.statusText}`);
-    
-        console.log('开始解析API响应');
-        let result;
-        try {
-          result = await response.json();
-          console.log('API响应解析成功:', JSON.stringify(result, null, 2));
-        } catch (jsonError) {
-          console.error('错误: 解析API响应JSON失败:', jsonError);
-          throw new Error('服务器返回无效响应格式');
-        }
-    
-        // 检查响应状态 - 关键问题点：不仅检查HTTP状态码，还要检查响应内容中的success标志和code字段
-        console.log(`响应状态检查: HTTP状态=${response.ok ? 'ok' : 'error'}, 响应success标志=${result.success || false}, 响应code=${result.code || 'N/A'}`);
-        
-        // 重要：同时检查HTTP状态码、响应中的success标志和code字段
-        // 即使HTTP状态码是200，只要success为false或code不是200，也要视为错误
-        if (!response.ok || result.success === false || (result.code && result.code !== 200)) {
-          const errorMsg = result.message || result.error || '发布任务失败，请稍后重试';
-          console.error(`任务发布失败: HTTP状态=${response.status}, 响应code=${result.code || 'N/A'}, 错误消息=${errorMsg}`);
-          throw new Error(errorMsg);
-        }
-        
-        console.log('任务发布成功！后端返回了成功的响应');
-    
-        // 成功处理
-        console.log('显示发布成功提示框');
-        setAlertConfig({
-          title: '发布成功',
-          message: '任务已成功发布！',
-          icon: 'success',
-          buttonText: '确定',
-          onButtonClick: () => {
-            console.log('用户点击确认按钮，跳转到仪表盘页面');
-            // 重置表单或返回上一页
-            router.push('/publisher/dashboard');
-          }
-        });
-        setShowAlertModal(true);
-      } catch (error) {
-        // 错误处理
-        const errorMessage = error instanceof Error ? error.message : '发布任务时发生错误';
-        console.error('严重错误: 发布任务失败:', error, '错误消息:', errorMessage);
-        
-        console.log('显示发布失败提示框');
-        setAlertConfig({
-          title: '发布失败',
-          message: errorMessage,
-          icon: 'error',
-          buttonText: '确定',
-          onButtonClick: () => {}
-        });
-        setShowAlertModal(true);
-      } finally {
-        // 无论成功失败，都重置加载状态
-        console.log('重置发布状态为未发布');
-        setIsPublishing(false);
-        console.log('========== 发布任务请求处理结束 ==========');
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        credentials: 'include'
+      });
+      
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error('服务器返回无效响应格式');
       }
-    };
+      
+      // 检查响应状态
+      if (!response.ok || result.success === false || (result.code && result.code !== 200 && result.code !== 1)) {
+        const errorMsg = result.message || result.error || '发布任务失败，请稍后重试';
+        throw new Error(errorMsg);
+      }
+      
+      // 成功处理
+      showAlert('发布成功', '任务已成功发布！', 'success', '确定', () => {
+        router.push('/publisher/dashboard');
+      });
+    } catch (error) {
+      // 错误处理
+      const errorMessage = error instanceof Error ? error.message : '发布任务时发生错误';
+      showAlert('发布失败', errorMessage, 'error');
+    } finally {
+      // 无论成功失败，都重置加载状态
+      setIsPublishing(false);
+    }
+  };
     
     // 处理图片上传
     const handleImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -371,15 +288,8 @@ export default function PublishTaskPage() {
       if (!file) return;
       
       // 检查文件大小
-      if (file.size > 200 * 1024) { // 200KB
-        setAlertConfig({
-          title: '上传失败',
-          message: '图片大小不能超过200KB',
-          icon: 'error',
-          buttonText: '确定',
-          onButtonClick: () => {}
-        });
-        setShowAlertModal(true);
+      if (file.size > 2000 * 1024) { // 200KB
+        showAlert('上传失败', '图片大小不能超过200KB', 'error');
         return;
       }
       
@@ -387,8 +297,7 @@ export default function PublishTaskPage() {
         // 压缩图片
         const compressedFile = await compressImage(file);
         
-        // 直接保存压缩后的图片文件，不再尝试获取imageUrl
-        // 实际项目中应该调用上传API并获取URL
+        // 保存压缩后的图片文件
         const newComments = [...formData.comments];
         newComments[index] = {
           ...newComments[index],
@@ -397,24 +306,9 @@ export default function PublishTaskPage() {
         setFormData({...formData, comments: newComments});
         
         // 显示上传成功提示
-        setAlertConfig({
-          title: '上传成功',
-          message: '图片上传成功！',
-          icon: 'success',
-          buttonText: '确定',
-          onButtonClick: () => {}
-        });
-        setShowAlertModal(true);
-      } catch (error) {
-        console.error('上传图片失败:', error);
-        setAlertConfig({
-          title: '上传失败',
-          message: '图片上传失败，请重试',
-          icon: 'error',
-          buttonText: '确定',
-          onButtonClick: () => {}
-        });
-        setShowAlertModal(true);
+        showAlert('上传成功', '图片上传成功！', 'success');
+      } catch {
+        showAlert('上传失败', '图片上传失败，请重试', 'error');
       }
     };
     
@@ -476,12 +370,12 @@ export default function PublishTaskPage() {
           {formData.comments.map((comment, index) => (
             <div key={index} className="mb-4 py-2 border-b border-gray-200 last:border-b-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                上评评论 {index + 1}
+                推荐评论 {index + 1}
               </label>
               <textarea
                 className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 rows={3}
-                placeholder={`请输入上评评论内容`}
+                placeholder={`请输入推荐评论内容`}
                 value={comment.content}
                 onChange={(e) => {
                   const newComments = [...formData.comments];

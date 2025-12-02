@@ -21,20 +21,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // 解析请求体
     const requestData: RechargeRequest = await request.json();
-
-    // 验证请求参数
-    if (!requestData.channel || requestData.channel !== 'alipay' || requestData.amount <= 0 || !requestData.remark) {
-      return NextResponse.json<ApiResponse>({
-        success: false,
-        message: '参数验证失败: channel、amount、remark为必填项，且channel必须为alipay，amount必须大于0'
-      }, { status: 400 });
-    }
+    console.log('开始处理充值请求', `充值金额${ requestData.amount } 充值方式${ requestData.channel } 支付截图${ requestData.remark }`);
 
     // 从Cookie获取admin_token
     let token = '';
     try {
       const cookieStore = await cookies();
-      const cookieToken = cookieStore.get('admin_token');
+      const cookieToken = cookieStore.get('publisher_token');
       token = cookieToken?.value || '';
     } catch (cookieError) {
       console.error('无法从Cookie获取token:', cookieError);
@@ -55,6 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 构建外部API请求
     const apiUrl = `${config.baseUrl}${config.endpoints.wallet.usersrecharge}`;
+    console.log('外部API充值请求URL:', apiUrl);
     const requestHeaders: HeadersInit = {
       ...config.headers,
       'Authorization': `Bearer ${token}`

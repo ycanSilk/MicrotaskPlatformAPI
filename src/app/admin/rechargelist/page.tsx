@@ -56,9 +56,18 @@ export default function AdminProcessWithdrawPage() {
             size: 10
           })
         });
+      console.log('请求URL:', '/api/public/walletmanagement/transactionrecord');
+      console.log('请求体:', JSON.stringify({
+        transactionType: 'RECHARGE',
+        page: 1,
+        size: 10
+      }));
+      console.log('响应状态:', response.status);
       
+      // 只读取一次response body
       const data: ApiResponse = await response.json();
-      
+      console.log('响应体:', data);
+      console.log('API响应:', data);
       if (data.success) {
         setTransactionRecords(data.data.list);
       } else {
