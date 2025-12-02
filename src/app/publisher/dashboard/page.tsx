@@ -111,7 +111,8 @@ export default function PublisherDashboardPage() {
         const taskresponse = await fetch('/api/publisher/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestParams)
+          body: JSON.stringify(requestParams),
+          credentials: 'include'
         });
 
         // 解析任务列表
@@ -180,7 +181,8 @@ export default function PublisherDashboardPage() {
         const pendingResponse = await fetch('/api/publisher/publishertasks/pendingverifylist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(pendingParams)
+          body: JSON.stringify(pendingParams),
+          credentials: 'include'
         });
         
         const pendingData: ApiResponse<PaginationData> = await pendingResponse.json();
@@ -210,7 +212,8 @@ export default function PublisherDashboardPage() {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
        console.log('这是获取任务统计数据的API返回的日志输出:', response);

@@ -49,8 +49,8 @@ export async function GET(request: Request) {
       const responseText = await response.text();
       responseData = JSON.parse(responseText);
       console.log("这是获取任务统计数据的API返回的日志输出:", apiUrl);
-    console.log("这是获取任务统计数据的API返回的日志输出:", token);
-    console.log('这是获取任务统计数据的API返回的日志输出:', response);
+      console.log("这是获取任务统计数据的API返回的日志输出:", token);
+      console.log('这是获取任务统计数据的API返回的日志输出:', response);
       console.log('任务统计数据:', responseData.data);
     } catch (jsonError) {
       console.error(formatLog(operation, `错误: API响应解析失败 - ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`));
