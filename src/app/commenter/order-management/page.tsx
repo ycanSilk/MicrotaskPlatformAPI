@@ -315,6 +315,7 @@ const OrderManagementPage = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({}), // 使用默认参数
+          credentials: 'include'
         });
 
         if (!response.ok) {

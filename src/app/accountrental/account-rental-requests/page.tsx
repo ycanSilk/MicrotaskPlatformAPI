@@ -262,10 +262,10 @@ const RentalRequestsPage = () => {
                 <h3 className="font-medium text-gray-800 mb-2 line-clamp-2">{request.rentalDescription}</h3>
                 <div className="flex justify-between items-center text-sm mb-2">
                   <div>发布时间: {formatPublishTime(request.publishTime)}</div>
-                  <div>出租天数: {request.rentalDays}天</div>
+                  <div>求租天数: {request.rentalDays}天</div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <div className="text-xl font-bold text-red-600">¥{request.price}</div>
+                  <div className="text-xl font-bold text-red-600">¥{request.price}/天</div>
                   <Button className="bg-blue-500 hover:bg-blue-600 text-white">查看详情</Button>
                 </div>
               </div>

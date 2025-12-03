@@ -46,7 +46,7 @@ export default function commenterProfilePage() {
     const fetchUserInfo = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/commenter/user/getloginuserinfo');
+        const response = await fetch('/api/commenter/user/getloginuserinfo', { credentials: 'include' });
         const result = await response.json();
         if (response.ok && result.success) {
           setUserInfo(result.data.userInfo);

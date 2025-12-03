@@ -19,13 +19,13 @@ export default function BottomNavigationBar({}: BottomNavigationBarProps) {
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-500">
       <div className="grid grid-cols-5 py-2">   
         <Link
-          href="/commenter/tasks"
+          href="/commenter/tasks?tab=ACCEPTED"
           className="flex flex-col items-center"
         >
-          <span className={`text-lg w-6 h-6 flex items-center justify-center ${isActive('/tasks') ? 'text-blue-500' : 'text-gray-500'}`}>
+          <span className={`text-lg w-6 h-6 flex items-center justify-center ${isActive('/tasks?tab=ACCEPTED') ? 'text-blue-500' : 'text-gray-500'}`}>
             <FileTextOutlined />
           </span>
-          <span className={`text-xs ${isActive('/tasks') ? 'text-blue-500' : 'text-gray-500'}`}>评论进行</span>
+          <span className={`text-xs ${isActive('/tasks?tab=ACCEPTED') ? 'text-blue-500' : 'text-gray-500'}`}>评论进行</span>
         </Link>
         <Link
           href="/accountrental/account-rental-market?from=commenter-hall"

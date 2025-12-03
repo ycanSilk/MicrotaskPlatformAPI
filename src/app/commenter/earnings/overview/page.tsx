@@ -86,7 +86,8 @@ const OverviewPage = () => {
             endDate: '',
             page: 1,
             size: 50 // 请求更多数据以便前端进行筛选
-          })
+          }),
+          credentials: 'include'
         });
 
         if (!response.ok) {

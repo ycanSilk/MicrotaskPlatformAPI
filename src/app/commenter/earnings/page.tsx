@@ -244,7 +244,8 @@ export default function CommenterEarningsPage() {
             endDate: '',
             page: 1,
             size: 50
-          })
+          }),
+          credentials: 'include'
         });
 
         if (!response.ok) {

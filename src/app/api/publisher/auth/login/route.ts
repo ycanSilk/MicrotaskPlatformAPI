@@ -23,8 +23,11 @@ export async function POST(request: NextRequest) {
     }
     
     // 构建外部API请求URL
-    const apiUrl = `${config.baseUrl}${config.endpoints.auth.login}`;
+    // 根据配置决定使用环境变量还是config中的baseUrl
+    const baseUrl = config.useEnvBaseUrl && process.env.API_BASE_URL ? process.env.API_BASE_URL : config.baseUrl;
+    const apiUrl = `${baseUrl}${config.endpoints.auth.login}`;
     console.log('调用外部登录API:', apiUrl);
+    console.log('使用的baseUrl配置:', { useEnvBaseUrl: config.useEnvBaseUrl, envApiBaseUrl: process.env.API_BASE_URL, finalBaseUrl: baseUrl });
     
     // 调用外部API
     const response = await fetch(apiUrl, {
@@ -58,9 +61,13 @@ export async function POST(request: NextRequest) {
 
     // 设置HttpOnly Cookie存储token
     if (data.data?.token) {
+      // 根据请求协议自动决定secure属性
+      // 如果是HTTPS请求，则设置secure为true；否则为false
+      const isHttps = request.headers.get('x-forwarded-proto') === 'https' || request.url.startsWith('https://');
+      
       nextResponse.cookies.set('publisher_token', data.data.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isHttps, // 根据请求协议自动设置secure属性
         sameSite: 'lax',
         path: '/',
         maxAge: data.data.expiresIn ? Math.floor(data.data.expiresIn / 1000) : 86400 // 转换为秒

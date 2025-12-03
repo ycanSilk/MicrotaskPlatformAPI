@@ -186,7 +186,8 @@ export default function CommenterHallContentPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestParams)
+        body: JSON.stringify(requestParams),
+        credentials: 'include'
       });
 
       // 检查响应状态
@@ -304,7 +305,8 @@ export default function CommenterHallContentPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ taskId })
+        body: JSON.stringify({ taskId }),
+        credentials: 'include'
       });
 
       // 检查响应状态
@@ -341,8 +343,8 @@ export default function CommenterHallContentPage() {
       // 抢单成功后延迟3秒跳转到任务页面
       setTimeout(() => {
         console.log('跳转到任务页面');
-        router.push('/commenter/tasks');
-      }, 3000);
+        router.push('/commenter/tasks?tab=ACCEPTED');
+      }, 2000);
       
       // 抢单成功后立即刷新列表
       await fetchAvailableTasks(0);

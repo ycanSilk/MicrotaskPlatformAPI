@@ -200,6 +200,15 @@ export default function CommenterTasksPage() {
     fetchUserTasks();
   }, [])
 
+  // 页面加载时，如果URL没有tab参数，自动添加?tab=ACCEPTED
+  useEffect(() => {
+    const currentTab = searchParams?.get('tab');
+    if (!currentTab) {
+      // 使用replaceState避免创建新的历史记录
+      router.replace('/commenter/tasks?tab=ACCEPTED');
+    }
+  }, [searchParams, router])
+
   // 认证逻辑已整合到fetchUserTasks函数中
   
 
@@ -260,17 +269,46 @@ export default function CommenterTasksPage() {
 
   // 复制推荐评论功能
   const handleCopyComment = (taskId: string, comment?: string) => {
-    if (!comment) {
+    // 确保comment有默认值
+    const commentToCopy = comment || '';
+    
+    if (!commentToCopy.trim()) {
       setModalMessage('暂无推荐评论');
       setShowModal(true);
       return;
     }
     
-    navigator.clipboard.writeText(comment).then(() => {
+    // 检查navigator.clipboard是否可用
+    if (!navigator.clipboard) {
+      // 如果clipboard API不可用，使用传统的复制方法
+      const textArea = document.createElement('textarea');
+      textArea.value = commentToCopy;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        setCommentContent(prev => ({ ...prev, [taskId]: commentToCopy }));
+        setModalMessage('复制评论成功');
+        setShowModal(true);
+      } catch (err) {
+        console.error('复制失败:', err);
+        setModalMessage('复制失败，请手动复制');
+        setShowModal(true);
+      } finally {
+        document.body.removeChild(textArea);
+      }
+      return;
+    }
+    
+    // 如果clipboard API可用，使用它
+    navigator.clipboard.writeText(commentToCopy).then(() => {
       // 保存到commentContent状态
-      setCommentContent(prev => ({ ...prev, [taskId]: comment }));
-          setModalMessage('复制评论成功');
-          setShowModal(true);
+      setCommentContent(prev => ({ ...prev, [taskId]: commentToCopy }));
+      setModalMessage('复制评论成功');
+      setShowModal(true);
     }).catch(err => {
       console.error('复制失败:', err);
       setModalMessage('复制失败，请手动复制');

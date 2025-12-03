@@ -43,20 +43,25 @@ function validateLoginData(data: LoginRequest): { isValid: boolean; error?: stri
 
 /**
  * 配置并设置安全的HttpOnly Cookie
+ * 根据请求协议自动决定是否使用secure属性
  */
 function setSecureHttpOnlyCookie(
+  req: NextRequest,
   response: NextResponse,
   name: string,
   value: string,
   maxAge: number
 ): void {
-  const isProduction = process.env.NODE_ENV === 'production';
   const expiryDate = new Date(Date.now() + maxAge * 1000);
+  
+  // 根据请求协议自动决定secure属性
+  // 如果是HTTPS请求，则设置secure为true；否则为false
+  const isHttps = req.headers.get('x-forwarded-proto') === 'https' || req.url.startsWith('https://');
   
   // 设置安全Cookie
   response.cookies.set(name, value, {
     httpOnly: true,
-    secure: isProduction,
+    secure: isHttps, // 根据请求协议自动设置secure属性
     sameSite: 'lax',
     path: '/',
     expires: expiryDate,
@@ -155,7 +160,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const successResponse = NextResponse.json(responseData, { status: 200 });
     
     // 设置安全的HttpOnly Cookie保存token
-    setSecureHttpOnlyCookie(successResponse, 'commenter_token', token, expiresIn);
+    setSecureHttpOnlyCookie(req, successResponse, 'commenter_token', token, expiresIn);
     
     // 关键日志
     console.log(`用户 ${requestData.username} 登录成功`);

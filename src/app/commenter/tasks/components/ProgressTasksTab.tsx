@@ -339,7 +339,34 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
               <button 
                 className="ml-2 text-blue-500 hover:text-blue-700 transition-colors"
                 onClick={() => {
-                  navigator.clipboard.writeText(task.id).then(() => {
+                  const taskIdToCopy = task.id;
+                  
+                  // 检查navigator.clipboard是否可用
+                  if (!navigator.clipboard) {
+                    // 如果clipboard API不可用，使用传统的复制方法
+                    const textArea = document.createElement('textarea');
+                    textArea.value = taskIdToCopy;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    
+                    try {
+                      document.execCommand('copy');
+                      setModalMessage('任务ID已复制到剪贴板');
+                      setShowModal(true);
+                    } catch (err) {
+                      console.error('复制失败:', err);
+                      setModalMessage('复制失败，请手动复制');
+                      setShowModal(true);
+                    } finally {
+                      document.body.removeChild(textArea);
+                    }
+                    return;
+                  }
+                  
+                  // 如果clipboard API可用，使用它
+                  navigator.clipboard.writeText(taskIdToCopy).then(() => {
                     // 使用模态框显示复制成功提示
                     setModalMessage('任务ID已复制到剪贴板');
                     setShowModal(true);
@@ -392,7 +419,7 @@ const ProgressTasksTab: React.FC<ProgressTasksTabProps> = ({ tasks, handleViewIm
             <h4 className="text-sm font-medium text-blue-700"><EditOutlined className="inline-block mr-1" /> 推荐评论</h4>
             <button
                 className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-500 transition-colors"
-                onClick={() => handleCopyComment && handleCopyComment(task.id, (task.firstGroupComment || task.secondGroupComment || task.submittedComment || undefined))}
+                onClick={() => handleCopyComment && handleCopyComment(task.id, (task.firstGroupComment || task.secondGroupComment || task.submittedComment || ''))}
               >
                 <CopyOutlined className="inline-block mr-1" /> 复制评论
               </button>
