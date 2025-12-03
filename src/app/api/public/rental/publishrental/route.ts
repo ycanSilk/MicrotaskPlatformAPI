@@ -33,8 +33,8 @@ export async function POST(request: Request) {
     accountLevel: requestData.usaccountLevelerId || "",
     platform: requestData.platform || "",
     description: requestData.description || "",
-    pricePerDay: requestData.pricePerDay || 1,
-    depositAmount: requestData.depositAmount || 1,
+    pricePerDay: requestData.pricePerDay || 50,
+    depositAmount: requestData.depositAmount || 100,
     minLeaseDays: requestData.minLeaseDays || 1,
     maxLeaseDays: requestData.maxLeaseDays || 30  
   };

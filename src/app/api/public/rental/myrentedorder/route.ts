@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+// 导入配置文件
+const config = require('../../apiconfig/config.json');
 export const dynamic = 'force-dynamic';
+// 主函数：处理POST请求
 export async function POST(request: Request) {
   // 从Cookie获取token
   const cookieStore = await cookies();
@@ -24,34 +27,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, message: '无效的请求数据格式' }, { status: 400 });
   }
   
+  // 构建新的请求体，包含所需的参数
   const newRequestBody = {
-    reason: requestData.reason || "",
-    notes: requestData.notes || ""
+    page: requestData.page || 0,
+    size: requestData.size || 20,
+    sortField: requestData.sortField || "createTime",
+    sortOrder: requestData.sortOrder || "DESC",
+    status: requestData.status || "PENDING"
   };
-
-  // 从请求数据中获取orderId和reason参数
-  const {orderId} = requestData;
   
-  if (!orderId) {
-    return NextResponse.json({ success: false, message: '缺少必要参数orderId' }, { status: 400 });
-  }
-  
-  // 构造请求URL，将orderId和reason参数添加到URL中
-  const apiUrl = `http://localhost:8083/api/orders/${orderId}/dispute`;
+  // 简化API URL构建，直接拼接baseUrl和endpoint
+  const apiUrl = `${config.baseUrl}${config.endpoints.rental.myrentedorder}`;
   
   // 直接调用外部API并返回原始响应
   try {
     const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(newRequestBody)
-    });
+    method: 'POST',
+    headers: {
+      ...(config.headers || {}),
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(newRequestBody)
+  });
 
+    
     // 获取原始响应数据
     const responseData = await response.json();
-    console.log('这是争议租赁订单API的日志输出:');
+    console.log('这是我作为出租方的订单API的日志输出:');
     console.log('请求url', apiUrl);
     console.log('token:', token);
     console.log('返回的状态:', response.status);

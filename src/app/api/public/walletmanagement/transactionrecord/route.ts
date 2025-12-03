@@ -56,11 +56,16 @@ export async function POST(request: Request) {
     
     // 获取原始响应数据
     const responseData = await response.json();
-    console.log('这是获取交易记录API请求成功响应:', responseData);
+    console.log('这是获取交易记录API请求成功响应:src/app/api/public/walletmanagement/transactionrecord/route.ts');
     console.log('请求url:', apiUrl);
     console.log('请求token :Bearer ', token);
-    console.log('交易记录:', responseData.data);
+    console.log('请求体:', JSON.stringify(newRequestBody));
+    console.log('响应状态:', response.status);
+    if (response.ok) {
+      console.log('响应体:', JSON.stringify(responseData));
+    }
     
+
     // 直接返回API的原始响应
     return NextResponse.json(responseData, { status: response.status });
   } catch (apiError) {

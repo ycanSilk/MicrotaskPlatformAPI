@@ -17,7 +17,7 @@ import type { TabsProps } from 'antd';
 type BackendOrderStatus = 'PENDING' | 'PAID' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'DISPUTED';
 
 // 前端显示的订单状态类型
-type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '争议中';
+type OrderStatus = '待支付' | '已支付' | '进行中' | '已完成' | '已取消' | '售后中';
 
 // 租赁信息接口
 interface LeaseInfo {
@@ -77,7 +77,7 @@ const statusMap: Record<BackendOrderStatus, OrderStatus> = {
   'IN_PROGRESS': '进行中',
   'COMPLETED': '已完成',
   'CANCELED': '已取消',
-  'DISPUTED': '争议中'
+  'DISPUTED': '售后中'
 };
 
 // 获取状态对应的标签颜色
@@ -88,7 +88,7 @@ const getStatusTagColor = (status: OrderStatus): string => {
     '进行中': 'green',
     '已完成': 'purple',
     '已取消': 'red',
-    '争议中': 'yellow'
+    '售后中': 'yellow'
   };
   return statusColors[status];
 };
@@ -115,6 +115,18 @@ const RentalOrderPage = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [apiLoading, setApiLoading] = useState<boolean>(false);
+  // 支付状态管理
+  const [payLoading, setPayLoading] = useState<boolean>(false);
+  // 支付成功确认对话框状态
+  const [paySuccessModalVisible, setPaySuccessModalVisible] = useState<boolean>(false);
+  
+  // 申请售后相关状态
+  const [disputeModalVisible, setDisputeModalVisible] = useState<boolean>(false);
+  const [selectedDisputeOrderId, setSelectedDisputeOrderId] = useState<string>('');
+  const [disputeReason, setDisputeReason] = useState<string>('');
+  const [disputeNotes, setDisputeNotes] = useState<string>('');
+  const [disputeLoading, setDisputeLoading] = useState<boolean>(false);
+  const [disputeSuccessModalVisible, setDisputeSuccessModalVisible] = useState<boolean>(false);
   
   // 预设取消原因选项
   const cancelReasons = [
@@ -129,14 +141,14 @@ const RentalOrderPage = () => {
     '进行中': 'IN_PROGRESS',
     '已完成': 'COMPLETED',
     '已取消': 'CANCELED',
-    '争议中': 'DISPUTED'
+    '售后': 'DISPUTED'
   };
 
   // 调用后端API获取订单数据
   const fetchOrders = async (status: string = 'PENDING') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/public/rental/myrenterorder', {
+      const response = await fetch('/api/public/rental/myrentedorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -188,7 +200,7 @@ const RentalOrderPage = () => {
     { key: '进行中', label: '进行中', children: null },
     { key: '已完成', label: '已完成', children: null },
     { key: '已取消', label: '已取消', children: null },
-    { key: '争议中', label: '争议中', children: null }
+    { key: '售后', label: '售后', children: null }
   ];
 
   // 复制订单号功能
@@ -207,11 +219,91 @@ const RentalOrderPage = () => {
     setCancelModalVisible(true);
   };
 
-  // 关闭取消订单模态框
+  // 取消订单模态框
   const handleCancelModalClose = () => {
     setCancelModalVisible(false);
     setSelectedOrderId('');
     setReason('');
+  };
+
+  // 处理支付成功确认
+  const handlePaySuccessConfirm = () => {
+    // 关闭对话框
+    setPaySuccessModalVisible(false);
+    // 跳转到已支付选项卡
+    handleTabChange('已支付');
+  };
+
+  // 处理支付成功对话框关闭（如果用户点击右上角关闭按钮）
+  const handlePaySuccessModalClose = () => {
+    setPaySuccessModalVisible(false);
+  };
+  
+  // 打开申请售后模态框
+  const handleDisputeOrderClick = (orderId: string) => {
+    setSelectedDisputeOrderId(orderId);
+    setDisputeReason('');
+    setDisputeNotes('');
+    setDisputeModalVisible(true);
+  };
+  
+  // 关闭申请售后模态框
+  const handleDisputeModalClose = () => {
+    setDisputeModalVisible(false);
+    setSelectedDisputeOrderId('');
+    setDisputeReason('');
+    setDisputeNotes('');
+  };
+  
+  // 提交申请售后请求
+  const handleSubmitDisputeOrder = async (orderId: string) => {
+    if (!disputeReason) {
+      message.warning('请选择售后原因');
+      return;
+    }
+
+    setDisputeLoading(true);
+    try {
+      // 构建请求体
+      const requestBody = {
+        reason: disputeReason,
+        notes: disputeNotes || ''
+      };
+      
+      // 调用后端API
+      const response = await fetch(`/api/public/rental/disputeorder?orderId=${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      console.log('orderId:', orderId);
+      console.log('申请售后请求体:', requestBody);
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        message.success('申请售后成功');
+        handleDisputeModalClose();
+        // 显示成功提示框
+        setDisputeSuccessModalVisible(true);
+      } else {
+        message.error(result.message || '申请售后失败');
+      }
+    } catch (error) {
+      console.error('申请售后失败:', error);
+      message.error('申请售后失败，请稍后重试');
+    } finally {
+      setDisputeLoading(false);
+    }
+  };
+  
+  // 处理申请售后成功确认
+  const handleDisputeSuccessConfirm = () => {
+    // 关闭对话框
+    setDisputeSuccessModalVisible(false);
+    // 跳转到售后选项卡
+    handleTabChange('售后');
   };
 
   // 提交取消订单请求
@@ -284,6 +376,42 @@ const RentalOrderPage = () => {
     alert(`订单 ${orderId} 执行 ${action} 操作`);
   };
 
+  // 处理支付订单
+  const handlePayOrder = async (orderId: string) => {
+    // 防止重复提交
+    if (payLoading) return;
+    
+    setPayLoading(true);
+    try {
+      // 调用支付API，将orderId作为URL路径参数传递
+      const response = await fetch(`/api/public/rental/paymentleaseorder?orderId=${orderId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+        // 不再发送body
+      });
+      console.log('请求后端url:/api/public/rental/paymentleaseorder和传递订单id', orderId);
+      console.log('支付响应:', response);
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        // 支付成功，显示确认对话框而不是直接切换标签页
+        setPaySuccessModalVisible(true);
+      } else {
+        // 支付失败
+        message.error(result.message || '支付失败，请稍后重试');
+      }
+    } catch (error) {
+      // 网络错误或其他异常
+      console.error('支付请求失败:', error);
+      message.error('网络错误，请检查网络连接后重试');
+    } finally {
+      setPayLoading(false);
+    }
+  };
+
   // 由于现在是通过API直接获取对应状态的订单，不需要前端过滤
   const filteredOrders = orders;
 
@@ -345,7 +473,7 @@ const RentalOrderPage = () => {
       {/* 订单列表 */}
       <div className="">
         {filteredOrders.map((order) => (
-            <Link href={`/accountrental/my-account-rental/rentalorder/rentalorder-detail/${order.id}`} key={order.id} className="block">
+            <Link href={`/accountrental/my-account-rental/myrentedorder/myrentedorder-detail/${order.id}`} key={order.id} className="block">
                 <Card className="border-0 rounded-none mb-3 cursor-pointer hover:shadow-md transition-shadow">
                 {/* 订单头部信息 */}
                 <div className="">
@@ -359,7 +487,7 @@ const RentalOrderPage = () => {
                         copyOrderNo(order.orderNo);
                       }}
                       size="small"
-                      className="ml-1"   
+                      className="ml-1 text-blue-500"   
                     >
                       复制
                     </Button>
@@ -406,7 +534,7 @@ const RentalOrderPage = () => {
                         handleContactService(order.id);
                       }}
                       size="small"
-                      style={{ borderColor: '#000' }}
+                      className="whitespace-nowrap bg-blue-600 text-white"
                     >
                       客服
                     </Button>
@@ -419,10 +547,12 @@ const RentalOrderPage = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleOrderAction(order.id, '立即付款');
+                            handlePayOrder(order.id);
                           }} 
                           size="small"
                           className="whitespace-nowrap"
+                          loading={payLoading}
+                          disabled={payLoading}
                         >
                           立即付款
                         </Button>
@@ -434,8 +564,7 @@ const RentalOrderPage = () => {
                             handleCancelOrderClick(order.id);
                           }}
                           size="small"
-                          style={{ borderColor: '#000' }}
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap bg-red-500 text-white"
                         >
                           取消订单
                         </Button>
@@ -444,18 +573,17 @@ const RentalOrderPage = () => {
 
                     {order.status === 'IN_PROGRESS' && (
                       <>
-                        <Button 
-                          type="default" 
+                        <Button
+                          danger
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleOrderAction(order.id, '延长租期');
-                          }} 
+                            handleDisputeOrderClick(order.id);
+                          }}
                           size="small"
-                          style={{ borderColor: '#000' }}
                           className="whitespace-nowrap"
                         >
-                          延长租期
+                          申请售后
                         </Button>
                       </>
                     )}
@@ -525,6 +653,107 @@ const RentalOrderPage = () => {
             </div>
           </div>
         </ConfigProvider>
+      </Modal>
+
+      {/* 支付成功确认对话框 */}
+      <Modal
+        title="支付成功"
+        open={paySuccessModalVisible}
+        onCancel={handlePaySuccessModalClose}
+        footer={[
+          <Button 
+            key="confirm" 
+            type="primary" 
+            onClick={handlePaySuccessConfirm}
+          >
+            确认
+          </Button>,
+        ]}
+        closable={false} // 禁用右上角关闭按钮，强制用户点击确认
+        centered
+      >
+      </Modal>
+
+      {/* 申请售后模态框 */}
+      <Modal
+        title="申请售后"
+        open={disputeModalVisible}
+        onCancel={handleDisputeModalClose}
+        footer={[
+          <Button 
+            key="cancel" 
+            onClick={handleDisputeModalClose}
+            disabled={disputeLoading}
+          >
+            取消
+          </Button>,
+          <Button 
+            key="confirm" 
+            type="primary" 
+            onClick={() => handleSubmitDisputeOrder(selectedDisputeOrderId)}
+            loading={disputeLoading}
+            disabled={disputeLoading || !disputeReason}
+          >
+            确认
+          </Button>,
+        ]}
+        width={320} // 移动端弹窗宽度
+        centered
+      >
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">售后原因</label>
+          <select
+            value={disputeReason}
+            onChange={(e) => setDisputeReason(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ height: 'auto' }}
+          >
+            <option value="">请选择售后原因</option>
+            <option value="账号无法登陆、登陆异常">账号无法登陆、登陆异常</option>
+            <option value="账号被平台封禁">账号被平台封禁</option>
+            <option value="不能发布视频和评论">不能发布视频和评论</option>
+            <option value="不能修改账号信息">不能修改账号信息</option>
+            <option value="不想租号了">不想租号了</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">备注（可选）</label>
+          <textarea
+            value={disputeNotes}
+            onChange={(e) => setDisputeNotes(e.target.value)}
+            placeholder="请输入详细描述（最多200字）"
+            maxLength={200}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={4}
+            disabled={disputeLoading}
+          />
+          <div className="text-right text-xs text-gray-500 mt-1">
+            {disputeNotes.length}/200
+          </div>
+        </div>
+      </Modal>
+
+      {/* 申请售后成功提示框 */}
+      <Modal
+        title="申请成功"
+        open={disputeSuccessModalVisible}
+        footer={[
+          <Button 
+            key="confirm" 
+            type="primary" 
+            onClick={handleDisputeSuccessConfirm}
+          >
+            确认
+          </Button>,
+        ]}
+        closable={false} // 禁用右上角关闭按钮，强制用户点击确认
+        centered
+      >
+          <div className="text-center py-4">
+            <p>订单开始租赁成功</p>
+            <p className="text-gray-500 text-sm mt-2">点击确认按钮查看售后订单</p>
+          </div>
       </Modal>
 
       {/* 取消订单模态框 */}

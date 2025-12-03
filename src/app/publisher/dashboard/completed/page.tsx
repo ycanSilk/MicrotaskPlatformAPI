@@ -97,6 +97,7 @@ export default function CompletedTabPage() {
         const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(requestParams)
         });
         

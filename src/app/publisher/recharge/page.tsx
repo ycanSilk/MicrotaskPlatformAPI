@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AlertModal from '../../../components/ui/AlertModal';
-import { WalletOutlined, CreditCardOutlined, DollarOutlined, ShoppingOutlined, CoffeeOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { WalletOutlined, CreditCardOutlined, DollarOutlined, ShoppingOutlined, CoffeeOutlined, InfoCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 
 // 定义类型接口
 export interface BalanceData {
@@ -23,6 +23,11 @@ export default function PublisherFinancePage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('alipay');
   const [rechargeSuccess, setRechargeSuccess] = useState(false);
   const [monthlyTransactions, setMonthlyTransactions] = useState<Record<string, any[]>>({});
+  // 截图上传相关状态
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string>('');
+  const [screenshotPath, setScreenshotPath] = useState<string>('');
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   // 通用提示框状态
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -33,6 +38,125 @@ export default function PublisherFinancePage() {
   });
   // 提示框确认后的回调函数
   const [alertCallback, setAlertCallback] = useState<(() => void) | null>(null);
+  
+  // 处理文件上传预览
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // 文件类型验证
+    if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+      showAlert('错误', '仅支持 JPG、PNG 格式的图片', '❌');
+      return;
+    }
+    
+    // 文件大小验证（5MB限制）
+    if (file.size > 5 * 1024 * 1024) {
+      showAlert('错误', '文件大小不能超过 5MB', '❌');
+      return;
+    }
+    
+    // 创建预览URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setScreenshotPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    
+    setScreenshotFile(file);
+    showAlert('成功', '截图上传成功', '✅');
+  };
+  
+  // 实时验证金额
+  const validateAmount = (value: string) => {
+    if (!value) return { isValid: false, message: '请输入充值金额' };
+    
+    const amount = Number(value);
+    if (isNaN(amount)) return { isValid: false, message: '请输入有效的数字' };
+    if (amount <= 0) return { isValid: false, message: '充值金额必须大于0' };
+    if (amount < 10) return { isValid: false, message: '最低充值金额为10元' };
+    if (amount > 100000) return { isValid: false, message: '单次充值金额不能超过100000元' };
+    if (!Number.isInteger(amount * 100)) return { isValid: false, message: '请输入最多两位小数' };
+    
+    return { isValid: true, message: '' };
+  };
+  
+  // 上传文件到服务器
+  const uploadFile = async (file: File): Promise<string> => {
+    setUploadLoading(true);
+    try {
+      // 再次验证文件，确保安全
+      if (!file || file.size === 0) {
+        throw new Error('文件为空');
+      }
+      
+      // 生成带日期时间的文件名
+      const now = new Date();
+      const timestamp = now.getFullYear() + 
+                       String(now.getMonth() + 1).padStart(2, '0') +
+                       String(now.getDate()).padStart(2, '0') +
+                       String(now.getHours()).padStart(2, '0') +
+                       String(now.getMinutes()).padStart(2, '0') +
+                       String(now.getSeconds()).padStart(2, '0');
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `recharge_${timestamp}.${extension}`;
+      
+      // 由于是模拟环境，我们直接返回文件名作为路径
+      // 实际项目中应该调用文件上传API
+      const filePath = `/uploads/rechargeImages/${fileName}`;
+      
+      // 模拟API延迟
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('文件上传成功:', { fileName, filePath, size: file.size, type: file.type });
+      return filePath;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '文件上传失败';
+      console.error('文件上传错误:', error);
+      showAlert('上传失败', errorMessage, '❌');
+      throw error;
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+  
+  // 添加拖拽上传支持
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      // 直接处理文件，不创建模拟事件
+      setScreenshotFile(file);
+      
+      // 创建预览URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+        showAlert('成功', '截图上传成功', '✅');
+      };
+      reader.readAsDataURL(file);
+      
+      // 文件类型验证
+      if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+        showAlert('错误', '仅支持 JPG、PNG 格式的图片', '❌');
+        setScreenshotFile(null);
+        return;
+      }
+      
+      // 文件大小验证（5MB限制）
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert('错误', '文件大小不能超过 5MB', '❌');
+        setScreenshotFile(null);
+        return;
+      }
+    }
+  };
 
   // 充值档位
   const rechargeOptions = [100, 200, 300, 500, 1000, 2000, ];
@@ -144,15 +268,32 @@ export default function PublisherFinancePage() {
       };
   // 处理充值 - 调用API
   const handleRecharge = async () => {
-    console.log('开始处理充值请求', { rechargeAmount, selectedPaymentMethod });
-    if (!rechargeAmount || parseFloat(rechargeAmount) <= 0) {
-      console.log('充值金额无效');
-      showAlert('输入错误', '请输入有效的充值金额', '⚠️');
-      return;
-    }
     try {
+      // 表单验证
+      const amountValidation = validateAmount(rechargeAmount);
+      if (!amountValidation.isValid) {
+        showAlert('提示', amountValidation.message, '⚠️');
+        return;
+      }
+
+      if (!selectedPaymentMethod) {
+        showAlert('提示', '请选择支付方式', '⚠️');
+        return;
+      }
+
+      if (!screenshotFile) {
+        showAlert('提示', '请上传支付截图', '⚠️');
+        return;
+      }
+      
+     
+      
       const amount = parseFloat(rechargeAmount);
       setLoading(true);
+      
+      // 上传截图文件
+      const screenshotPath = await uploadFile(screenshotFile);
+      setScreenshotPath(screenshotPath);
       
       // 调用充值API
       const response = await fetch('/api/public/walletmanagement/usersrecharge', {
@@ -162,23 +303,42 @@ export default function PublisherFinancePage() {
         },
         body: JSON.stringify({
           amount: amount,
-          channel: "ALIPAY",
-          remark: ""
+          channel: selectedPaymentMethod === 'alipay' ? 'ALIPAY' : 'USDT',
+          remark: screenshotPath
         }),
       });    
+       console.log('开始处理充值请求', `充值金额${ amount } 充值方式${ selectedPaymentMethod } 支付截图${ screenshotPath }`);
+      console.log('url:/api/public/walletmanagement/usersrecharge');
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();    
-      if (result.success) {
-        showAlert('充值成功', `成功充值 ${amount} 元`, '✅', () => {
-          setRechargeAmount('');
-          // 重新加载交易记录
-          fetchFinanceData();
-        });
+      if (result.success || result.code === 0) {
+        showAlert('提交成功','等待审核', '✅');
+        // 重置表单状态
+        setRechargeAmount('');
+        setSelectedPaymentMethod('alipay');
+        setScreenshotFile(null);
+        setScreenshotPreview('');
+        setScreenshotPath('');
+        // 重新加载交易记录
+        fetchFinanceData();
+        
+        setRechargeSuccess(true);
+        // 3秒后隐藏成功提示
+        setTimeout(() => {
+          setRechargeSuccess(false);
+        }, 3000);
+     
       } else {
         showAlert('充值失败', result.message || '充值失败，请稍后重试', '❌');
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '充值失败';
       console.error('充值失败:', error);
-      showAlert('错误', '充值失败，请稍后重试', '❌');
+      showAlert('错误', `${errorMessage}，请稍后重试`, '❌');
     } finally {
       setLoading(false);
     }
@@ -266,10 +426,22 @@ export default function PublisherFinancePage() {
                     type="number"
                     placeholder="请输入充值金额"
                     value={rechargeAmount}
-                    onChange={(e) => setRechargeAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setRechargeAmount(value);
+                      if (value) {
+                        const validation = validateAmount(value);
+                        if (!validation.isValid) {
+                          showAlert('输入错误', validation.message, '⚠️');
+                        }
+                      }
+                    }}
+                    className={`w-full pl-8 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 ${rechargeAmount && !validateAmount(rechargeAmount).isValid ? 'border-red-500' : 'border-gray-300'}`}
                   />
                 </div>
+                {rechargeAmount && !validateAmount(rechargeAmount).isValid && (
+                  <p className="text-xs text-red-500 mt-1">{validateAmount(rechargeAmount).message}</p>
+                )}
                 <div className="text-xs text-gray-500 mt-1">
                   最低充值：¥100 | 单次最高：¥2000
                 </div>
@@ -318,6 +490,57 @@ export default function PublisherFinancePage() {
                 </div>
               </div>
 
+              {/* 截图上传组件 */}
+              <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">上传支付截图</h4>
+                  <div 
+                    className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${uploadLoading ? 'border-yellow-500 bg-yellow-50' : screenshotPreview ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-500'}`}
+                    onClick={() => document.getElementById('screenshot-upload')?.click()}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    {uploadLoading ? (
+                      <div className="py-8">
+                        <LoadingOutlined className="text-yellow-500 text-3xl mb-2 animate-spin" />
+                        <p className="text-sm text-gray-600">上传中，请稍候...</p>
+                      </div>
+                    ) : screenshotPreview ? (
+                      <div className="relative">
+                        <img 
+                          src={screenshotPreview} 
+                          alt="支付截图" 
+                          className="max-w-full h-40 object-contain rounded-md"
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setScreenshotFile(null);
+                            setScreenshotPreview('');
+                            setScreenshotPath('');
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                          aria-label="删除截图"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="py-8">
+                        <InfoCircleOutlined className="text-gray-400 text-3xl mb-2" />
+                        <p className="text-sm text-gray-500">点击或拖拽文件到此处上传</p>
+                        <p className="text-xs text-gray-400 mt-1">支持 JPG、PNG 格式，大小不超过 5MB</p>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      id="screenshot-upload" 
+                      accept="image/jpeg, image/png"
+                      className="hidden"
+                      onChange={(e) => handleFileChange(e)}
+                    />
+                  </div>
+                </div>
+              
               {/* 支付信息展示 */}
               <div className="mb-4 flex flex-col items-center">
                 {selectedPaymentMethod === 'alipay' ? (
@@ -373,7 +596,7 @@ export default function PublisherFinancePage() {
                 disabled={loading}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
               >
-                {loading ? '处理中...' : '立即充值'}
+                {loading ? '处理中...' : '提交充值'}
               </button>
             </div>
           </div>

@@ -126,6 +126,7 @@ export default function ActiveTabPage() {
         const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(requestParams)
         });
         
@@ -197,6 +198,7 @@ export default function ActiveTabPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(requestParams)
       });
 

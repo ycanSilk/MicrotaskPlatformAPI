@@ -54,14 +54,20 @@ export async function GET(request: Request) {
     console.log('startDate:', startDate);
     console.log('endDate:', endDate);
 
-    // 从Cookie获取token
+    // 从Cookie获取token - 优先使用管理员token
     const cookieStore = await cookies();
-    const tokenKeys = ['commenter_token', 'publisher_token', 'admin_token', 'user_token', 'auth_token', 'token'];
     let token: string | undefined;
     
-    for (const key of tokenKeys) {
-      token = cookieStore.get(key)?.value;
-      if (token) break;
+    // 优先检查管理员token
+    token = cookieStore.get('admin_token')?.value;
+    
+    // 如果没有管理员token，再检查其他类型的token
+    if (!token) {
+      const tokenKeys = ['commenter_token', 'publisher_token', 'user_token', 'auth_token', 'token'];
+      for (const key of tokenKeys) {
+        token = cookieStore.get(key)?.value;
+        if (token) break;
+      }
     }
     
     if (!token) {

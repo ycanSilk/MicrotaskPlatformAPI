@@ -66,10 +66,22 @@ export default function AdminControlPanel() {
       {/* 快速入口 */}
       <FeatureSection title="快速入口">
         <FeatureCard
-          title=" 充值管理"
+          title=" 充值"
+          icon="📊"
+          description="管理系统中的所有充值申请"
+          route="/admin/recharge"
+        />
+        <FeatureCard
+          title=" 充值审核"
           icon="📊"
           description="管理系统中的所有充值申请"
           route="/admin/rechargelist"
+        />
+        <FeatureCard
+          title=" 充值管理"
+          icon="📊"
+          description="管理系统中的所有充值申请"
+          route="/admin/finance"
         />
         <FeatureCard
           title="提现管理"

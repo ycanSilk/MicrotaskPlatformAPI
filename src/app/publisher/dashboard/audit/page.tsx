@@ -153,7 +153,8 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
+        credentials: 'include'
       });
       
       const endTime = performance.now();

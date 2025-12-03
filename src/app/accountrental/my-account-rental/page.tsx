@@ -27,14 +27,14 @@ const MyAccountRentalPage = () => {
       title: '我出租的订单',
       icon: <ShopOutlined className="text-xl" />, // 保留ShopOutlined，适合表示出租业务
       color: 'bg-blue-100',
-      path: '/accountrental/my-account-rental/forrentorder'
+      path: '/accountrental/my-account-rental/myrentalorder'
     },
     {
       id: 'lease-orders',
       title: '我租用的订单',
       icon: <TransactionOutlined className="text-xl" />, // 替换为TransactionOutlined，更适合表示交易/订单
       color: 'bg-green-100',
-      path: '/accountrental/my-account-rental/rentalorder'
+      path: '/accountrental/my-account-rental/myrentedorder'
     },
     {
       id: 'rental-info',
