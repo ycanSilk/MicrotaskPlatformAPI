@@ -238,12 +238,17 @@ export default function ActiveTabPage() {
     }
   };
 
-  // 过滤最近订单
+  // 过滤最近订单 - 允许未来日期的任务
   const filterRecentOrders = (tasks: Task[]) => {
     return tasks.filter(task => {
-      const taskTime = new Date(task.createTime).getTime();
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      return taskTime >= sevenDaysAgo;
+      try {
+        const taskTime = new Date(task.createTime).getTime();
+        // 对于未来日期的任务，也应该显示
+        return !isNaN(taskTime);
+      } catch (error) {
+        console.error('日期解析错误:', task.createTime, error);
+        return true; // 解析错误时也显示任务
+      }
     });
   };
 
@@ -402,17 +407,18 @@ export default function ActiveTabPage() {
             target="_blank" 
             rel="noopener noreferrer" 
             className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm  inline-flex items-center"
-            onClick={async (e) => {
+            onClick={(e) => {
               e.preventDefault();
               // 获取评论内容
               const blueDiv = e.currentTarget.closest('div.bg-blue-50');
               const commentSpan = blueDiv?.querySelector('p:last-of-type span');
               const commentText = commentSpan?.textContent || '';
-              // 复制评论
-              await handleCopyComment(commentText);
-              // 设置当前视频URL并打开模态框
-              setCurrentVideoUrl('https://v.douyin.com/oiunFce071s/');
-              setIsModalOpen(true);
+              // 复制评论（不使用await，避免返回Promise）
+              handleCopyComment(commentText).then(() => {
+                // 设置当前视频URL并打开模态框
+                setCurrentVideoUrl('https://v.douyin.com/oiunFce071s/');
+                setIsModalOpen(true);
+              });
             }}
           >
              打开视频

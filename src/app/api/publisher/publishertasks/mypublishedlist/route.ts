@@ -99,11 +99,16 @@ export async function POST(request: Request) {
       body: JSON.stringify(requestParams)
     });
     
+    
     // 6. 处理API响应
     let responseData;
     try {
       const responseText = await response.text();
       responseData = JSON.parse(responseText);  
+      console.log('apiUrl', apiUrl);
+    console.log('requestParams', requestParams);
+    console.log('请求成功')
+    console.log('返回数据：', responseData);
     } catch (jsonError) {
       console.error(formatLog(operation, `错误: API响应解析失败 - ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`));
       return NextResponse.json(

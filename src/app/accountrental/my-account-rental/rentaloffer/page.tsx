@@ -79,7 +79,7 @@ const RentalOfferPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<RentalOfferData | null>(null);
-  const [pagination, setPagination] = useState({ page: 1, size: 20 });
+  const [pagination, setPagination] = useState({ page: 0, size: 20 });
 
   // 选项卡配置 - 确保顺序正确，默认激活第一个(已发布)
   const tabItems: TabsProps['items'] = [
