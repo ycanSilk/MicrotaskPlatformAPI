@@ -58,14 +58,12 @@ export async function POST(request: NextRequest) {
 
     // 设置HttpOnly Cookie存储token
     if (data.data?.token) {
-      nextResponse.cookies.set({
-        name: 'publisher_token',
-        value: data.data.token,
+      nextResponse.cookies.set('publisher_token', data.data.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: data.data.expiresIn ? Math.floor(data.data.expiresIn / 1000) : 86400, // 转换为秒
-        path: '/'
+        sameSite: 'lax',
+        path: '/',
+        maxAge: data.data.expiresIn ? Math.floor(data.data.expiresIn / 1000) : 86400 // 转换为秒
       });
     }
     console.log('登录成功，返回响应');
