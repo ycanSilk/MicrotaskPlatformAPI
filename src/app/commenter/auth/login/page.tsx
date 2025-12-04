@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-// import SuccessModal from '../../../../components/button/authButton/SuccessModal'; // 移除SuccessModal导入
+
 
 // 获取认证用户信息
 const getAuthUserFromStorage = () => {
@@ -413,16 +413,6 @@ export default function CommenterLoginPage() {
             <p>© 2024 微任务系统 v2.0.0</p>
           </div>
         </div>
-        
-        {/* 登录成功提示框 */}
-        {/* <SuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          title="登录成功"
-          message={loginSuccessMessage}
-          buttonText="确认"
-          redirectUrl="/commenter/hall"
-        /> */}
       </div>
     </div>
   );

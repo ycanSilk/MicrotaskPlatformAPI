@@ -41,42 +41,49 @@ export default function AdminLayout({
 
 
 
+  // 检查是否是认证相关页面
+  const isAuthPage = pathname?.includes('/admin/auth/');
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 顶部管理栏 */}
-      <div className="bg-purple-500 text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="text-lg font-bold">管理员</span>
-          <div className="flex items-center space-x-1">
-            <span className="text-yellow-400">⚙️</span>
-            <span className="text-sm">系统正常</span>
+      {/* 认证页面不显示顶部管理栏 */}
+      {!isAuthPage && (
+        <div className="bg-purple-500 text-white px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-lg font-bold">管理员</span>
+            <div className="flex items-center space-x-1">
+              <span className="text-yellow-400">⚙️</span>
+              <span className="text-sm">系统正常</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <span className="text-yellow-400">🔔</span>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full px-1">5</span>
+            </div>
+            <button onClick={handleLogout} className="text-sm">👤</button>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <span className="text-yellow-400">🔔</span>
-            <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full px-1">5</span>
-          </div>
-          <button onClick={handleLogout} className="text-sm">👤</button>
+      )}
+
+      {/* 认证页面不显示页面标题 */}
+      {!isAuthPage && (
+        <div className="bg-white px-4 py-4">
+          <h2 className="text-lg font-bold text-gray-800">
+            {getPageTitle()}
+          </h2>
         </div>
-      </div>
+      )}
 
-      {/* 页面标题 */}
-      <div className="bg-white px-4 py-4">
-        <h2 className="text-lg font-bold text-gray-800">
-          {getPageTitle()}
-        </h2>
-      </div>
-
-      {/* 主要内容区域 */}
-      <main className="flex-1 pb-20">
+      {/* 主要内容区域 - 认证页面不需要底部内边距 */}
+      <main className={`flex-1 ${isAuthPage ? '' : 'pb-20'}`}>
         <Suspense fallback={<div className="w-full h-64 flex items-center justify-center">Loading...</div>}>
           {children}
         </Suspense>
       </main>
 
-      {/* 底部导航栏 - 使用可复用组件 */}
-      <AdminBottomNavigation />
+      {/* 认证页面不显示底部导航栏 */}
+      {!isAuthPage && <AdminBottomNavigation />}
     </div>
   );
 }

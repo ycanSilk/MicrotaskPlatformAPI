@@ -183,41 +183,47 @@ export default function CommenterLayout({
     );
   }
 
+  // 检查是否是认证相关页面
+  const isAuthPage = pathname?.includes('/commenter/auth/');
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigationBar user={user} />
+      {/* 认证页面不显示顶部导航栏 */}
+      {!isAuthPage && <TopNavigationBar user={user} />}
 
-      {/* 页面标题和返回按钮 */}
-      <div className="bg-white px-4 py-4">
-        <div className="flex items-center">
-          {/* 返回按钮 */}
-          <button 
-            className="p-2 rounded-full transition-colors text-white mr-3" 
-            aria-label="返回上一页"
-            onClick={handleBack}
-            style={{ backgroundColor: '#ff4d4f' }}
-          >
-            <span role="img" aria-label="left" className="anticon anticon-left text-white">
-              <svg viewBox="64 64 896 896" focusable="false" data-icon="left" width="1em" height="1em" fill="currentColor" aria-hidden="true">
-                <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path>
-              </svg>
-            </span>
-          </button>
-          
-          {/* 动态页面标题 */}
-          <h2 className="text-lg font-bold text-gray-800">
-            {getPageTitle()}
-          </h2>
+      {/* 认证页面不显示页面标题和返回按钮 */}
+      {!isAuthPage && (
+        <div className="bg-white px-4 py-4">
+          <div className="flex items-center">
+            {/* 返回按钮 */}
+            <button 
+              className="p-2 rounded-full transition-colors text-white mr-3" 
+              aria-label="返回上一页"
+              onClick={handleBack}
+              style={{ backgroundColor: '#ff4d4f' }}
+            >
+              <span role="img" aria-label="left" className="anticon anticon-left text-white">
+                <svg viewBox="64 64 896 896" focusable="false" data-icon="left" width="1em" height="1em" fill="currentColor" aria-hidden="true">
+                  <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8a31.86 31.86 0 000 50.3l450.8 352.1c5.3 4.1 12.9.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z"></path>
+                </svg>
+              </span>
+            </button>
+            
+            {/* 动态页面标题 */}
+            <h2 className="text-lg font-bold text-gray-800">
+              {getPageTitle()}
+            </h2>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 主要内容区域 - 添加底部内边距避免被底部导航栏遮挡 */}
-      <main className="flex-1 pb-20">
+      {/* 主要内容区域 - 认证页面不需要底部内边距 */}
+      <main className={`flex-1 ${isAuthPage ? '' : 'pb-20'}`}>
         {children}
       </main>
 
-      {/* 底部导航栏 */}
-      <BottomNavigationBar />
+      {/* 认证页面不显示底部导航栏 */}
+      {!isAuthPage && <BottomNavigationBar />}
 
     </div>
   );
