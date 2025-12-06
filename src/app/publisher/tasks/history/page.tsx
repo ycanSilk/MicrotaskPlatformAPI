@@ -58,32 +58,13 @@ const TaskHistoryPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // 获取认证token
-      let authToken = null;
-      if (typeof window !== 'undefined') {
-        try {
-          const token = localStorage.getItem('publisher_auth_token');
-          if (token) {
-            authToken = token;
-          } else {
-            throw new Error('未找到认证token');
-          }
-        } catch (e) {
-          throw new Error('获取认证信息失败');
-        }
-      }
-      
       // 构建请求头
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
       
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-      
       // 发送API请求
-      const response = await fetch('/api/publisher/tasks', {
+      const response = await fetch('/api/tasks', {
         headers,
         credentials: 'include'
       });

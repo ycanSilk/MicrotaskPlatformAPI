@@ -50,7 +50,7 @@ export default function PersonalInfoPage() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/publisher/user/getuserinfo', {
+        const response = await fetch('/api/user/getuserinfo', {
           method: 'GET',
           headers: {
             'Accept': 'application/json'

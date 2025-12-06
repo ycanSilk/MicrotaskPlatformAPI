@@ -142,13 +142,13 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
       };
       
       console.log('调用审核通过API:', {
-        endpoint: '/api/publisher/publishertasks/reviewtask',
+        endpoint: '/api/publishertasks/reviewtask',
         requestData: requestData
       });
       
       const startTime = performance.now();
       
-      const response = await fetch('/api/publisher/publishertasks/reviewtask', {
+      const response = await fetch('/api/publishertasks/reviewtask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ export default function AuditTabPage({ pendingOrders, paginationData, loading }:
     
     try {
       // 在实际应用中，这里应该调用API进行驳回操作
-      // const response = await fetch('/api/publisher/verify/reject', {
+      // const response = await fetch('/api/verify/reject', {
       //   method: 'POST',
       //   headers: {
       //     'Content-Type': 'application/json',

@@ -471,7 +471,7 @@ export default function PublishTaskPage() {
           console.log(`  请求包含字段总数: ${formDataToSend.entries().next().done ? 0 : Array.from(formDataToSend.entries()).length}`);
           
           response = await Promise.race([
-            fetch('/api/publisher/publishertasks/middlecomment', {
+            fetch('/api/publishertasks/middlecomment', {
               method: 'POST',
               // 不需要设置Content-Type，浏览器会自动设置正确的multipart/form-data类型
               body: formDataToSend,

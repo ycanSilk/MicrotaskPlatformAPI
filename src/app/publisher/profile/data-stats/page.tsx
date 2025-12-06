@@ -42,7 +42,7 @@ export default function DataStatsPage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`/api/publisher/publishertasks/taskcount?dateRange=${dateRange}`);
+        const response = await fetch(`/api/publishertasks/taskcount?dateRange=${dateRange}`);
         const data = await response.json();
         if (data.success) {
           setTaskCountData(data);

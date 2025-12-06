@@ -123,7 +123,7 @@ export default function ActiveTabPage() {
         console.log('请求参数:', requestParams);
         
         // 调用后端API
-        const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
+        const response = await fetch('/api/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -193,7 +193,7 @@ export default function ActiveTabPage() {
       };
       
       // 调用后端API
-      const response = await fetch('/api/publisher/publishertasks/subtasklist', {
+      const response = await fetch('/api/publishertasks/subtasklist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

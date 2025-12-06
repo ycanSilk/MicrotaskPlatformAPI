@@ -1,5 +1,5 @@
 import React from 'react';
-import ReorderButton from '../../../commenter/components/ReorderButton';
+
 import OrderHeaderTemplate from './OrderHeaderTemplate';
 
 interface Task {
@@ -179,9 +179,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
               查看详情
             </button>
             
-            {tabType === 'completed' && (
-              <ReorderButton taskId={task.id} />
-            )}
+
           </div>
         </div>
       ))}

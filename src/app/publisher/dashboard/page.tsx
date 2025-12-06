@@ -108,7 +108,7 @@ export default function PublisherDashboardPage() {
         console.log('请求参数:', requestParams);
         
         // 调用后端API
-        const taskresponse = await fetch('/api/publisher/publishertasks/mypublishedlist', {
+        const taskresponse = await fetch('/api/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestParams),
@@ -173,12 +173,12 @@ export default function PublisherDashboardPage() {
         };
         
         console.log('开始调用待审核订单API:', {
-          endpoint: '/api/publisher/publishertasks/pendingverifylist',
+          endpoint: '/api/publishertasks/pendingverifylist',
           method: 'POST',
           requestData: pendingParams
         });
         
-        const pendingResponse = await fetch('/api/publisher/publishertasks/pendingverifylist', {
+        const pendingResponse = await fetch('/api/publishertasks/pendingverifylist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pendingParams),
@@ -208,7 +208,7 @@ export default function PublisherDashboardPage() {
         }
 
         // 调用后端API获取任务统计数据
-        const response = await fetch('/api/publisher/publishertasks/taskcount', {
+        const response = await fetch('/api/publishertasks/taskcount', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

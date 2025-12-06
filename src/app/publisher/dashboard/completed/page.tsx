@@ -94,7 +94,7 @@ export default function CompletedTabPage() {
         console.log('请求参数:', requestParams);
         
         // 调用后端API
-        const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
+        const response = await fetch('/api/publishertasks/mypublishedlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',

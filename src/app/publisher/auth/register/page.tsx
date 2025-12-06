@@ -167,7 +167,7 @@ export default function PublisherRegisterPage() {
     
     try {
       // 调用发布者注册API
-      const response = await fetch('/api/publisher/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

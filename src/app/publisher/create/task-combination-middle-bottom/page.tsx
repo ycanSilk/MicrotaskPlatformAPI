@@ -480,7 +480,7 @@ export default function PublishTaskPage() {
           console.log(`  请求包含图片数量: ${imageCount}`);
           
           response = await Promise.race([
-            fetch('/api/publisher/publishertasks/topmiddlecommnet', {
+            fetch('/api/publishertasks/topmiddlecommnet', {
               method: 'POST',
               body: formDataToSend,
               credentials: 'include',

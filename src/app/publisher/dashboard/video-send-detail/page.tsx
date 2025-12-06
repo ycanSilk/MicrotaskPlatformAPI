@@ -65,24 +65,13 @@ export default function VideoSendDetailPage() {
       setLoading(true);
       
       // 调用API获取任务详情
-      const url = `/api/publisher/task-detail?taskId=${id}`;
-      
-      // 获取认证token（如果存在）
-      let authToken = null;
-      if (typeof window !== 'undefined') {
-        try {
-          authToken = localStorage.getItem('publisher_auth_token');
-        } catch (e) {
-          // 静默处理获取认证token时的错误
-        }
-      }
+      const url = `/api/task-detail?taskId=${id}`;
       
       // 构建请求选项
       const requestOptions = {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+          'Content-Type': 'application/json'
         },
         cache: 'no-store' as RequestCache
       };

@@ -137,7 +137,7 @@ const OrderDetailPage: React.FC = () => {
     setError(null);
     try {
       // 调用publishertasks/maintaskdetail API获取订单详情数据
-      const response = await fetch('/api/publisher/publishertasks/maintaskdetail', {
+      const response = await fetch('/api/publishertasks/maintaskdetail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -175,7 +175,7 @@ const OrderDetailPage: React.FC = () => {
   const fetchSubOrders = async () => {
     try {
       // 调用subtasklist API获取子订单数据
-      const response = await fetch('/api/publisher/publishertasks/subtasklist', {
+      const response = await fetch('/api/publishertasks/subtasklist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -244,7 +244,7 @@ const OrderDetailPage: React.FC = () => {
   const handleReview = async (subOrderId: string, approve: boolean) => {
     try {
       // 调用审核API
-      const response = await fetch(`/api/publisher/suborders/${subOrderId}/review`, {
+      const response = await fetch(`/api/suborders/${subOrderId}/review`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -411,7 +411,7 @@ const OrderDetailPage: React.FC = () => {
         throw new Error('无效的订单ID');
       }
       
-      const response = await fetch(`/api/publisher/orders/${orderId}/export`, {
+      const response = await fetch(`/api/orders/${orderId}/export`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

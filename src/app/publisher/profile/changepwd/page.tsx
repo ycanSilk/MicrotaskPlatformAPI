@@ -170,7 +170,7 @@ export default function ResetPasswordPage() {
       // API调用信息
       console.log('调用密码修改API');
       
-      const response = await fetch('/api/publisher/user/changepwd', {
+      const response = await fetch('/api/user/changepwd', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

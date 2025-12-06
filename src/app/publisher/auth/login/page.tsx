@@ -70,7 +70,7 @@ export default function PublisherLoginPage() {
     
     try {
       // 调用后端API进行身份验证
-      const response = await fetch('/api/publisher/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

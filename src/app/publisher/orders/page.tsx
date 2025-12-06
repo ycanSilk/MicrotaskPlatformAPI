@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { SearchOutlined, FilterOutlined, CalendarOutlined, DownOutlined, ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, DownloadOutlined, CopyOutlined } from '@ant-design/icons';
-import ReorderButton from '../../commenter/components/ReorderButton';
+
 
 // API响应类型定义
 export interface CommentDetail {
@@ -153,7 +153,7 @@ const PublisherOrdersPage: React.FC = () => {
         maxPrice: 9999,
         keyword: activeSearchTerm,
       };
-      const response = await fetch('/api/publisher/publishertasks/mypublishedlist', {
+      const response = await fetch('/api/publishertasks/mypublishedlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

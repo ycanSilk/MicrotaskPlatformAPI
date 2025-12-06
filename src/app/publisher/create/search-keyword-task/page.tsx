@@ -4,45 +4,7 @@ import { Button, Input, AlertModal } from '@/components/ui';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-// 本地实现Publisher认证信息获取，替代已移除的PublisherAuthStorage
-const PublisherAuthStorage = {
-  getAuth: () => {
-    try {
-      if (typeof window === 'undefined') return null;
-      
-      // 尝试从localStorage获取publisher认证信息
-      const authToken = localStorage.getItem('publisher_auth_token');
-      const userInfo = localStorage.getItem('publisher_user_info');
-      
-      if (authToken && userInfo) {
-        return {
-          token: authToken,
-          user: JSON.parse(userInfo)
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取认证信息失败:', error);
-      return null;
-    }
-  },
-  getCurrentUser: () => {
-    try {
-      if (typeof window === 'undefined') return null;
-      
-      const userInfoStr = localStorage.getItem('publisher_user_info');
-      if (userInfoStr) {
-        return JSON.parse(userInfoStr);
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('获取当前用户信息失败:', error);
-      return null;
-    }
-  }
-};
+
 
 export default function PublishSearchKeywordTaskPage() {
   const router = useRouter();
@@ -147,32 +109,16 @@ export default function PublishSearchKeywordTaskPage() {
     console.log(`[任务发布-${requestId}] 任务ID:`, taskId);
 
     try {
-      // 使用PublisherAuthStorage获取认证token和用户信息
-      const auth = PublisherAuthStorage.getAuth();
-      const token = auth?.token;
-      const userInfo = PublisherAuthStorage.getCurrentUser();
-      
-      console.log('[任务发布] 认证信息:', { token: token ? '存在' : '不存在', userInfo });
-      
-      if (!token || !userInfo) {
-        console.log('[任务发布] 认证失败: 用户未登录或会话已过期');
-        showAlert('认证失败', '用户未登录，请重新登录', '❌');
-        // 使用setTimeout延迟跳转，确保用户看到提示
-        setTimeout(() => {
-          router.push('/publisher/login' as any);
-        }, 1500);
-        return;
-      }
+      // 移除token获取逻辑，后端API会自动处理认证
 
       // 计算总费用（不包含平台手续费）
       const totalCost = taskPrice * formData.quantity;
       
       // 余额校验 - 获取当前用户的可用余额
       console.log('[任务发布] 开始余额校验，总费用:', totalCost);
-      const balanceResponse = await fetch('/api/publisher/finance', {
+      const balanceResponse = await fetch('/api/finance', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         cache: 'no-store'
@@ -222,11 +168,10 @@ export default function PublishSearchKeywordTaskPage() {
       console.log(`[任务发布-${requestId}] 即将发送API请求，时间戳: ${Date.now()}`);
       
       // 调用API发布任务
-      const response = await fetch('/api/publisher/comment-order', {
+      const response = await fetch('/api/comment-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
           'X-Request-ID': requestId // 添加请求ID头
         },
         body: JSON.stringify(requestBody)

@@ -244,7 +244,7 @@ export default function PublishTaskPage() {
         }
       };
 
-      const apiUrl = '/api/publisher/publishertasks/topcomment';
+      const apiUrl = '/api/publishertasks/topcomment';
 
       const response = await fetch(apiUrl, {
         method: 'POST',

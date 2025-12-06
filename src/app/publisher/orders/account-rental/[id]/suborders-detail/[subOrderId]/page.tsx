@@ -51,13 +51,6 @@ const OrderDetailPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // 在实际应用中，这里会调用API获取数据
-        // const response = await fetch(`/api/publisher/orders/${orderId}`);
-        // if (!response.ok) throw new Error('Failed to fetch order detail');
-        // const data = await response.json();
-        // setOrder(data);
-
-        // 模拟数据
         const mockOrder: Order = {
           id: orderId,
           orderNumber: `ORD-${2023}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
