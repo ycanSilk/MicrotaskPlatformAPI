@@ -174,7 +174,7 @@ const PublishForm = () => {
     
     // 发送API请求
     try {
-      const response = await fetch('/api/public/rental/publishrequestrental', {
+      const response = await fetch('/api//rental/publishrequestrental', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

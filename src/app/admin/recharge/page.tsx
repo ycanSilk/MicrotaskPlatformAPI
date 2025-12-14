@@ -107,14 +107,14 @@ export default function PublisherFinancePage() {
       const remark = rechargeRemark;
 
       // 调用后端充值API
-      const response = await fetch('/api/admin/wallet/recharge', {
+      const response = await fetch('/api/wallet/recharge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ targetUserId, amount, remark }),
       });
-      console.log('前端请求的后端APIurl:/api/admin/wallet/recharge');
+      console.log('前端请求的后端APIurl:/api/wallet/recharge');
       console.log('targetUserId:', targetUserId);
       console.log('amount:', amount);
       console.log('remark:', remark);

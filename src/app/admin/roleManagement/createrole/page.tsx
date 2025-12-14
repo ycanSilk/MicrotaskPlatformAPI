@@ -62,7 +62,7 @@ const CreateRolePage: React.FC = () => {
       };
       
       // 调用实际的后端API
-      const response = await fetch('/api/admin/role/systemrole/creatrole', {
+      const response = await fetch('/api/role/systemrole/creatrole', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

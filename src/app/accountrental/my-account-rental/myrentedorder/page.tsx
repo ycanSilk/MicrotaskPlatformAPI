@@ -148,7 +148,7 @@ const RentalOrderPage = () => {
   const fetchOrders = async (status: string = 'PENDING') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/public/rental/myrentedorder', {
+      const response = await fetch('/api//rental/myrentedorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -271,7 +271,7 @@ const RentalOrderPage = () => {
       };
       
       // 调用后端API
-      const response = await fetch(`/api/public/rental/disputeorder?orderId=${orderId}`, {
+      const response = await fetch(`/api//rental/disputeorder?orderId=${orderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -316,7 +316,7 @@ const RentalOrderPage = () => {
     setApiLoading(true);
     try {
       // 与forrentorder页面相同的API调用实现
-      const response = await fetch('/api/public/rental/cancelleaseorder', {
+      const response = await fetch('/api//rental/cancelleaseorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -384,14 +384,14 @@ const RentalOrderPage = () => {
     setPayLoading(true);
     try {
       // 调用支付API，将orderId作为URL路径参数传递
-      const response = await fetch(`/api/public/rental/paymentleaseorder?orderId=${orderId}`, {
+      const response = await fetch(`/api//rental/paymentleaseorder?orderId=${orderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         }
         // 不再发送body
       });
-      console.log('请求后端url:/api/public/rental/paymentleaseorder和传递订单id', orderId);
+      console.log('请求后端url:/api//rental/paymentleaseorder和传递订单id', orderId);
       console.log('支付响应:', response);
 
       const result = await response.json();

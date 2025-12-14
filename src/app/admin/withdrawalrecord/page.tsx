@@ -36,7 +36,7 @@ const WithdrawalListPage = () => {
       setLoading(true);
       try {
         // 调用真实API获取提现记录
-        const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+        const response = await fetch('/api//walletmanagement/transactionrecord', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

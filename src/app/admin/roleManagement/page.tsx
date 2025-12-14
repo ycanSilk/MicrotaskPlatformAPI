@@ -59,7 +59,7 @@ export default function RoleManagementPage() {
         status: ""
       };
       
-      const response = await fetch('/api/admin/role/systemrole/getrolelist', {
+      const response = await fetch('/api/role/systemrole/getrolelist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -97,7 +97,7 @@ export default function RoleManagementPage() {
     
     try {
         const action = newStatus === 'DISABLED' ? '禁用' : '启用';
-        const endpoint = newStatus === 'DISABLED' ? '/api/admin/role/systemrole/disabledrole' : '/api/admin/role/systemrole/enablerole';
+        const endpoint = newStatus === 'DISABLED' ? '/api/role/systemrole/disabledrole' : '/api/role/systemrole/enablerole';
         
         const response = await fetch(endpoint, {
           method: 'POST',

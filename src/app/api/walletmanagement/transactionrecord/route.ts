@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     
     // 获取原始响应数据
     const responseData = await response.json();
-    console.log('这是获取交易记录API请求成功响应:src/app/api/public/walletmanagement/transactionrecord/route.ts');
+    console.log('这是获取交易记录API请求成功响应:src/app/api//walletmanagement/transactionrecord/route.ts');
     console.log('请求url:', apiUrl);
     console.log('请求token :Bearer ', token);
     console.log('请求体:', JSON.stringify(newRequestBody));

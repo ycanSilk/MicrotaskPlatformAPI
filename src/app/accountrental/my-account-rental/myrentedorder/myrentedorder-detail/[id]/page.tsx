@@ -90,7 +90,7 @@ const RentalOrderDetailPage = () => {
       console.log('订单ID:', id);
       try {
         setLoading(true);
-        const response = await fetch(`/api/public/rental/getorderdetail?orderRequestId=${id}`, {
+        const response = await fetch(`/api//rental/getorderdetail?orderRequestId=${id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

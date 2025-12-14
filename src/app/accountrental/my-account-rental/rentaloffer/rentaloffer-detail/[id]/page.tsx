@@ -76,7 +76,7 @@ const RentalRequestDetailPage = () => {
       console.log('id类型:', typeof id);
       console.log('id是否为空:', id === '');
       // 调用后端API
-      const apiUrl = `/api/public/rental/getleaseinfodetail?leaseInfoId=${id}`;
+      const apiUrl = `/api//rental/getleaseinfodetail?leaseInfoId=${id}`;
       console.log('前端请求的完整URL:', apiUrl);
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -149,7 +149,7 @@ const RentalRequestDetailPage = () => {
     try {
       console.log('调用取消租赁API，参数:', { leaseInfoId, reason });
       // 调用后端API
-      const response = await fetch('/api/public/rental/cancelleasrentaleinfo', {
+      const response = await fetch('/api//rental/cancelleasrentaleinfo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -87,7 +87,7 @@ export default function CommenterManagementPage() {
     useEffect(() => {
       const fetchCommenters = async () => {
         try {
-          const response = await fetch('/api/public/users/getinduserlist', {
+          const response = await fetch('/api//users/getinduserlist', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export default function CommenterManagementPage() {
           }
 
           const result: APIResponse = await response.json();
-          console.log('请求url', '/api/public/users/getinduserlist');
+          console.log('请求url', '/api//users/getinduserlist');
           console.log('这是获取个人用户列表API返回的原始响应:', result);
 
           if (result.success && (result.code === 1 || result.code === 200)) {

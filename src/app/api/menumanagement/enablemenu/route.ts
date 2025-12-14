@@ -5,7 +5,7 @@ import config from '../../apiconfig/config.json';
 export const dynamic = 'force-dynamic';
 // 主函数：处理POST请求
 export async function POST(request: Request) {
-  console.log('API Route: /api/public/users/induser called');
+  console.log('API Route: /api//users/induser called');
   // 从Cookie获取token
   const cookieStore = await cookies();
   const tokenKeys = [ 'admin_token', 'user_token', 'auth_token', 'token'];

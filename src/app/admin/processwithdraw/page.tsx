@@ -50,7 +50,7 @@ export default function AdminProcessWithdrawPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+      const response = await fetch('/api//walletmanagement/transactionrecord', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export default function AdminProcessWithdrawPage() {
     setModalError(null);
 
     // 定义API URL
-    const apiUrl = '/api/public/walletmanagement/processwithdraw';
+    const apiUrl = '/api//walletmanagement/processwithdraw';
     // 定义请求参数
     const requestParams = {
         orderNo: selectedOrderNo,

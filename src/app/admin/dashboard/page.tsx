@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
         const { startDate, endDate } = getDateRangeParams();
         
         // 调用后端API，传递startDate和endDate参数，并确保credentials包含cookies
-        const response = await fetch(`/api/public/taskmodule/tasksplatformstats?startDate=${startDate}&endDate=${endDate}`, {
+        const response = await fetch(`/api//taskmodule/tasksplatformstats?startDate=${startDate}&endDate=${endDate}`, {
           credentials: 'include' // 确保cookies被正确传递
         });
         

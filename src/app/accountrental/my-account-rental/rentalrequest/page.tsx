@@ -84,7 +84,7 @@ const RentalRequestPage = () => {
         setLoading(true);
         setError(null);
         
-        const response = await fetch('/api/public/rental/myrequestrentalinfolist', {
+        const response = await fetch('/api//rental/myrequestrentalinfolist', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

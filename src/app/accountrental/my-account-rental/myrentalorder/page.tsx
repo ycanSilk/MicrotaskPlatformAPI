@@ -135,7 +135,7 @@ const RentalOrderPage = () => {
   const fetchOrders = async (status: string = 'PENDING') => {
     setLoading(true);
     try {
-      const response = await fetch('/api/public/rental/myrentalorder', {
+      const response = await fetch('/api//rental/myrentalorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -249,7 +249,7 @@ const RentalOrderPage = () => {
   const handleStartLease = async (orderId: string) => {
     setApiLoading(true);
     try {
-      const response = await fetch(`/api/public/rental/startleaseorder?orderId=${orderId}`, {
+      const response = await fetch(`/api//rental/startleaseorder?orderId=${orderId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -286,7 +286,7 @@ const RentalOrderPage = () => {
     
     setApiLoading(true);
     try {
-      const response = await fetch('/api/public/rental/cancelleaseorder', {
+      const response = await fetch('/api//rental/cancelleaseorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

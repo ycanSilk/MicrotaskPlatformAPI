@@ -76,7 +76,7 @@ export default function PersonalUsersPage() {
         phone: filteredPhone
       };
       
-      const response = await fetch('/api/public/users/induser', {
+      const response = await fetch('/api//users/induser', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

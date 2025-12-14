@@ -38,7 +38,7 @@ const CreateMenuPage: React.FC = () => {
     try {
       // 获取菜单列表以计算最大序号
       const timestamp = new Date().getTime();
-      const response = await fetch(`/api/admin/menumanagement/getmenutree?_t=${timestamp}`, {
+      const response = await fetch(`/api/menumanagement/getmenutree?_t=${timestamp}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -163,7 +163,7 @@ const CreateMenuPage: React.FC = () => {
       console.log('提交菜单数据:', requestData);
       
       // 调用实际的后端API
-      const response = await fetch('/api/admin/menumanagement/createmenu', {
+      const response = await fetch('/api/menumanagement/createmenu', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

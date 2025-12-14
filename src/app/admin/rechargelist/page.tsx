@@ -45,7 +45,7 @@ export default function AdminProcessWithdrawPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/public/walletmanagement/transactionrecord', {
+      const response = await fetch('/api//walletmanagement/transactionrecord', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export default function AdminProcessWithdrawPage() {
             size: 10
           })
         });
-      console.log('请求URL:', '/api/public/walletmanagement/transactionrecord');
+      console.log('请求URL:', '/api//walletmanagement/transactionrecord');
       console.log('请求体:', JSON.stringify({
         transactionType: 'RECHARGE',
         page: 1,

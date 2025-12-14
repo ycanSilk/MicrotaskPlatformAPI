@@ -92,7 +92,7 @@ export default function AccountRentalMarketPage({ searchParams }: { searchParams
         };
         
         // 调用后端API
-        const response = await fetch('/api/public/rental/rentalmarket', {
+        const response = await fetch('/api//rental/rentalmarket', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

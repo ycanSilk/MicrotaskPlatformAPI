@@ -105,7 +105,7 @@ const RentalOfferPage = () => {
       
       console.log(`获取出租信息 - status: ${currentStatus}`);
       
-      const response = await fetch('/api/public/rental/mypublishrentalinfolist', {
+      const response = await fetch('/api//rental/mypublishrentalinfolist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

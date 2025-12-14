@@ -54,7 +54,7 @@ const RentalRequestDetailPage: React.FC = () => {
       
       try {
         setLoading(true);
-        const response = await fetch(`/api/public/rental/getrequestinfodetail?rentRequestId=${id}`, {
+        const response = await fetch(`/api//rental/getrequestinfodetail?rentRequestId=${id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

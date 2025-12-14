@@ -99,7 +99,7 @@ const RentalRequestsPage = () => {
         setError(null);
         
         // 调用后端API获取求租信息
-        const response = await fetch('/api/public/rental/requestrentalmarket', {
+        const response = await fetch('/api//rental/requestrentalmarket', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

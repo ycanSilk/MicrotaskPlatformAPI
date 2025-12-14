@@ -46,7 +46,7 @@ export default function MenuManagementPage() {
     try {
       // 添加时间戳参数确保每次请求都是唯一的，避免缓存问题
       const timestamp = new Date().getTime();
-      const url = `/api/admin/menumanagement/getmenutree?_t=${timestamp}`;
+      const url = `/api/menumanagement/getmenutree?_t=${timestamp}`;
       
       console.log('API请求URL:', url);
       
@@ -176,8 +176,8 @@ export default function MenuManagementPage() {
     try {
       // 获取对应的API端点
       const apiEndpoint = action === 'enable' 
-        ? '/api/admin/menumanagement/enablemenu'
-        : '/api/admin/menumanagement/disablemenu';
+        ? '/api/menumanagement/enablemenu'
+        : '/api/menumanagement/disablemenu';
       
       // 设置请求超时
       const controller = new AbortController();

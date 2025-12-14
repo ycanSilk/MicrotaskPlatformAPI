@@ -170,7 +170,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const successResponse = NextResponse.json(responseData, { status: 200 });
     
     // 设置安全的HttpOnly Cookie保存token
-<<<<<<< HEAD:src/app/api/public/auth/login/route.ts
+<<<<<<< HEAD:src/app/api//auth/login/route.ts
     setSecureHttpOnlyCookie(req, successResponse, 'admin_token', token, expiresIn);
     
     // 关键日志

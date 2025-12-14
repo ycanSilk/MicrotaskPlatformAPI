@@ -56,7 +56,7 @@ const PermissionDetailsPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/role/systemrole/getpermissionmenus', {
+      const response = await fetch('/api/role/systemrole/getpermissionmenus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roleId: id })
@@ -250,7 +250,7 @@ const PermissionDetailsPage: React.FC = () => {
       setLoading(true);
       const selectedPermissionIds = getSelectedPermissionIds();
       
-      const response = await fetch('/api/admin/role/systemrole/changepermission', {
+      const response = await fetch('/api/role/systemrole/changepermission', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -272,7 +272,7 @@ export default function DouyinAccountRentalPage() {
       console.log('提交的API请求数据:', requestData);
       
       // 调用后端API提交数据
-      const response = await fetch('/api/public/rental/publishrental', {
+      const response = await fetch('/api//rental/publishrental', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

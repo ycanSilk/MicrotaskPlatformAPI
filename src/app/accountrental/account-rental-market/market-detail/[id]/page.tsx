@@ -39,7 +39,7 @@ const fetchLeaseInfoDetail = async (leaseInfoId: string): Promise<LeaseInfo> => 
   try {
     // 调用本地API路由，将leaseInfoId通过headers传递给后端
     console.log('正在发送请求，leaseInfoId通过headers传递:', leaseInfoId);
-    const response = await fetch(`/api/public/rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`,{
+    const response = await fetch(`/api//rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`,{
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -47,7 +47,7 @@ const fetchLeaseInfoDetail = async (leaseInfoId: string): Promise<LeaseInfo> => 
       }
     );
     console.log('这是获取租赁信息详情的日志输出:', response.status);
-    console.log('请求url:', `/api/public/rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`);
+    console.log('请求url:', `/api//rental/getleaseinfodetail?leaseInfoId=${leaseInfoId}`);
     console.log(await response.clone().json());
     // 首先检查响应是否成功
     if (!response.ok) {
@@ -106,7 +106,7 @@ const AccountDetailPage = ({
   // 创建租赁订单
   const createLeaseOrder = async (leaseInfoId: string, leaseDays: number) => {
     try {
-      const response = await fetch('/api/public/rental/creatleaseorder', {
+      const response = await fetch('/api//rental/creatleaseorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -133,7 +133,7 @@ const AccountDetailPage = ({
   // 支付租赁订单
   const payLeaseOrder = async (orderId: string): Promise<boolean> => {
     try {
-      const response = await fetch('/api/public/rental/paymentleaseorder', {
+      const response = await fetch('/api//rental/paymentleaseorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
