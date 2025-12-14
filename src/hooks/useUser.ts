@@ -8,25 +8,6 @@ const getCurrentLoggedInUser = (): User | null => {
   try {
     if (typeof window === 'undefined') return null;
     
-    // 检查commenter认证数据
-    const commenterAuthData = localStorage.getItem('commenter_auth_data');
-    if (commenterAuthData) {
-      const parsedData = JSON.parse(commenterAuthData);
-      if (parsedData.userInfo) {
-        return {
-          id: parsedData.userId || parsedData.userInfo.id,
-          username: parsedData.username || parsedData.userInfo.username,
-          role: 'commenter',
-          ...parsedData.userInfo,
-          // 确保必要的字段存在
-          balance: parsedData.userInfo.balance || 0,
-          status: parsedData.userInfo.status || 'active',
-          createdAt: parsedData.userInfo.createTime || parsedData.createdAt || new Date().toISOString()
-        };
-      }
-    }
-    
-    // 检查publisher认证数据
     const publisherToken = localStorage.getItem('publisher_auth_token');
     const publisherUser = localStorage.getItem('publisher_user_info');
     if (publisherToken && publisherUser) {

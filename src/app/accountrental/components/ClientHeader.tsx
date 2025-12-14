@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname,useRouter, useSearchParams } from 'next/navigation';
 import { CustomerServiceButton } from '../../../components/button/CustomerServiceButton';
-import { UserOutlined, LeftOutlined } from '@ant-design/icons';
+import { UserOutlined, LeftOutlined, BellOutlined } from '@ant-design/icons';
 
 interface User {
   id: string;
@@ -28,6 +28,10 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
   const [pageTitle, setPageTitle] = useState('账户租赁');
   const headerRef = useRef<HTMLDivElement>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  // 创建下拉菜单的ref
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  // 创建头像按钮的ref
+  const avatarButtonRef = useRef<HTMLButtonElement>(null);
 
   // 定义路由到标题的映射关系
   const routeTitleMap: Record<string, string> = {
@@ -36,27 +40,31 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
     '/accountrental/account-rental-requests': '求租市场',
     '/accountrental/account-rental-publish': '发布租赁',
     '/accountrental/my-account-rental': '我的租赁',
-    '/accountrental/account-rental-market/market-detail': '出租账号详情',
+    '/accountrental/account-rental-market/market-detail': '出租信息详情',
     '/accountrental/account-rental-requests/request-detail': '求租信息详情',
     '/accountrental/account-rental-requests/requests-detail': '求租信息详情',
     '/accountrental/account-rental-publish/publish-for-rent': '发布出租信息',
     '/accountrental/account-rental-publish/publish-requests': '发布求租信息',
-    '/accountrental/my-account-rental/forrentorder': '出租订单',
-    '/accountrental/my-account-rental/rentalorder': '租用订单',
-    '/accountrental/my-account-rental/rentaloffer': '出租信息',
-    '/accountrental/my-account-rental/rentalrequest': '求租信息',
-    '/accountrental/my-account-rental/rentalrequest/rentalrequest-detail/[id]': '求租信息详情',
-    '/accountrental/my-account-rental/rentaloffer/rentaloffer-detail/[id]': '出租信息详情',
-    '/accountrental/my-account-rental/forrentorder/forrentorder-detail/[id]': '出租订单详情',
-    '/accountrental/my-account-rental/rentalorder/rentalorder-detail/[id]': '租用订单详情'
+    '/accountrental/my-account-rental/myrentalorder': '我出租的订单',
+    '/accountrental/my-account-rental/myrentedorder': '我租用的订单',
+    '/accountrental/my-account-rental/rentaloffer': '我发布的出租信息',
+    '/accountrental/my-account-rental/rentalrequest': '我发布的求租信息',
+    '/accountrental/my-account-rental/rentalrequest/rentalrequest-detail/[id]': '我发布的求租信息详情',
+    '/accountrental/my-account-rental/rentaloffer/rentaloffer-detail/[id]': '我发布的出租信息详情',
+    '/accountrental/my-account-rental/myrentalorder/myrentalorder-detail/[id]': '我出租的订单详情',
+    '/accountrental/my-account-rental/myrentedorder/myrentedorder-detail/[id]': '我租用的订单详情'
   };
 
-  // 定义账号租赁模块的一级页面
+  // 定义账号租赁模块的一级页面（点击返回跳转到hall）
   const firstLevelPages = [
-    '/accountrental',
     '/accountrental/account-rental-market',
     '/accountrental/account-rental-requests',
     '/accountrental/account-rental-publish',
+    '/accountrental/my-account-rental'
+  ];
+
+  // 定义需要特殊处理的一级页面下的URL模式
+  const myAccountRentalPages = [
     '/accountrental/my-account-rental'
   ];
 
@@ -64,10 +72,17 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
   const handleBack = () => {
     if (!pathname) return;
 
-    // 检查当前页面是否为一级页面
+    // 检查当前页面是否为指定的一级页面
     if (firstLevelPages.includes(pathname)) {
-      // 如果是一级页面，返回账户租赁主页
-      router.push('/accountrental');
+      // 如果是指定的一级页面，跳转到/commenter/hall
+      router.push('/commenter/hall');
+      return;
+    }
+
+    // 检查是否是my-account-rental下面的页面
+    if (pathname.startsWith('/accountrental/my-account-rental/')) {
+      // 跳转到/commenter/hall
+      router.push('/commenter/hall');
       return;
     }
 
@@ -75,11 +90,10 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
     const dynamicRouteMap: Record<string, string> = {
       '/accountrental/account-rental-market/market-detail': '/accountrental/account-rental-market',
       '/accountrental/account-rental-requests/requests-detail': '/accountrental/account-rental-requests',
-      '/accountrental/my-account-rental/forrentorder/forrentorder-detail': '/accountrental/my-account-rental/forrentorder',
-      '/accountrental/my-account-rental/rentalorder/rentalorder-detail': '/accountrental/my-account-rental/rentalorder',
+      '/accountrental/my-account-rental/myrentalorder/myrentalorder-detail': '/accountrental/my-account-rental/myrentalorder',
+      '/accountrental/my-account-rental/myrentedorder/myrentedorder-detail': '/accountrental/my-account-rental/myrentedorder',
       '/accountrental/my-account-rental/rentaloffer/rentaloffer-detail': '/accountrental/my-account-rental/rentaloffer',
       '/accountrental/my-account-rental/rentalrequest/rentalrequest-detail': '/accountrental/my-account-rental/rentalrequest',
-      '/accountrental/my-account-rental/rented/rented-detail': '/accountrental/my-account-rental/rented',
     };
 
     // 检查当前路径是否匹配动态路由模式
@@ -91,34 +105,22 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
       }
     }
 
-    // 不是一级页面和动态路由页面，提取上一级路由路径
+    // 提取上一级路由路径
     const pathParts = pathname.split('/').filter(Boolean);
-    if (pathParts.length > 0) {
-      // 检查是否为多层级路径
-      if (pathParts.length > 1) {
-        // 对于账号租赁模块的特殊处理
-        if (pathParts[0] === 'accountrental') {
-          // 检查是否为accountrental的二级页面
-          const secondLevelPath = '/' + pathParts.slice(0, 2).join('/');
-          if (firstLevelPages.includes(secondLevelPath)) {
-            router.push(secondLevelPath);
-            return;
-          }
-        }
-      }
+    if (pathParts.length > 1) {
       const parentPath = '/' + pathParts.slice(0, -1).join('/');
       router.push(parentPath);
     } else {
-      // 如果已经是根路径，则返回首页
-      router.push('/');
+      // 如果已经是一级路由，则跳转到/commenter/hall
+      router.push('/commenter/hall');
     }
   };
 
   // 检查是否显示返回按钮
   const shouldShowBackButton = () => {
     if (!pathname) return false;
-    // 在首页不显示，在其他页面显示
-    return pathname !== '/accountrental';
+    // 只在/accountrental下的子页面显示返回按钮
+    return pathname.startsWith('/accountrental/') && pathname !== '/accountrental';
   };
 
   useEffect(() => {
@@ -182,29 +184,32 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
     }
   }, [pathname]);
 
-  const handleDashboardClick = () => {
-    // 获取 URL 中的 from 参数 - 安全处理可能为 null 的情况
-    const fromSource = searchParams?.get('from');
-    
-    console.log('来源参数:', fromSource); // 调试信息
-    
-    // 优先根据来源参数决定跳转目标
-    if (fromSource === 'commenter-hall') {
-      // 来自接单模块，返回接单模块
-      router.push('/commenter/hall');
-    } else if (fromSource === 'publisher-dashboard') {
-      // 来自派单模块，返回派单模块
-      router.push('/publisher/dashboard');
-    } else if (user?.role === 'commenter') {
-      // 评论员角色跳转到接单模块
-      router.push('/commenter/hall');
-    } else if (user?.role === 'publisher') {
-      // 发布者角色跳转到派单模块
-      router.push('/publisher/dashboard');
-    } else {
-      // 默认跳转到首页
-      router.push('/');
-    }
+  // 点击外部区域关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // 检查点击是否发生在下拉菜单外部
+      if (
+        showDropdown &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        avatarButtonRef.current &&
+        !avatarButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    // 添加全局点击事件监听器
+    document.addEventListener('mousedown', handleClickOutside);
+
+    // 清理函数
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDropdown]);
+
+  const handleDashboardClick = () => {  
+    router.push('/publisher/dashboard');
   };
 
   const handleUserAvatarClick = () => {
@@ -219,7 +224,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
   };
 
   return (
-    <div ref={headerRef} className="bg-blue-500 border-b border-[#9bcfffff] px-4 py-3 flex items-center justify-between h-[60px] box-border">
+    <div ref={headerRef} className="bg-blue-500 border-b border-[#9bcfffff] px-2 py-3 flex items-center justify-between h-[60px] box-border">
       <div className="flex items-center flex-1">
         {isClient && shouldShowBackButton() && (
           <button 
@@ -230,7 +235,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
             <LeftOutlined size={20} className="text-white" />
           </button>
         )}
-        <h1 className="text-xl text-white ml-1">
+        <h1 className="text-xl text-white">
           {pageTitle}
         </h1>
       </div>
@@ -239,14 +244,24 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
           <CustomerServiceButton 
             buttonText="联系客服" 
             modalTitle="在线客服" 
-            userId={user?.id || 'guest'} 
+            CustomerServiceId="admin"
             className="text-white mr-1 font-bold text-lg"
           />
         )}
         
+        <div className="relative">
+          <BellOutlined className="text-3xl text-white rounded-full p-1" />
+          {/* 通知数量提示 */}
+          <div className="absolute top-0 left-5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+            3
+          </div>
+        </div>
+
+
         {/* 用户头像和下拉菜单 */}
         <div className="relative ml-3 mr-3">
           <button 
+            ref={avatarButtonRef}
             onClick={() => setShowDropdown(!showDropdown)}
             className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
             aria-label="用户菜单"
@@ -260,11 +275,14 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
           
           {/* 下拉菜单 */}
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-10 transform transition-all duration-200 origin-top-right animate-fade-in-down">
+            <div 
+              ref={dropdownRef}
+              className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden z-10 transform transition-all duration-200 origin-top-right animate-fade-in-down"
+            >
               {/* 个人中心按钮 */}
               <button 
                 onClick={() => {
-                  router.push('/commenter/profile/settings');
+                  router.push('/commenter/profile/userinfo');
                   setShowDropdown(false);
                 }}
                 className="w-full text-left px-4 py-3 border-b border-gray-100 text-gray-800 font-medium text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
@@ -287,7 +305,7 @@ const ClientHeader: React.FC<ClientHeaderProps> = ({ user }) => {
         </div>
         <button
           onClick={handleDashboardClick}
-          className="text-sm cursor-pointer text-xl text-white transition-all duration-300 ease"
+          className="text-sm cursor-pointer text-xl text-white transition-all duration-300 ease mr-2"
         >
           返回
         </button>
