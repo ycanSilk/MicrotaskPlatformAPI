@@ -7,12 +7,20 @@
   },
   "endpoints": {
     "auth": {
-      "register": "/biz/user/register",
-      "login": "/biz/user/login",
-      "logout": "/biz/user/logout",
-      "resetpwd": "/biz/user/reset-password",
-      "refreshToken": "/biz/user/refresh",
-      "userlist": "/biz/user/list"
+      "register": "/sys/user/register",
+      "login": "/sys/user/login",
+      "logout": "/sys/user/logout",
+      "resetpwd": "/sys/user/reset-password",
+      "refreshToken": "/sys/user/refresh",
+      "userlist": "/sys/user/list",
+      "forgotpwd": "/sys/user/forgot-password",
+      "changepwd": "/sys/user/change-password",
+      "userprofile": "/sys/user/profile",
+      "createuser": "/sys/user"
+    },
+    "role": {
+      "getrolelist": "/sys/role/list",
+      "createrole": "/sys/role/"
     },
     "user": {
       "getuserinfo": "/biz/user/profile",
@@ -21,7 +29,6 @@
       "getinbuserlist": "/ind/user/list",
       "getbizuserstats": "/biz/user/main-accounts/list"
     },
-
     "task": {
       "publish": "/tasks/publish",
       "mypublished": "/tasks/my-published",
@@ -39,7 +46,13 @@
       "availablebalance": "/wallet/available-balance",
       "validatepwd": "/wallet/validate-security-password?password=",
       "transactionrecord": "/wallet/transactions",
-      "usersrecharge": "/wallet/recharge"
+      "usersrecharge": "/wallet/recharge",
+      "recharge": "/wallet/admin/recharge"
+    },
+    "menu": {
+      "createmenu": "/sys/menu/",
+      "getmenutree": "/sys/menu/tree",
+      "getchildrenmenulist": "/sys/menu/children"
     },
     "bank": {
       "getbankcardslist": "/bank-cards/",
